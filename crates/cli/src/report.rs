@@ -12,7 +12,7 @@ pub fn print_results(
 ) {
     match config.output {
         OutputFormat::Human => print_human(results, &config.root, elapsed, quiet),
-        OutputFormat::Json => print_json(results),
+        OutputFormat::Json => print_json(results, elapsed),
         OutputFormat::Compact => print_compact(results, &config.root),
         OutputFormat::Sarif => print_sarif(results, &config.root),
     }
@@ -164,9 +164,27 @@ fn print_human(results: &AnalysisResults, root: &std::path::Path, elapsed: Durat
     }
 }
 
-fn print_json(results: &AnalysisResults) {
-    let json = serde_json::to_string_pretty(results).expect("Failed to serialize results");
-    println!("{json}");
+fn print_json(results: &AnalysisResults, elapsed: Duration) {
+    // Merge metadata alongside result fields for backwards compatibility
+    let mut output = serde_json::to_value(results).expect("Failed to serialize results");
+    if let serde_json::Value::Object(ref mut map) = output {
+        map.insert(
+            "version".to_string(),
+            serde_json::json!(env!("CARGO_PKG_VERSION")),
+        );
+        map.insert(
+            "elapsed_ms".to_string(),
+            serde_json::json!(elapsed.as_millis()),
+        );
+        map.insert(
+            "total_issues".to_string(),
+            serde_json::json!(results.total_issues()),
+        );
+    }
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&output).expect("Failed to serialize JSON")
+    );
 }
 
 fn print_compact(results: &AnalysisResults, root: &std::path::Path) {
@@ -249,7 +267,7 @@ fn build_sarif(results: &AnalysisResults, root: &std::path::Path) -> serde_json:
         sarif_results.push(serde_json::json!({
             "ruleId": "fallow/unused-file",
             "level": "warning",
-            "message": { "text": format!("File is not reachable from any entry point") },
+            "message": { "text": "File is not reachable from any entry point" },
             "locations": [{
                 "physicalLocation": {
                     "artifactLocation": { "uri": relative.display().to_string() }
@@ -275,6 +293,23 @@ fn build_sarif(results: &AnalysisResults, root: &std::path::Path) -> serde_json:
         }));
     }
 
+    for export in &results.unused_types {
+        let relative = export.path.strip_prefix(root).unwrap_or(&export.path);
+        sarif_results.push(serde_json::json!({
+            "ruleId": "fallow/unused-type",
+            "level": "warning",
+            "message": {
+                "text": format!("Type export '{}' is never imported by other modules", export.export_name)
+            },
+            "locations": [{
+                "physicalLocation": {
+                    "artifactLocation": { "uri": relative.display().to_string() },
+                    "region": { "startLine": export.line }
+                }
+            }]
+        }));
+    }
+
     for dep in &results.unused_dependencies {
         sarif_results.push(serde_json::json!({
             "ruleId": "fallow/unused-dependency",
@@ -290,6 +325,110 @@ fn build_sarif(results: &AnalysisResults, root: &std::path::Path) -> serde_json:
         }));
     }
 
+    for dep in &results.unused_dev_dependencies {
+        sarif_results.push(serde_json::json!({
+            "ruleId": "fallow/unused-dev-dependency",
+            "level": "warning",
+            "message": {
+                "text": format!("Package '{}' is in devDependencies but never imported", dep.package_name)
+            },
+            "locations": [{
+                "physicalLocation": {
+                    "artifactLocation": { "uri": "package.json" }
+                }
+            }]
+        }));
+    }
+
+    for member in &results.unused_enum_members {
+        let relative = member.path.strip_prefix(root).unwrap_or(&member.path);
+        sarif_results.push(serde_json::json!({
+            "ruleId": "fallow/unused-enum-member",
+            "level": "warning",
+            "message": {
+                "text": format!("Enum member '{}.{}' is never referenced", member.parent_name, member.member_name)
+            },
+            "locations": [{
+                "physicalLocation": {
+                    "artifactLocation": { "uri": relative.display().to_string() },
+                    "region": { "startLine": member.line }
+                }
+            }]
+        }));
+    }
+
+    for member in &results.unused_class_members {
+        let relative = member.path.strip_prefix(root).unwrap_or(&member.path);
+        sarif_results.push(serde_json::json!({
+            "ruleId": "fallow/unused-class-member",
+            "level": "warning",
+            "message": {
+                "text": format!("Class member '{}.{}' is never referenced", member.parent_name, member.member_name)
+            },
+            "locations": [{
+                "physicalLocation": {
+                    "artifactLocation": { "uri": relative.display().to_string() },
+                    "region": { "startLine": member.line }
+                }
+            }]
+        }));
+    }
+
+    for import in &results.unresolved_imports {
+        let relative = import.path.strip_prefix(root).unwrap_or(&import.path);
+        sarif_results.push(serde_json::json!({
+            "ruleId": "fallow/unresolved-import",
+            "level": "error",
+            "message": {
+                "text": format!("Import '{}' could not be resolved", import.specifier)
+            },
+            "locations": [{
+                "physicalLocation": {
+                    "artifactLocation": { "uri": relative.display().to_string() },
+                    "region": { "startLine": import.line }
+                }
+            }]
+        }));
+    }
+
+    for dep in &results.unlisted_dependencies {
+        sarif_results.push(serde_json::json!({
+            "ruleId": "fallow/unlisted-dependency",
+            "level": "error",
+            "message": {
+                "text": format!("Package '{}' is imported but not listed in package.json", dep.package_name)
+            },
+            "locations": [{
+                "physicalLocation": {
+                    "artifactLocation": { "uri": "package.json" }
+                }
+            }]
+        }));
+    }
+
+    for dup in &results.duplicate_exports {
+        let locations: Vec<serde_json::Value> = dup
+            .locations
+            .iter()
+            .map(|p| {
+                let relative = p.strip_prefix(root).unwrap_or(p);
+                serde_json::json!({
+                    "physicalLocation": {
+                        "artifactLocation": { "uri": relative.display().to_string() }
+                    }
+                })
+            })
+            .collect();
+        sarif_results.push(serde_json::json!({
+            "ruleId": "fallow/duplicate-export",
+            "level": "warning",
+            "message": {
+                "text": format!("Export '{}' appears in multiple modules", dup.export_name)
+            },
+            "locations": locations
+        }));
+    }
+
     serde_json::json!({
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
         "version": "2.1.0",
@@ -298,19 +437,57 @@ fn build_sarif(results: &AnalysisResults, root: &std::path::Path) -> serde_json:
                 "driver": {
                     "name": "fallow",
                     "version": env!("CARGO_PKG_VERSION"),
-                    "informationUri": "https://github.com/nicholasgasior/fallow",
+                    "informationUri": "https://github.com/bartwaardenburg/fallow",
                     "rules": [
                         {
                             "id": "fallow/unused-file",
-                            "shortDescription": { "text": "File is not reachable from any entry point" }
+                            "shortDescription": { "text": "File is not reachable from any entry point" },
+                            "defaultConfiguration": { "level": "warning" }
                         },
                         {
                             "id": "fallow/unused-export",
-                            "shortDescription": { "text": "Export is never imported" }
+                            "shortDescription": { "text": "Export is never imported" },
+                            "defaultConfiguration": { "level": "warning" }
+                        },
+                        {
+                            "id": "fallow/unused-type",
+                            "shortDescription": { "text": "Type export is never imported" },
+                            "defaultConfiguration": { "level": "warning" }
                         },
                         {
                             "id": "fallow/unused-dependency",
-                            "shortDescription": { "text": "Dependency listed but never imported" }
+                            "shortDescription": { "text": "Dependency listed but never imported" },
+                            "defaultConfiguration": { "level": "warning" }
+                        },
+                        {
+                            "id": "fallow/unused-dev-dependency",
+                            "shortDescription": { "text": "Dev dependency listed but never imported" },
+                            "defaultConfiguration": { "level": "warning" }
+                        },
+                        {
+                            "id": "fallow/unused-enum-member",
+                            "shortDescription": { "text": "Enum member is never referenced" },
+                            "defaultConfiguration": { "level": "warning" }
+                        },
+                        {
+                            "id": "fallow/unused-class-member",
+                            "shortDescription": { "text": "Class member is never referenced" },
+                            "defaultConfiguration": { "level": "warning" }
+                        },
+                        {
+                            "id": "fallow/unresolved-import",
+                            "shortDescription": { "text": "Import could not be resolved" },
+                            "defaultConfiguration": { "level": "error" }
+                        },
+                        {
+                            "id": "fallow/unlisted-dependency",
+                            "shortDescription": { "text": "Dependency used but not in package.json" },
+                            "defaultConfiguration": { "level": "error" }
+                        },
+                        {
+                            "id": "fallow/duplicate-export",
+                            "shortDescription": { "text": "Export name appears in multiple modules" },
+                            "defaultConfiguration": { "level": "warning" }
                         }
                     ]
                 }

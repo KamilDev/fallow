@@ -5,11 +5,11 @@ const { join } = require('path');
 const { existsSync } = require('fs');
 
 const PLATFORMS = {
-  'darwin-arm64': '@nicholasgasior/fallow-darwin-arm64',
-  'darwin-x64': '@nicholasgasior/fallow-darwin-x64',
-  'linux-x64': '@nicholasgasior/fallow-linux-x64-gnu',
-  'linux-arm64': '@nicholasgasior/fallow-linux-arm64-gnu',
-  'win32-x64': '@nicholasgasior/fallow-win32-x64-msvc',
+  'darwin-arm64': '@fallow-cli/darwin-arm64',
+  'darwin-x64': '@fallow-cli/darwin-x64',
+  'linux-x64': '@fallow-cli/linux-x64-gnu',
+  'linux-arm64': '@fallow-cli/linux-arm64-gnu',
+  'win32-x64': '@fallow-cli/win32-x64-msvc',
 };
 
 const platformKey = `${process.platform}-${process.arch}`;

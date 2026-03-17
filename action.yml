@@ -1,6 +1,6 @@
 name: 'Fallow - Dead Code Analysis'
 description: 'Find unused files, exports, and dependencies in JavaScript/TypeScript projects'
-author: 'Nicholas Gasior'
+author: 'Bart Waardenburg'
 
 branding:
   icon: 'search'

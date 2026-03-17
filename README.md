@@ -1,93 +1,143 @@
-# fallow
+<p align="center">
+  <img src="assets/logo.svg" alt="fallow" width="280">
+</p>
 
-A blazing-fast dead code analyzer for JavaScript and TypeScript projects, written in Rust.
+<p align="center">
+  <strong>Find dead code in JavaScript and TypeScript projects. Written in Rust.</strong>
+</p>
 
-Fallow finds unused files, exports, dependencies, types, enum members, and class members in your codebase. It's a Rust alternative to [knip](https://github.com/webpro-nl/knip) that is 10-100x faster by leveraging the [Oxc](https://oxc.rs) parser ecosystem.
+<p align="center">
+  <a href="https://crates.io/crates/fallow-cli"><img src="https://img.shields.io/crates/v/fallow-cli.svg" alt="crates.io"></a>
+  <a href="https://www.npmjs.com/package/fallow"><img src="https://img.shields.io/npm/v/fallow.svg" alt="npm"></a>
+  <a href="https://github.com/bartwaardenburg/fallow/actions"><img src="https://img.shields.io/github/actions/workflow/status/bartwaardenburg/fallow/ci.yml?branch=main" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
+</p>
 
-## Features
+<p align="center">
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#what-it-finds">What It Finds</a> ·
+  <a href="#configuration">Configuration</a> ·
+  <a href="#ci-integration">CI Integration</a>
+</p>
 
-- **Unused files** — files not reachable from any entry point
-- **Unused exports** — exported symbols never imported elsewhere
-- **Unused types** — exported type aliases and interfaces never referenced
-- **Unused dependencies** — packages in `dependencies` never imported
-- **Unused devDependencies** — packages in `devDependencies` never imported
-- **Unused enum members** — individual enum values never accessed
-- **Unused class members** — class methods and properties never referenced
-- **Unresolved imports** — import specifiers that can't be resolved
-- **Unlisted dependencies** — packages imported but not in package.json
-- **Duplicate exports** — same name exported from multiple files
+---
 
-### Beyond knip
+Fallow detects unused files, exports, dependencies, types, enum members, and class members across your codebase. It is a drop-in alternative to [knip](https://knip.dev) that runs **10–100x faster** by using the [Oxc](https://oxc.rs) parser instead of the TypeScript compiler.
 
-- **Incremental caching** — only reparse changed files (bincode + xxh3)
-- **Watch mode** — file watcher with debounced re-analysis
-- **Auto-fix** — remove unused exports, clean package.json
-- **LSP server** — real-time diagnostics in your editor
-- **Git-aware** — only report new issues (`--changed-since main`)
-- **Baseline comparison** — `--save-baseline` / `--baseline` for CI
-- **SARIF output** — GitHub Code Scanning integration
-- **GitHub Action** — drop-in CI integration
+<!-- TODO: Replace with an actual terminal recording (e.g. VHS/asciinema SVG) -->
 
-## Installation
+```
+$ fallow check
 
-### npm
+Unused files (3)
+------------------------------------------------------------
+  src/legacy/oldUtils.ts
+  src/components/DeprecatedBanner.tsx
+  src/lib/unused-helper.ts
 
-```bash
-npm install -g fallow
+Unused exports (5)
+------------------------------------------------------------
+  src/utils/format.ts  `formatCurrency`
+  src/utils/format.ts  `formatPercentage`
+  src/hooks/useAuth.ts  `AuthContext`
+  src/api/client.ts  `legacyFetch`
+  src/types/models.ts  `DeprecatedUser`
+
+Unused dependencies (2)
+------------------------------------------------------------
+  moment
+  lodash
+
+Unlisted dependencies (1)
+------------------------------------------------------------
+  chalk
+
+Found 11 issues (0.42s)
 ```
 
-### Cargo
+## Why fallow?
+
+**knip is good. fallow is fast.**
+
+knip calls `ts.createProgram()` on every run — it loads the full TypeScript compiler to type-check your project, even though dead code detection is a syntactic problem. For a 2,000-file monorepo, that means 30–60 seconds of waiting.
+
+fallow takes a different approach:
+
+- **Oxc parser** — syntactic analysis only, no type-checking overhead
+- **Parallel parsing** — every file parsed on its own rayon thread with a thread-local allocator, zero contention
+- **Incremental cache** — xxh3 content hashing + bincode serialization, only changed files are reparsed
+- **Flat graph storage** — contiguous `Vec<Edge>` with range indices for cache-friendly traversal
+
+The result: sub-second analysis on codebases where knip takes a minute.
+
+<!-- TODO: Add hyperfine benchmark chart (assets/benchmark.svg) -->
+<!-- hyperfine --warmup 3 'fallow check --quiet' 'npx knip --no-progress' -->
+
+## Quick start
 
 ```bash
-cargo install fallow-cli
+npx fallow check
 ```
 
-### From source
+Or install globally:
 
 ```bash
-git clone https://github.com/nicholasgasior/fallow
-cd fallow
-cargo install --path crates/cli
+npm install -g fallow        # npm (prebuilt binaries via optionalDependencies)
+cargo install fallow-cli     # cargo
 ```
+
+## What it finds
+
+| Issue | Description |
+|:------|:------------|
+| **Unused files** | Not reachable from any entry point |
+| **Unused exports** | Exported symbols never imported elsewhere |
+| **Unused types** | Type aliases and interfaces never referenced |
+| **Unused dependencies** | Packages in `dependencies` never imported |
+| **Unused devDependencies** | Packages in `devDependencies` never imported |
+| **Unused enum members** | Individual enum values never accessed |
+| **Unused class members** | Methods and properties never referenced externally |
+| **Unresolved imports** | Import specifiers that cannot be resolved |
+| **Unlisted dependencies** | Imported packages missing from `package.json` |
+| **Duplicate exports** | Same symbol exported from multiple modules |
+
+## Features knip doesn't have
+
+- **Watch mode** — file watcher with 500ms debounce, re-analyzes on save
+- **Auto-fix** — remove unused exports, clean dependencies from `package.json`
+- **LSP server** — real-time diagnostics and quick-fix code actions in your editor
+- **Incremental cache** — only reparse changed files across runs
+- **Git-aware** — only report issues in files changed since a branch (`--changed-since main`)
+- **Baseline comparison** — save a snapshot, only fail CI on *new* issues
+- **SARIF output** — native GitHub Code Scanning integration
+- **GitHub Action** — drop-in CI with one line of YAML
 
 ## Usage
 
 ```bash
-# Run analysis on current directory
-fallow check
+fallow check                          # Analyze current directory
+fallow check --format json            # Machine-readable JSON
+fallow check --format sarif           # SARIF for GitHub Code Scanning
+fallow check --format compact         # One issue per line, grep-friendly
 
-# Run with JSON output
-fallow check --format json
+fallow watch                          # Re-analyze on file changes
 
-# Run with SARIF output (for GitHub Code Scanning)
-fallow check --format sarif
+fallow fix                            # Auto-remove unused exports and deps
+fallow fix --dry-run                  # Preview what would change
 
-# Watch mode
-fallow watch
+fallow check --changed-since main     # Only issues in changed files
+fallow check --save-baseline b.json   # Snapshot current state
+fallow check --baseline b.json        # Fail only on new issues
 
-# Auto-fix issues
-fallow fix
-fallow fix --dry-run
-
-# Only report issues in files changed since main
-fallow check --changed-since main
-
-# Baseline comparison
-fallow check --save-baseline baseline.json
-fallow check --baseline baseline.json --fail-on-issues
-
-# Initialize config
-fallow init
-
-# List detected frameworks and entry points
-fallow list --frameworks
-fallow list --entry-points
-fallow list --files
+fallow init                           # Create fallow.toml
+fallow list --frameworks              # Show detected frameworks
+fallow list --entry-points            # Show entry points
+fallow list --files                   # Show discovered files
 ```
 
 ## Configuration
 
-Create a `fallow.toml` in your project root:
+Create `fallow.toml` in your project root, or run `fallow init`:
 
 ```toml
 # Additional entry points beyond auto-detected ones
@@ -99,7 +149,7 @@ ignore = ["**/*.generated.ts", "**/*.d.ts"]
 # Dependencies to always consider as used
 ignore_dependencies = ["autoprefixer", "@types/node"]
 
-# What to detect
+# What to detect (all default to true)
 [detect]
 unused_files = true
 unused_exports = true
@@ -111,42 +161,27 @@ unused_class_members = true
 unresolved_imports = true
 unlisted_dependencies = true
 duplicate_exports = true
+```
 
-# Ignore specific exports
+<details>
+<summary><strong>Ignoring specific exports</strong></summary>
+
+```toml
+# Ignore all exports from utility files
 [[ignore_exports]]
 file = "src/utils/**"
 exports = ["*"]
 
+# Ignore a specific export
 [[ignore_exports]]
 file = "src/types.ts"
 exports = ["InternalType"]
 ```
 
-## Framework Support
+</details>
 
-Fallow auto-detects frameworks and adjusts analysis accordingly. Each framework defines entry points, always-used files, and exports considered used.
-
-| Framework | Detection |
-|-----------|-----------|
-| Next.js | `next` in dependencies |
-| Vite | `vite` in dependencies |
-| Vitest | `vitest` in dependencies |
-| Jest | `jest` in dependencies |
-| Storybook | `.storybook/main.{ts,js}` exists |
-| Remix | `@remix-run/node` in dependencies |
-| Astro | `astro` in dependencies |
-| Nuxt | `nuxt` in dependencies |
-| Angular | `@angular/core` in dependencies |
-| Playwright | `@playwright/test` in dependencies |
-| Prisma | `prisma` in dependencies |
-| ESLint | `eslint` in dependencies |
-| TypeScript | `typescript` in dependencies |
-| Webpack | `webpack` in dependencies |
-| Tailwind CSS | `tailwindcss` in dependencies |
-| GraphQL Codegen | `@graphql-codegen/cli` in dependencies |
-| React Router | `react-router` in dependencies |
-
-### Custom frameworks
+<details>
+<summary><strong>Custom framework presets</strong></summary>
 
 ```toml
 [[framework]]
@@ -167,63 +202,173 @@ file_pattern = "src/routes/**/*.ts"
 exports = ["default", "loader"]
 ```
 
-## GitHub Action
+</details>
+
+## Framework support
+
+Fallow auto-detects 17 frameworks and adjusts entry points and used exports accordingly. Frameworks are defined as **declarative TOML presets**, not JavaScript plugins — because ~85% of knip's 140+ plugins are just glob patterns expressed as code.
+
+| Framework | Detection |
+|:----------|:----------|
+| Next.js | `next` in dependencies |
+| Vite | `vite` in dependencies |
+| Vitest | `vitest` in dependencies |
+| Jest | `jest` in dependencies |
+| Storybook | `.storybook/main.{ts,js}` exists |
+| Remix | `@remix-run/node` in dependencies |
+| Astro | `astro` in dependencies |
+| Nuxt | `nuxt` in dependencies |
+| Angular | `@angular/core` in dependencies |
+| Playwright | `@playwright/test` in dependencies |
+| Prisma | `prisma` in dependencies |
+| ESLint | `eslint` in dependencies |
+| TypeScript | `typescript` in dependencies |
+| Webpack | `webpack` in dependencies |
+| Tailwind CSS | `tailwindcss` in dependencies |
+| GraphQL Codegen | `@graphql-codegen/cli` in dependencies |
+| React Router | `react-router` in dependencies |
+
+## CI integration
+
+### GitHub Action
 
 ```yaml
-- uses: nicholasgasior/fallow@v1
+- uses: bartwaardenburg/fallow@v1
   with:
-    format: sarif
+    format: sarif           # Uploads to GitHub Code Scanning automatically
     fail-on-issues: true
-    # Only check files changed in this PR
     changed-since: ${{ github.event.pull_request.base.sha }}
 ```
 
-## Output Formats
+### Baseline workflow
 
-- **human** — colored terminal output with file paths and export names
-- **json** — machine-readable JSON for tooling integration
-- **sarif** — SARIF 2.1.0 for GitHub Code Scanning
-- **compact** — one issue per line, grep-friendly
+Prevent dead code from growing without blocking PRs on existing debt:
 
-## Architecture
+```yaml
+# On main: save baseline
+- run: fallow check --save-baseline fallow-baseline.json --quiet
+- uses: actions/upload-artifact@v4
+  with:
+    name: fallow-baseline
+    path: fallow-baseline.json
+
+# On PRs: fail only on new issues
+- uses: actions/download-artifact@v4
+  with:
+    name: fallow-baseline
+- run: fallow check --baseline fallow-baseline.json --fail-on-issues
+```
+
+### Output formats
+
+| Format | Use case |
+|:-------|:---------|
+| `human` | Colored terminal output with grouped categories |
+| `json` | Machine-readable, full result data |
+| `sarif` | SARIF 2.1.0 — GitHub Code Scanning, VS Code SARIF Viewer |
+| `compact` | One issue per line — `grep`, `awk`, shell scripts |
+
+## How it works
 
 ```
-Config → File Discovery → Parallel Parsing (rayon + oxc) → Module Resolution (oxc_resolver)
-    → Graph Construction → Dead Code Detection → Reporting
+                      ┌─────────────────────┐
+                      │   fallow.toml +      │
+                      │   package.json       │
+                      └─────────┬───────────┘
+                                │
+                      ┌─────────▼───────────┐
+                      │   File Discovery     │
+                      │   (ignore crate +    │
+                      │    workspace-aware)  │
+                      └─────────┬───────────┘
+                                │
+                ┌───────────────┼───────────────┐
+                │               │               │
+         ┌──────▼──────┐ ┌─────▼──────┐ ┌──────▼──────┐
+         │  Parse (oxc) │ │ Parse (oxc) │ │ Parse (oxc) │  ← rayon threads
+         │  thread-local│ │ thread-local│ │ thread-local│    with own allocators
+         │  allocator   │ │ allocator   │ │ allocator   │
+         └──────┬──────┘ └─────┬──────┘ └──────┬──────┘
+                │               │               │
+                └───────────────┼───────────────┘
+                                │
+                      ┌─────────▼───────────┐
+                      │  Module Resolution   │
+                      │  (oxc_resolver)      │
+                      └─────────┬───────────┘
+                                │
+                      ┌─────────▼───────────┐
+                      │  Graph Construction  │
+                      │  (flat Vec<Edge>     │
+                      │   + range indices)   │
+                      └─────────┬───────────┘
+                                │
+                      ┌─────────▼───────────┐
+                      │  Re-export Chain     │
+                      │  Resolution          │
+                      │  (iterative, max 20  │
+                      │   rounds, cycle-safe)│
+                      └─────────┬───────────┘
+                                │
+                      ┌─────────▼───────────┐
+                      │  BFS Reachability    │
+                      │  from entry points   │
+                      │  (FixedBitSet)       │
+                      └─────────┬───────────┘
+                                │
+                      ┌─────────▼───────────┐
+                      │  Dead Code Detection │
+                      │  (10 issue types)    │
+                      └─────────────────────┘
 ```
 
-Key design decisions:
+**Key design decisions:**
 
-- **No TypeScript compiler** — syntactic analysis only via Oxc parser. This is what makes fallow fast; knip uses `ts.createProgram()` which is the bottleneck.
-- **Declarative framework presets** — knip has 140+ JS plugins. ~85% are just glob patterns. Fallow expresses these as data (TOML), not code.
-- **Flat edge storage** — contiguous `Vec<Edge>` with range indices for cache-friendly graph traversal.
-- **Thread-local allocators** — each rayon thread gets its own `oxc_allocator::Allocator`. Zero contention during parsing.
+1. **No TypeScript compiler.** knip's bottleneck is `ts.createProgram()`. Dead code detection is a graph problem on import/export edges — you don't need type information. Oxc gives us a full AST at native speed.
+
+2. **Declarative framework presets.** knip's 140+ plugins are mostly `{ entry: ["glob"], project: ["glob"] }` wrapped in JavaScript. Fallow expresses the same thing as TOML data. Adding a framework is editing a struct, not writing a plugin.
+
+3. **Flat edge storage.** Module graph edges live in a single contiguous `Vec<Edge>`. Each node stores a `Range<usize>` into this vec. This is dramatically more cache-friendly than `HashMap<NodeId, Vec<Edge>>` and matters when traversing graphs with tens of thousands of edges.
+
+4. **Thread-local Oxc allocators.** Each rayon thread owns its own `oxc_allocator::Allocator`. No Arc, no Mutex, no contention during the parsing phase.
+
+5. **Iterative re-export resolution.** Barrel files (`index.ts` re-exporting from submodules) create chains that need to be resolved transitively. Fallow propagates usage through these chains iteratively with cycle detection, up to 20 rounds.
 
 ## Comparison with knip
 
-| Feature | fallow | knip |
-|---------|--------|------|
+| | fallow | knip |
+|:--|:-------|:-----|
 | Language | Rust | TypeScript |
-| Parser | Oxc | TypeScript compiler |
-| Parallel parsing | Yes (rayon) | No |
-| Speed | 10-100x faster | Baseline |
-| Unused files | Yes | Yes |
-| Unused exports | Yes | Yes |
-| Unused types | Yes | Yes |
-| Unused deps | Yes | Yes |
-| Unused enum members | Yes | Yes |
-| Unused class members | Yes | Yes |
-| Unresolved imports | Yes | Yes |
-| Unlisted deps | Yes | Yes |
-| Duplicate exports | Yes | Yes |
+| Parser | Oxc (syntactic only) | TypeScript compiler |
+| Parallelism | rayon (all cores) | Single-threaded |
+| Speed | **10–100x faster** | Baseline |
 | Watch mode | Yes | No |
 | Auto-fix | Yes | No |
 | LSP server | Yes | No |
-| Git-aware | Yes | No |
+| Incremental cache | Yes | No |
+| Git-aware analysis | Yes | No |
 | Baseline comparison | Yes | No |
 | SARIF output | Yes | No |
-| Incremental cache | Yes | No |
 | Framework presets | 17 | 140+ |
+| Detection types | 10 | 10 |
+
+fallow intentionally covers the same 10 detection types as knip. The difference is in speed, developer experience, and CI integration — not in what it detects.
+
+Knip has broader framework coverage (140+ plugins). Fallow covers the 17 most common frameworks. If your framework isn't supported, you can [add a custom preset](#custom-framework-presets) in `fallow.toml`.
+
+## Building from source
+
+```bash
+git clone https://github.com/bartwaardenburg/fallow
+cd fallow
+cargo install --path crates/cli
+```
+
+```bash
+cargo test --workspace           # Run all tests
+cargo clippy --workspace         # Lint
+cargo bench -p fallow-core       # Run benchmarks
+```
 
 ## License
 
