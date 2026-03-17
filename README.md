@@ -7,9 +7,10 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/BartWaardenburg/fallow/actions/workflows/ci.yml"><img src="https://github.com/BartWaardenburg/fallow/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/BartWaardenburg/fallow/actions/workflows/coverage.yml"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/BartWaardenburg/fallow/badges/coverage.json" alt="Coverage"></a>
   <a href="https://crates.io/crates/fallow-cli"><img src="https://img.shields.io/crates/v/fallow-cli.svg" alt="crates.io"></a>
   <a href="https://www.npmjs.com/package/fallow"><img src="https://img.shields.io/npm/v/fallow.svg" alt="npm"></a>
-  <a href="https://github.com/bartwaardenburg/fallow/actions"><img src="https://img.shields.io/github/actions/workflow/status/bartwaardenburg/fallow/ci.yml?branch=main" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
 </p>
 
