@@ -282,6 +282,17 @@ fn extract_class_members(class: &Class<'_>) -> Vec<MemberInfo> {
     members
 }
 
+/// Check if an argument expression is `import.meta.url`.
+fn is_meta_url_arg(arg: &Argument<'_>) -> bool {
+    if let Argument::StaticMemberExpression(member) = arg
+        && member.property.name == "url"
+        && matches!(member.object, Expression::MetaProperty(_))
+    {
+        return true;
+    }
+    false
+}
+
 /// AST visitor that extracts all import/export information in a single pass.
 struct ModuleInfoExtractor {
     exports: Vec<ExportInfo>,
@@ -571,22 +582,50 @@ impl<'a> Visit<'a> for ModuleInfoExtractor {
         walk::walk_call_expression(self, expr);
     }
 
+    fn visit_new_expression(&mut self, expr: &oxc_ast::ast::NewExpression<'a>) {
+        // Detect `new URL('./path', import.meta.url)` pattern.
+        // This is the standard Vite/bundler pattern for referencing worker files and assets.
+        // Treat the path as a dynamic import so the target file is considered reachable.
+        if let Expression::Identifier(callee) = &expr.callee
+            && callee.name == "URL"
+            && expr.arguments.len() == 2
+            && let Some(Argument::StringLiteral(path_lit)) = expr.arguments.first()
+            && is_meta_url_arg(&expr.arguments[1])
+            && (path_lit.value.starts_with("./") || path_lit.value.starts_with("../"))
+        {
+            self.dynamic_imports.push(DynamicImportInfo {
+                source: path_lit.value.to_string(),
+                span: expr.span,
+            });
+        }
+
+        walk::walk_new_expression(self, expr);
+    }
+
     fn visit_assignment_expression(&mut self, expr: &AssignmentExpression<'a>) {
         // Detect module.exports = ... and exports.foo = ...
-        if let AssignmentTarget::StaticMemberExpression(member) = &expr.left
-            && let Expression::Identifier(obj) = &member.object
-        {
-            if obj.name == "module" && member.property.name == "exports" {
-                self.has_cjs_exports = true;
+        if let AssignmentTarget::StaticMemberExpression(member) = &expr.left {
+            if let Expression::Identifier(obj) = &member.object {
+                if obj.name == "module" && member.property.name == "exports" {
+                    self.has_cjs_exports = true;
+                }
+                if obj.name == "exports" {
+                    self.has_cjs_exports = true;
+                    self.exports.push(ExportInfo {
+                        name: ExportName::Named(member.property.name.to_string()),
+                        local_name: None,
+                        is_type_only: false,
+                        span: expr.span,
+                        members: vec![],
+                    });
+                }
             }
-            if obj.name == "exports" {
-                self.has_cjs_exports = true;
-                self.exports.push(ExportInfo {
-                    name: ExportName::Named(member.property.name.to_string()),
-                    local_name: None,
-                    is_type_only: false,
-                    span: expr.span,
-                    members: vec![],
+            // Capture `this.member = ...` assignment patterns within class bodies.
+            // This indicates the class uses the member internally.
+            if matches!(member.object, Expression::ThisExpression(_)) {
+                self.member_accesses.push(MemberAccess {
+                    object: "this".to_string(),
+                    member: member.property.name.to_string(),
                 });
             }
         }
@@ -598,6 +637,13 @@ impl<'a> Visit<'a> for ModuleInfoExtractor {
         if let Expression::Identifier(obj) = &expr.object {
             self.member_accesses.push(MemberAccess {
                 object: obj.name.to_string(),
+                member: expr.property.name.to_string(),
+            });
+        }
+        // Capture `this.member` patterns within class bodies — these members are used internally
+        if matches!(expr.object, Expression::ThisExpression(_)) {
+            self.member_accesses.push(MemberAccess {
+                object: "this".to_string(),
                 member: expr.property.name.to_string(),
             });
         }

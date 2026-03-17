@@ -37,6 +37,17 @@ pub fn find_dead_code_with_resolved(
     resolved_modules: &[ResolvedModule],
     plugin_result: Option<&crate::plugins::AggregatedPluginResult>,
 ) -> AnalysisResults {
+    find_dead_code_full(graph, config, resolved_modules, plugin_result, &[])
+}
+
+/// Find all dead code, with optional resolved module data, plugin context, and workspace info.
+pub fn find_dead_code_full(
+    graph: &ModuleGraph,
+    config: &ResolvedConfig,
+    resolved_modules: &[ResolvedModule],
+    plugin_result: Option<&crate::plugins::AggregatedPluginResult>,
+    workspaces: &[fallow_config::WorkspaceInfo],
+) -> AnalysisResults {
     let _span = tracing::info_span!("find_dead_code").entered();
 
     let mut results = AnalysisResults::default();
@@ -65,10 +76,12 @@ pub fn find_dead_code_with_resolved(
         }
     }
 
+    // Build merged dependency set from root + all workspace package.json files
     let pkg_path = config.root.join("package.json");
     if let Ok(pkg) = PackageJson::load(&pkg_path) {
         if config.detect.unused_dependencies || config.detect.unused_dev_dependencies {
-            let (deps, dev_deps) = find_unused_dependencies(graph, &pkg, config, plugin_result);
+            let (deps, dev_deps) =
+                find_unused_dependencies(graph, &pkg, config, plugin_result, workspaces);
             if config.detect.unused_dependencies {
                 results.unused_dependencies = deps;
             }
@@ -78,7 +91,8 @@ pub fn find_dead_code_with_resolved(
         }
 
         if config.detect.unlisted_dependencies {
-            results.unlisted_dependencies = find_unlisted_dependencies(graph, &pkg);
+            results.unlisted_dependencies =
+                find_unlisted_dependencies(graph, &pkg, config, workspaces);
         }
     }
 
@@ -189,6 +203,11 @@ fn is_config_file(path: &std::path::Path) -> bool {
         "stencil.config.",
         "remotion.config.",
         "metro.config.",
+        "tsup.config.",
+        "unbuild.config.",
+        "esbuild.config.",
+        "swc.config.",
+        "turbo.",
         // Testing
         "jest.config.",
         "jest.setup.",
@@ -218,6 +237,8 @@ fn is_config_file(path: &std::path::Path) -> bool {
         "sentry.server.config.",
         "sentry.edge.config.",
         "react-router.config.",
+        // Documentation
+        "typedoc.",
         // Analysis & misc
         "knip.config.",
         "fallow.config.",
@@ -225,6 +246,9 @@ fn is_config_file(path: &std::path::Path) -> bool {
         "codegen.config.",
         "graphql.config.",
         "npmpackagejsonlint.config.",
+        "release-it.",
+        "release.config.",
+        "contentlayer.config.",
         // Environment declarations
         "next-env.d.",
         "env.d.",
@@ -392,6 +416,7 @@ fn find_unused_dependencies(
     pkg: &PackageJson,
     config: &ResolvedConfig,
     plugin_result: Option<&crate::plugins::AggregatedPluginResult>,
+    workspaces: &[fallow_config::WorkspaceInfo],
 ) -> (Vec<UnusedDependency>, Vec<UnusedDependency>) {
     let used_packages: HashSet<&str> = graph.package_usage.keys().map(|s| s.as_str()).collect();
 
@@ -410,6 +435,9 @@ fn find_unused_dependencies(
         .map(|pr| pr.tooling_dependencies.iter().map(|s| s.as_str()).collect())
         .unwrap_or_default();
 
+    // Collect workspace package names — these are internal deps, not npm packages
+    let workspace_names: HashSet<&str> = workspaces.iter().map(|ws| ws.name.as_str()).collect();
+
     let unused_deps: Vec<UnusedDependency> = pkg
         .production_dependency_names()
         .into_iter()
@@ -417,6 +445,8 @@ fn find_unused_dependencies(
         .filter(|dep| !is_implicit_dependency(dep))
         .filter(|dep| !plugin_referenced.contains(dep.as_str()))
         .filter(|dep| !config.ignore_dependencies.iter().any(|d| d == dep))
+        // Skip internal workspace packages — they're not npm deps
+        .filter(|dep| !workspace_names.contains(dep.as_str()))
         .map(|dep| UnusedDependency {
             package_name: dep,
             location: DependencyLocation::Dependencies,
@@ -431,6 +461,7 @@ fn find_unused_dependencies(
         .filter(|dep| !plugin_tooling.contains(dep.as_str()))
         .filter(|dep| !plugin_referenced.contains(dep.as_str()))
         .filter(|dep| !config.ignore_dependencies.iter().any(|d| d == dep))
+        .filter(|dep| !workspace_names.contains(dep.as_str()))
         .map(|dep| UnusedDependency {
             package_name: dep,
             location: DependencyLocation::DevDependencies,
@@ -456,6 +487,12 @@ fn find_unused_members(
     // We map local import names back to the original imported names.
     let mut accessed_members: HashSet<(String, String)> = HashSet::new();
 
+    // Also build a per-file set of `this.member` accesses. These indicate internal usage
+    // within a class body — class members accessed via `this.foo` are used internally
+    // even if no external code accesses them via `ClassName.foo`.
+    let mut self_accessed_members: HashMap<crate::discover::FileId, HashSet<String>> =
+        HashMap::new();
+
     for resolved in resolved_modules {
         // Build a map from local name -> imported name for this module's imports
         let local_to_imported: HashMap<&str, &str> = resolved
@@ -473,6 +510,14 @@ fn find_unused_members(
             .collect();
 
         for access in &resolved.member_accesses {
+            // Track `this.member` accesses per-file for internal class usage
+            if access.object == "this" {
+                self_accessed_members
+                    .entry(resolved.file_id)
+                    .or_default()
+                    .insert(access.member.clone());
+                continue;
+            }
             // If the object is a local name for an import, map it to the original export name
             let export_name = local_to_imported
                 .get(access.object.as_str())
@@ -502,9 +547,22 @@ fn find_unused_members(
 
             let export_name = export.name.to_string();
 
+            // Get `this.member` accesses from this file (internal class usage)
+            let file_self_accesses = self_accessed_members.get(&module.file_id);
+
             for member in &export.members {
-                // Check if this member is accessed anywhere
+                // Check if this member is accessed anywhere via external import
                 if accessed_members.contains(&(export_name.clone(), member.name.clone())) {
+                    continue;
+                }
+
+                // Check if this member is accessed via `this.member` within the same file
+                // (internal class usage — e.g., constructor sets this.label, methods use this.label)
+                if matches!(
+                    member.kind,
+                    MemberKind::ClassMethod | MemberKind::ClassProperty
+                ) && file_self_accesses.is_some_and(|accesses| accesses.contains(&member.name))
+                {
                     continue;
                 }
 
@@ -546,26 +604,72 @@ fn find_unused_members(
 }
 
 /// Find dependencies used in imports but not listed in package.json.
-fn find_unlisted_dependencies(graph: &ModuleGraph, pkg: &PackageJson) -> Vec<UnlistedDependency> {
+fn find_unlisted_dependencies(
+    graph: &ModuleGraph,
+    pkg: &PackageJson,
+    config: &ResolvedConfig,
+    workspaces: &[fallow_config::WorkspaceInfo],
+) -> Vec<UnlistedDependency> {
     let all_deps: HashSet<String> = pkg.all_dependency_names().into_iter().collect();
+
+    // Build a set of all deps across all workspace package.json files.
+    // In monorepos, imports in workspace files reference deps from that workspace's package.json.
+    let mut all_workspace_deps: HashSet<String> = all_deps.clone();
+    // Also collect workspace package names — internal workspace deps should not be flagged
+    let mut workspace_names: HashSet<String> = HashSet::new();
+    // Map: canonical workspace root -> set of dep names (for per-file checks)
+    let mut ws_dep_map: Vec<(std::path::PathBuf, HashSet<String>)> = Vec::new();
+
+    for ws in workspaces {
+        workspace_names.insert(ws.name.clone());
+        let ws_pkg_path = ws.root.join("package.json");
+        if let Ok(ws_pkg) = PackageJson::load(&ws_pkg_path) {
+            let ws_deps: HashSet<String> = ws_pkg.all_dependency_names().into_iter().collect();
+            all_workspace_deps.extend(ws_deps.iter().cloned());
+            let canonical_ws = ws.root.canonicalize().unwrap_or_else(|_| ws.root.clone());
+            ws_dep_map.push((canonical_ws, ws_deps));
+        }
+    }
 
     let mut unlisted: HashMap<String, Vec<std::path::PathBuf>> = HashMap::new();
 
     for (package_name, file_ids) in &graph.package_usage {
-        if !all_deps.contains(package_name)
-            && !is_builtin_module(package_name)
-            && !is_path_alias(package_name)
-        {
-            let mut paths: Vec<std::path::PathBuf> = file_ids
-                .iter()
-                .filter_map(|id| graph.modules.get(id.0 as usize).map(|m| m.path.clone()))
-                .collect();
-            paths.sort();
-            paths.dedup();
-            unlisted.insert(package_name.clone(), paths);
+        if is_builtin_module(package_name) || is_path_alias(package_name) {
+            continue;
+        }
+        // Skip internal workspace package names
+        if workspace_names.contains(package_name) {
+            continue;
+        }
+        // Quick check: if listed in any root or workspace deps, skip
+        if all_workspace_deps.contains(package_name) {
+            continue;
+        }
+
+        // Slower fallback: check if each importing file belongs to a workspace that lists this dep
+        let mut unlisted_paths: Vec<std::path::PathBuf> = Vec::new();
+        for id in file_ids {
+            if let Some(module) = graph.modules.get(id.0 as usize) {
+                let file_canonical = module.path.canonicalize().unwrap_or(module.path.clone());
+                let listed_in_ws = ws_dep_map.iter().any(|(ws_root, ws_deps)| {
+                    file_canonical.starts_with(ws_root) && ws_deps.contains(package_name)
+                });
+                // Also check root deps
+                let listed_in_root = all_deps.contains(package_name);
+                if !listed_in_ws && !listed_in_root {
+                    unlisted_paths.push(module.path.clone());
+                }
+            }
+        }
+
+        if !unlisted_paths.is_empty() {
+            unlisted_paths.sort();
+            unlisted_paths.dedup();
+            unlisted.insert(package_name.clone(), unlisted_paths);
         }
     }
 
+    let _ = config; // future use
     unlisted
         .into_iter()
         .map(|(name, paths)| UnlistedDependency {
@@ -640,30 +744,22 @@ fn find_unresolved_imports(
 /// Barrel re-exports (files that only re-export from other modules via `export { X } from './source'`)
 /// are excluded — having an index.ts re-export the same name as the source module is the normal
 /// barrel file pattern, not a true duplicate.
-fn find_duplicate_exports(graph: &ModuleGraph, _config: &ResolvedConfig) -> Vec<DuplicateExport> {
-    // Pre-compute which modules are pure barrel files (only re-exports, no local exports with spans)
-    let barrel_modules: HashSet<usize> = graph
-        .modules
-        .iter()
-        .enumerate()
-        .filter(|(_, m)| {
-            !m.re_exports.is_empty()
-                && m.exports
-                    .iter()
-                    .all(|e| e.span.start == 0 && e.span.end == 0)
-        })
-        .map(|(i, _)| i)
-        .collect();
+fn find_duplicate_exports(graph: &ModuleGraph, config: &ResolvedConfig) -> Vec<DuplicateExport> {
+    // Build a set of re-export relationships: (re-exporting module idx) -> set of (source module idx)
+    let mut re_export_sources: HashMap<usize, HashSet<usize>> = HashMap::new();
+    for (idx, module) in graph.modules.iter().enumerate() {
+        for re in &module.re_exports {
+            re_export_sources
+                .entry(idx)
+                .or_default()
+                .insert(re.source_file.0 as usize);
+        }
+    }
 
-    let mut export_locations: HashMap<String, Vec<std::path::PathBuf>> = HashMap::new();
+    let mut export_locations: HashMap<String, Vec<(usize, std::path::PathBuf)>> = HashMap::new();
 
     for (idx, module) in graph.modules.iter().enumerate() {
         if !module.is_reachable || module.is_entry_point {
-            continue;
-        }
-
-        // Skip barrel files — their re-exported names are not true duplicates
-        if barrel_modules.contains(&idx) {
             continue;
         }
 
@@ -671,20 +767,53 @@ fn find_duplicate_exports(graph: &ModuleGraph, _config: &ResolvedConfig) -> Vec<
             if matches!(export.name, crate::extract::ExportName::Default) {
                 continue; // Skip default exports
             }
+            // Skip synthetic re-export entries (span 0..0) — these are generated by
+            // graph construction for re-exports, not real local declarations
+            if export.span.start == 0 && export.span.end == 0 {
+                continue;
+            }
             let name = export.name.to_string();
             export_locations
                 .entry(name)
                 .or_default()
-                .push(module.path.clone());
+                .push((idx, module.path.clone()));
         }
     }
 
+    // Filter: only keep truly independent duplicates (not re-export chains)
+    let _ = config; // used for consistency
     export_locations
         .into_iter()
-        .filter(|(_, locations)| locations.len() > 1)
-        .map(|(name, locations)| DuplicateExport {
-            export_name: name,
-            locations,
+        .filter_map(|(name, locations)| {
+            if locations.len() <= 1 {
+                return None;
+            }
+            // Remove entries where one module re-exports from another in the set.
+            // For each pair (A, B), if A re-exports from B or B re-exports from A,
+            // they are part of the same export chain, not true duplicates.
+            let module_indices: HashSet<usize> = locations.iter().map(|(idx, _)| *idx).collect();
+            let independent: Vec<std::path::PathBuf> = locations
+                .into_iter()
+                .filter(|(idx, _)| {
+                    // Keep this module only if it doesn't re-export from another module in the set
+                    // AND no other module in the set re-exports from it (unless both are sources)
+                    let sources = re_export_sources.get(idx);
+                    let has_source_in_set = sources
+                        .map(|s| s.iter().any(|src| module_indices.contains(src)))
+                        .unwrap_or(false);
+                    !has_source_in_set
+                })
+                .map(|(_, path)| path)
+                .collect();
+
+            if independent.len() > 1 {
+                Some(DuplicateExport {
+                    export_name: name,
+                    locations: independent,
+                })
+            } else {
+                None
+            }
         })
         .collect()
 }
@@ -817,9 +946,12 @@ fn is_tooling_dependency(name: &str) -> bool {
         "semantic-release",
         "@release-it/",
         "@lerna-lite/",
+        "@changesets/",
         // Build tool plugins (used in config)
         "@graphql-codegen/",
         "@rollup/",
+        // Biome tooling
+        "@biomejs/",
     ];
 
     let exact_matches = [
@@ -880,8 +1012,13 @@ fn is_tooling_dependency(name: &str) -> bool {
         "@vitejs/plugin-react",
         // Site generation / SEO
         "next-sitemap",
+        // Build tools (used by CLI, not imported in code)
+        "tsup",
+        "unbuild",
+        "typedoc",
         // Monorepo tools
         "nx",
+        "@manypkg/cli",
         // Vue tooling
         "vue-tsc",
         "@vue/tsconfig",
@@ -891,6 +1028,13 @@ fn is_tooling_dependency(name: &str) -> bool {
         "@typescript/native-preview",
         // CSS-only deps (not imported in JS)
         "tw-animate-css",
+        // Formatting
+        "@ianvs/prettier-plugin-sort-imports",
+        "prettier-plugin-tailwindcss",
+        "prettier-plugin-organize-imports",
+        // Additional build tooling
+        "@vitejs/plugin-react-swc",
+        "@vitejs/plugin-legacy",
     ];
 
     tooling_prefixes.iter().any(|p| name.starts_with(p)) || exact_matches.contains(&name)

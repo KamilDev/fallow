@@ -81,12 +81,13 @@ pub fn analyze(config: &ResolvedConfig) -> Result<AnalysisResults, FallowError> 
     // Stage 5: Build module graph
     let graph = graph::ModuleGraph::build(&resolved, &entry_points, &files);
 
-    // Stage 6: Analyze for dead code (with plugin context for dependency analysis)
-    Ok(analyze::find_dead_code_with_resolved(
+    // Stage 6: Analyze for dead code (with plugin context and workspace info)
+    Ok(analyze::find_dead_code_full(
         &graph,
         config,
         &resolved,
         Some(&plugin_result),
+        &workspaces,
     ))
 }
 
