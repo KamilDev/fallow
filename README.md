@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="fallow" width="280"><br>
+  <img src="assets/logo.png" alt="fallow" width="460"><br>
   <strong>Find dead code in JavaScript and TypeScript projects. Written in Rust.</strong><br><br>
   <a href="https://github.com/BartWaardenburg/fallow/actions/workflows/ci.yml"><img src="https://github.com/BartWaardenburg/fallow/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/BartWaardenburg/fallow/actions/workflows/coverage.yml"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/BartWaardenburg/fallow/badges/coverage.json" alt="Coverage"></a>
