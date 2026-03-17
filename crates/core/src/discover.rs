@@ -93,14 +93,29 @@ pub fn discover_entry_points(config: &ResolvedConfig, files: &[DiscoveredFile]) 
     let _span = tracing::info_span!("discover_entry_points").entered();
     let mut entries = Vec::new();
 
-    // 1. Manual entries from config
+    // Pre-compute relative paths for all files (once, not per pattern)
+    let relative_paths: Vec<String> = files
+        .iter()
+        .map(|f| {
+            f.path
+                .strip_prefix(&config.root)
+                .unwrap_or(&f.path)
+                .to_string_lossy()
+                .into_owned()
+        })
+        .collect();
+
+    // 1. Manual entries from config — pre-compile all patterns
     for pattern in &config.entry_patterns {
-        for file in files {
-            if glob_matches(pattern, &file.path, &config.root) {
-                entries.push(EntryPoint {
-                    path: file.path.clone(),
-                    source: EntryPointSource::ManualEntry,
-                });
+        if let Ok(glob) = globset::Glob::new(pattern) {
+            let matcher = glob.compile_matcher();
+            for (idx, rel) in relative_paths.iter().enumerate() {
+                if matcher.is_match(rel) {
+                    entries.push(EntryPoint {
+                        path: files[idx].path.clone(),
+                        source: EntryPointSource::ManualEntry,
+                    });
+                }
             }
         }
     }
@@ -130,35 +145,40 @@ pub fn discover_entry_points(config: &ResolvedConfig, files: &[DiscoveredFile]) 
             }
         }
 
-        // 3. Framework rules
-        for rule in &config.framework_rules {
-            if !is_framework_active(rule, &pkg, &config.root) {
-                continue;
-            }
+        // 3. Framework rules — cache active status + pre-compile pattern matchers
+        let active_rules: Vec<&fallow_config::FrameworkRule> = config
+            .framework_rules
+            .iter()
+            .filter(|rule| is_framework_active(rule, &pkg, &config.root))
+            .collect();
 
-            for entry_pat in &rule.entry_points {
-                for file in files {
-                    if glob_matches(&entry_pat.pattern, &file.path, &config.root) {
-                        entries.push(EntryPoint {
-                            path: file.path.clone(),
-                            source: EntryPointSource::FrameworkRule {
-                                name: rule.name.clone(),
-                            },
-                        });
-                    }
-                }
-            }
+        for rule in &active_rules {
 
-            for pattern in &rule.always_used {
-                for file in files {
-                    if glob_matches(pattern, &file.path, &config.root) {
-                        entries.push(EntryPoint {
-                            path: file.path.clone(),
-                            source: EntryPointSource::FrameworkRule {
-                                name: rule.name.clone(),
-                            },
-                        });
-                    }
+            // Pre-compile entry point matchers
+            let entry_matchers: Vec<globset::GlobMatcher> = rule
+                .entry_points
+                .iter()
+                .filter_map(|ep| globset::Glob::new(&ep.pattern).ok().map(|g| g.compile_matcher()))
+                .collect();
+
+            // Pre-compile always_used matchers
+            let always_matchers: Vec<globset::GlobMatcher> = rule
+                .always_used
+                .iter()
+                .filter_map(|p| globset::Glob::new(p).ok().map(|g| g.compile_matcher()))
+                .collect();
+
+            // Single pass over files for all matchers of this rule
+            for (idx, rel) in relative_paths.iter().enumerate() {
+                let matched = entry_matchers.iter().any(|m| m.is_match(rel))
+                    || always_matchers.iter().any(|m| m.is_match(rel));
+                if matched {
+                    entries.push(EntryPoint {
+                        path: files[idx].path.clone(),
+                        source: EntryPointSource::FrameworkRule {
+                            name: rule.name.clone(),
+                        },
+                    });
                 }
             }
         }
@@ -172,14 +192,18 @@ pub fn discover_entry_points(config: &ResolvedConfig, files: &[DiscoveredFile]) 
             "index.{ts,tsx,js,jsx}",
             "main.{ts,tsx,js,jsx}",
         ];
-        for pattern in &default_patterns {
-            for file in files {
-                if glob_matches(pattern, &file.path, &config.root) {
-                    entries.push(EntryPoint {
-                        path: file.path.clone(),
-                        source: EntryPointSource::DefaultIndex,
-                    });
-                }
+        // Pre-compile default matchers
+        let default_matchers: Vec<globset::GlobMatcher> = default_patterns
+            .iter()
+            .filter_map(|p| globset::Glob::new(p).ok().map(|g| g.compile_matcher()))
+            .collect();
+
+        for (idx, rel) in relative_paths.iter().enumerate() {
+            if default_matchers.iter().any(|m| m.is_match(rel)) {
+                entries.push(EntryPoint {
+                    path: files[idx].path.clone(),
+                    source: EntryPointSource::DefaultIndex,
+                });
             }
         }
     }
@@ -346,15 +370,19 @@ fn file_exists_glob(pattern: &str, root: &Path) -> bool {
         root.to_path_buf()
     } else {
         // prefix may be an exact directory or include the filename portion.
-        // Use the parent if the joined path isn't a directory.
         let joined = root.join(&prefix);
         if joined.is_dir() {
             joined
+        } else if let Some(parent) = joined.parent() {
+            // Only use parent if it's NOT the root itself (avoid walking entire project)
+            if parent != root && parent.is_dir() {
+                parent.to_path_buf()
+            } else {
+                // The prefix directory doesn't exist — no match possible
+                return false;
+            }
         } else {
-            joined
-                .parent()
-                .map(Path::to_path_buf)
-                .unwrap_or_else(|| root.to_path_buf())
+            return false;
         }
     };
 
@@ -398,4 +426,18 @@ fn glob_matches(pattern: &str, path: &Path, root: &Path) -> bool {
         .ok()
         .map(|g| g.compile_matcher().is_match(relative_str.as_ref()))
         .unwrap_or(false)
+}
+
+/// Pre-compile a set of glob patterns for efficient matching against many paths.
+pub fn compile_glob_set(patterns: &[String]) -> Option<globset::GlobSet> {
+    if patterns.is_empty() {
+        return None;
+    }
+    let mut builder = globset::GlobSetBuilder::new();
+    for pattern in patterns {
+        if let Ok(glob) = globset::Glob::new(pattern) {
+            builder.add(glob);
+        }
+    }
+    builder.build().ok()
 }

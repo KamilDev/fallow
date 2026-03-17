@@ -54,7 +54,7 @@ pub fn resolve_all_imports(
     config: &ResolvedConfig,
     files: &[DiscoveredFile],
 ) -> Vec<ResolvedModule> {
-    // Build path -> FileId index
+    // Build path -> FileId index (canonicalize once here)
     let path_to_id: HashMap<PathBuf, FileId> = files
         .iter()
         .filter_map(|f| {
@@ -68,15 +68,16 @@ pub fn resolve_all_imports(
     let file_id_to_path: HashMap<FileId, PathBuf> =
         files.iter().map(|f| (f.id, f.path.clone())).collect();
 
-    // Resolve in parallel — each thread gets its own Resolver instance
+    // Create resolver ONCE and share across threads (oxc_resolver::Resolver is Send + Sync)
+    let resolver = create_resolver(config);
+
+    // Resolve in parallel — shared resolver instance
     modules
         .par_iter()
         .map(|module| {
             let file_path = file_id_to_path
                 .get(&module.file_id)
                 .expect("file_id must exist");
-
-            let resolver = create_resolver(config);
 
             let resolved_imports: Vec<ResolvedImport> = module
                 .imports
@@ -98,7 +99,7 @@ pub fn resolve_all_imports(
                         is_type_only: false,
                         span: imp.span,
                     },
-                    target: resolve_specifier(&resolver, file_path, &imp.source, &path_to_id),
+                    target: resolve_specifier_fast(specifier_kind(&imp.source), file_path, &imp.source, &path_to_id, &resolver),
                 })
                 .collect();
 
@@ -123,7 +124,7 @@ pub fn resolve_all_imports(
                         is_type_only: false,
                         span: req.span,
                     },
-                    target: resolve_specifier(&resolver, file_path, &req.source, &path_to_id),
+                    target: resolve_specifier_fast(specifier_kind(&req.source), file_path, &req.source, &path_to_id, &resolver),
                 })
                 .collect();
 
@@ -187,6 +188,39 @@ fn create_resolver(config: &ResolvedConfig) -> Resolver {
     }
 
     Resolver::new(options)
+}
+
+/// Classify specifier to skip expensive resolution for bare specifiers.
+enum SpecifierKind {
+    Bare,
+    Relative,
+}
+
+fn specifier_kind(specifier: &str) -> SpecifierKind {
+    if specifier.starts_with('.') || specifier.starts_with('/') || specifier.starts_with('#') {
+        SpecifierKind::Relative
+    } else {
+        SpecifierKind::Bare
+    }
+}
+
+/// Fast path: skip resolver for bare specifiers that will just become NpmPackage.
+fn resolve_specifier_fast(
+    kind: SpecifierKind,
+    from_file: &Path,
+    specifier: &str,
+    path_to_id: &HashMap<PathBuf, FileId>,
+    resolver: &Resolver,
+) -> ResolveResult {
+    match kind {
+        SpecifierKind::Bare => {
+            // Try resolver first for bare specifiers that might resolve to local files
+            resolve_specifier(resolver, from_file, specifier, path_to_id)
+        }
+        SpecifierKind::Relative => {
+            resolve_specifier(resolver, from_file, specifier, path_to_id)
+        }
+    }
 }
 
 /// Resolve a single import specifier to a target.

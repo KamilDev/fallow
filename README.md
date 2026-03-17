@@ -14,7 +14,7 @@
 
 ---
 
-Fallow detects unused files, exports, dependencies, types, enum members, and class members across your codebase. It is a drop-in alternative to [knip](https://knip.dev) that runs **10–100x faster** by using the [Oxc](https://oxc.rs) parser instead of the TypeScript compiler.
+Fallow detects unused files, exports, dependencies, types, enum members, and class members across your codebase. It is a drop-in alternative to [knip](https://knip.dev) that runs **25–50x faster** on real-world projects by using the [Oxc](https://oxc.rs) parser instead of the TypeScript compiler.
 
 <!-- TODO: Replace with an actual terminal recording (e.g. VHS/asciinema SVG) -->
 
@@ -62,8 +62,38 @@ fallow takes a different approach:
 
 The result: sub-second analysis on codebases where knip takes a minute.
 
-<!-- TODO: Add hyperfine benchmark chart (assets/benchmark.svg) -->
-<!-- hyperfine --warmup 3 'fallow check --quiet' 'npx knip --no-progress' -->
+### Benchmarks
+
+Measured on real-world open-source projects (median of 7 runs, 3 warmup):
+
+| Project | Files | fallow | knip | Speedup |
+|:--------|------:|-------:|-----:|--------:|
+| [zod](https://github.com/colinhacks/zod) | 174 | **16ms** | 582ms | **35.8x** |
+| [fastify](https://github.com/fastify/fastify) | 286 | **20ms** | 804ms | **39.4x** |
+| [preact](https://github.com/preactjs/preact) | 244 | **29ms** | 771ms | **26.6x** |
+
+Scaling behavior on synthetic TypeScript projects:
+
+| Size | Files | fallow | knip | Speedup |
+|:-----|------:|-------:|-----:|--------:|
+| tiny | 11 | **5ms** | 271ms | **53.2x** |
+| small | 51 | **7ms** | 280ms | **41.7x** |
+| medium | 201 | **12ms** | 299ms | **25.0x** |
+| large | 1,001 | **42ms** | 372ms | **8.8x** |
+| xlarge | 5,001 | **186ms** | 610ms | **3.3x** |
+
+<details>
+<summary>Reproduce these benchmarks</summary>
+
+```bash
+cd benchmarks
+npm install
+node generate-fixtures.mjs    # Generate synthetic projects
+node download-fixtures.mjs    # Clone real-world projects
+node bench.mjs                # Run all benchmarks
+```
+
+</details>
 
 ## Quick start
 
@@ -333,7 +363,7 @@ Prevent dead code from growing without blocking PRs on existing debt:
 | Language | Rust | TypeScript |
 | Parser | Oxc (syntactic only) | TypeScript compiler |
 | Parallelism | rayon (all cores) | Single-threaded |
-| Speed | **10–100x faster** | Baseline |
+| Speed | **25–50x faster** (real-world) | Baseline |
 | Watch mode | Yes | No |
 | Auto-fix | Yes | No |
 | LSP server | Yes | No |

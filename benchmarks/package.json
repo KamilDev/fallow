@@ -1,0 +1,16 @@
+{
+  "name": "fallow-benchmarks",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node generate-fixtures.mjs",
+    "download-fixtures": "node download-fixtures.mjs",
+    "bench": "node bench.mjs",
+    "bench:synthetic": "node bench.mjs --synthetic",
+    "bench:real-world": "node bench.mjs --real-world"
+  },
+  "dependencies": {
+    "knip": "^5.0.0",
+    "tinybench": "^3.0.0"
+  }
+}

@@ -21,6 +21,8 @@ pub struct ModuleGraph {
     pub entry_points: HashSet<FileId>,
     /// Reverse index: for each FileId, which files import it.
     pub reverse_deps: Vec<Vec<FileId>>,
+    /// Precomputed: which modules have namespace imports (import * as ns).
+    namespace_imported: FixedBitSet,
 }
 
 /// A single module in the graph.
@@ -89,6 +91,7 @@ pub enum ReferenceKind {
 #[derive(Debug)]
 #[allow(dead_code)]
 struct Edge {
+    source: FileId,
     target: FileId,
     symbols: Vec<ImportedSymbol>,
     is_dynamic: bool,
@@ -127,22 +130,25 @@ impl ModuleGraph {
         let mut package_usage: HashMap<String, Vec<FileId>> = HashMap::new();
         let mut reverse_deps = vec![Vec::new(); module_count];
 
-        // Build entry point set
+        // Build entry point set — use path_to_id map instead of O(n) scan per entry
         let entry_point_ids: HashSet<FileId> = entry_points
             .iter()
             .filter_map(|ep| {
-                ep.path
-                    .canonicalize()
-                    .ok()
-                    .and_then(|c| {
-                        files
+                // Try direct lookup first (fast path)
+                path_to_id.get(&ep.path).copied().or_else(|| {
+                    // Fallback: canonicalize entry point and match
+                    ep.path.canonicalize().ok().and_then(|c| {
+                        path_to_id
                             .iter()
-                            .find(|f| f.path.canonicalize().ok().as_ref() == Some(&c))
-                            .map(|f| f.id)
+                            .find(|(p, _)| p.canonicalize().ok().as_ref() == Some(&c))
+                            .map(|(_, &id)| id)
                     })
-                    .or_else(|| path_to_id.get(&ep.path).copied())
+                })
             })
             .collect();
+
+        // Track which modules have namespace imports (precomputed)
+        let mut namespace_imported = FixedBitSet::with_capacity(module_count);
 
         for file in files {
             let edge_start = all_edges.len();
@@ -154,6 +160,13 @@ impl ModuleGraph {
                 for import in &resolved.resolved_imports {
                     match &import.target {
                         ResolveResult::InternalModule(target_id) => {
+                            // Track namespace imports during edge creation
+                            if matches!(import.info.imported_name, ImportedName::Namespace) {
+                                let idx = target_id.0 as usize;
+                                if idx < module_count {
+                                    namespace_imported.insert(idx);
+                                }
+                            }
                             edges_by_target
                                 .entry(*target_id)
                                 .or_default()
@@ -172,15 +185,23 @@ impl ModuleGraph {
                 // Re-exports also create edges
                 for re_export in &resolved.re_exports {
                     if let ResolveResult::InternalModule(target_id) = &re_export.target {
+                        let imp_name = if re_export.info.imported_name == "*" {
+                            ImportedName::Namespace
+                        } else {
+                            ImportedName::Named(re_export.info.imported_name.clone())
+                        };
+                        // Track namespace re-exports
+                        if matches!(imp_name, ImportedName::Namespace) {
+                            let idx = target_id.0 as usize;
+                            if idx < module_count {
+                                namespace_imported.insert(idx);
+                            }
+                        }
                         edges_by_target
                             .entry(*target_id)
                             .or_default()
                             .push(ImportedSymbol {
-                                imported_name: if re_export.info.imported_name == "*" {
-                                    ImportedName::Namespace
-                                } else {
-                                    ImportedName::Named(re_export.info.imported_name.clone())
-                                },
+                                imported_name: imp_name,
                                 local_name: re_export.info.exported_name.clone(),
                             });
                     } else if let ResolveResult::NpmPackage(name) = &re_export.target {
@@ -207,6 +228,7 @@ impl ModuleGraph {
                         .any(|s| matches!(s.imported_name, ImportedName::SideEffect));
 
                     all_edges.push(Edge {
+                        source: file.id,
                         target: target_id,
                         symbols,
                         is_dynamic: false,
@@ -276,54 +298,42 @@ impl ModuleGraph {
             });
         }
 
-        // Populate export references from edges
+        // Populate export references from edges — O(edges) not O(edges × modules)
         for edge in &all_edges {
-            let source_file_id = modules
-                .iter()
-                .find(|m| {
-                    m.edge_range
-                        .contains(&(edge as *const _ as usize - all_edges.as_ptr() as usize))
-                })
-                .map(|m| m.file_id);
+            let source_id = edge.source;
+            let target_module = &mut modules[edge.target.0 as usize];
+            for sym in &edge.symbols {
+                let ref_kind = match &sym.imported_name {
+                    ImportedName::Named(_) => ReferenceKind::NamedImport,
+                    ImportedName::Default => ReferenceKind::DefaultImport,
+                    ImportedName::Namespace => ReferenceKind::NamespaceImport,
+                    ImportedName::SideEffect => ReferenceKind::SideEffectImport,
+                };
 
-            // Find source file from reverse lookup
-            if let Some(source_id) = find_edge_source(&modules, &all_edges, edge) {
-                let target_module = &mut modules[edge.target.0 as usize];
-                for sym in &edge.symbols {
-                    let ref_kind = match &sym.imported_name {
-                        ImportedName::Named(_) => ReferenceKind::NamedImport,
-                        ImportedName::Default => ReferenceKind::DefaultImport,
-                        ImportedName::Namespace => ReferenceKind::NamespaceImport,
-                        ImportedName::SideEffect => ReferenceKind::SideEffectImport,
-                    };
+                // Match to specific export
+                if let Some(export) = target_module
+                    .exports
+                    .iter_mut()
+                    .find(|e| export_matches(&e.name, &sym.imported_name))
+                {
+                    export.references.push(SymbolReference {
+                        from_file: source_id,
+                        kind: ref_kind,
+                    });
+                }
 
-                    // Match to specific export
-                    if let Some(export) = target_module
-                        .exports
-                        .iter_mut()
-                        .find(|e| export_matches(&e.name, &sym.imported_name))
-                    {
-                        export.references.push(SymbolReference {
-                            from_file: source_id,
-                            kind: ref_kind,
-                        });
-                    }
-
-                    // Namespace imports mark ALL exports as referenced
-                    if matches!(sym.imported_name, ImportedName::Namespace) {
-                        for export in &mut target_module.exports {
-                            if export.references.iter().all(|r| r.from_file != source_id) {
-                                export.references.push(SymbolReference {
-                                    from_file: source_id,
-                                    kind: ReferenceKind::NamespaceImport,
-                                });
-                            }
+                // Namespace imports mark ALL exports as referenced
+                if matches!(sym.imported_name, ImportedName::Namespace) {
+                    for export in &mut target_module.exports {
+                        if export.references.iter().all(|r| r.from_file != source_id) {
+                            export.references.push(SymbolReference {
+                                from_file: source_id,
+                                kind: ReferenceKind::NamespaceImport,
+                            });
                         }
                     }
                 }
             }
-
-            let _ = source_file_id; // suppress warning
         }
 
         // Mark reachable modules via BFS from entry points
@@ -358,6 +368,7 @@ impl ModuleGraph {
             package_usage,
             entry_points: entry_point_ids,
             reverse_deps,
+            namespace_imported,
         };
 
         // Propagate references through re-export chains
@@ -385,6 +396,10 @@ impl ModuleGraph {
                 })
             })
             .collect();
+
+        if re_export_info.is_empty() {
+            return;
+        }
 
         // For each re-export, if the barrel's exported symbol has references,
         // propagate those references to the source module's original export.
@@ -462,37 +477,14 @@ impl ModuleGraph {
     }
 
     /// Check if any importer uses `import * as ns` for this module.
+    /// Uses precomputed bitset — O(1) lookup.
     pub fn has_namespace_import(&self, file_id: FileId) -> bool {
         let idx = file_id.0 as usize;
-        if idx >= self.reverse_deps.len() {
+        if idx >= self.namespace_imported.len() {
             return false;
         }
-
-        for &importer_id in &self.reverse_deps[idx] {
-            let importer = &self.modules[importer_id.0 as usize];
-            for edge in &self.edges[importer.edge_range.clone()] {
-                if edge.target == file_id {
-                    for sym in &edge.symbols {
-                        if matches!(sym.imported_name, ImportedName::Namespace) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        false
+        self.namespace_imported.contains(idx)
     }
-}
-
-/// Find the source FileId for an edge by checking which module's edge_range contains it.
-fn find_edge_source(modules: &[ModuleNode], all_edges: &[Edge], edge: &Edge) -> Option<FileId> {
-    let edge_idx =
-        (edge as *const Edge as usize - all_edges.as_ptr() as usize) / std::mem::size_of::<Edge>();
-
-    modules
-        .iter()
-        .find(|m| m.edge_range.contains(&edge_idx))
-        .map(|m| m.file_id)
 }
 
 /// Check if an export name matches an imported name.
@@ -501,5 +493,497 @@ fn export_matches(export: &ExportName, import: &ImportedName) -> bool {
         (ExportName::Named(e), ImportedName::Named(i)) => e == i,
         (ExportName::Default, ImportedName::Default) => true,
         _ => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+    use crate::discover::{DiscoveredFile, EntryPoint, EntryPointSource, FileId};
+    use crate::extract::{ExportName, ImportInfo, ImportedName};
+    use crate::resolve::{ResolveResult, ResolvedImport, ResolvedModule, ResolvedReExport};
+
+    #[test]
+    fn export_matches_named_same() {
+        assert!(export_matches(
+            &ExportName::Named("foo".to_string()),
+            &ImportedName::Named("foo".to_string())
+        ));
+    }
+
+    #[test]
+    fn export_matches_named_different() {
+        assert!(!export_matches(
+            &ExportName::Named("foo".to_string()),
+            &ImportedName::Named("bar".to_string())
+        ));
+    }
+
+    #[test]
+    fn export_matches_default() {
+        assert!(export_matches(&ExportName::Default, &ImportedName::Default));
+    }
+
+    #[test]
+    fn export_matches_named_vs_default() {
+        assert!(!export_matches(
+            &ExportName::Named("foo".to_string()),
+            &ImportedName::Default
+        ));
+    }
+
+    #[test]
+    fn export_matches_default_vs_named() {
+        assert!(!export_matches(
+            &ExportName::Default,
+            &ImportedName::Named("foo".to_string())
+        ));
+    }
+
+    #[test]
+    fn export_matches_namespace_no_match() {
+        assert!(!export_matches(
+            &ExportName::Named("foo".to_string()),
+            &ImportedName::Namespace
+        ));
+        assert!(!export_matches(
+            &ExportName::Default,
+            &ImportedName::Namespace
+        ));
+    }
+
+    #[test]
+    fn export_matches_side_effect_no_match() {
+        assert!(!export_matches(
+            &ExportName::Named("foo".to_string()),
+            &ImportedName::SideEffect
+        ));
+    }
+
+    // Helper to build a simple module graph
+    fn build_simple_graph() -> ModuleGraph {
+        // Two files: entry.ts imports foo from utils.ts
+        let files = vec![
+            DiscoveredFile { id: FileId(0), path: PathBuf::from("/project/src/entry.ts"), size_bytes: 100 },
+            DiscoveredFile { id: FileId(1), path: PathBuf::from("/project/src/utils.ts"), size_bytes: 50 },
+        ];
+
+        let entry_points = vec![EntryPoint {
+            path: PathBuf::from("/project/src/entry.ts"),
+            source: EntryPointSource::PackageJsonMain,
+        }];
+
+        let resolved_modules = vec![
+            ResolvedModule {
+                file_id: FileId(0),
+                path: PathBuf::from("/project/src/entry.ts"),
+                exports: vec![],
+                re_exports: vec![],
+                resolved_imports: vec![ResolvedImport {
+                    info: ImportInfo {
+                        source: "./utils".to_string(),
+                        imported_name: ImportedName::Named("foo".to_string()),
+                        local_name: "foo".to_string(),
+                        is_type_only: false,
+                        span: oxc_span::Span::new(0, 10),
+                    },
+                    target: ResolveResult::InternalModule(FileId(1)),
+                }],
+                resolved_dynamic_imports: vec![],
+                member_accesses: vec![],
+                has_cjs_exports: false,
+            },
+            ResolvedModule {
+                file_id: FileId(1),
+                path: PathBuf::from("/project/src/utils.ts"),
+                exports: vec![
+                    crate::extract::ExportInfo {
+                        name: ExportName::Named("foo".to_string()),
+                        local_name: Some("foo".to_string()),
+                        is_type_only: false,
+                        span: oxc_span::Span::new(0, 20),
+                        members: vec![],
+                    },
+                    crate::extract::ExportInfo {
+                        name: ExportName::Named("bar".to_string()),
+                        local_name: Some("bar".to_string()),
+                        is_type_only: false,
+                        span: oxc_span::Span::new(25, 45),
+                        members: vec![],
+                    },
+                ],
+                re_exports: vec![],
+                resolved_imports: vec![],
+                resolved_dynamic_imports: vec![],
+                member_accesses: vec![],
+                has_cjs_exports: false,
+            },
+        ];
+
+        ModuleGraph::build(&resolved_modules, &entry_points, &files)
+    }
+
+    #[test]
+    fn graph_module_count() {
+        let graph = build_simple_graph();
+        assert_eq!(graph.module_count(), 2);
+    }
+
+    #[test]
+    fn graph_edge_count() {
+        let graph = build_simple_graph();
+        assert_eq!(graph.edge_count(), 1);
+    }
+
+    #[test]
+    fn graph_entry_point_is_reachable() {
+        let graph = build_simple_graph();
+        assert!(graph.modules[0].is_entry_point);
+        assert!(graph.modules[0].is_reachable);
+    }
+
+    #[test]
+    fn graph_imported_module_is_reachable() {
+        let graph = build_simple_graph();
+        assert!(!graph.modules[1].is_entry_point);
+        assert!(graph.modules[1].is_reachable);
+    }
+
+    #[test]
+    fn graph_export_has_reference() {
+        let graph = build_simple_graph();
+        let utils = &graph.modules[1];
+        let foo_export = utils.exports.iter().find(|e| e.name.to_string() == "foo").unwrap();
+        assert!(!foo_export.references.is_empty(), "foo should have references");
+    }
+
+    #[test]
+    fn graph_unused_export_no_reference() {
+        let graph = build_simple_graph();
+        let utils = &graph.modules[1];
+        let bar_export = utils.exports.iter().find(|e| e.name.to_string() == "bar").unwrap();
+        assert!(bar_export.references.is_empty(), "bar should have no references");
+    }
+
+    #[test]
+    fn graph_no_namespace_import() {
+        let graph = build_simple_graph();
+        assert!(!graph.has_namespace_import(FileId(0)));
+        assert!(!graph.has_namespace_import(FileId(1)));
+    }
+
+    #[test]
+    fn graph_has_namespace_import() {
+        let files = vec![
+            DiscoveredFile { id: FileId(0), path: PathBuf::from("/project/entry.ts"), size_bytes: 100 },
+            DiscoveredFile { id: FileId(1), path: PathBuf::from("/project/utils.ts"), size_bytes: 50 },
+        ];
+
+        let entry_points = vec![EntryPoint {
+            path: PathBuf::from("/project/entry.ts"),
+            source: EntryPointSource::PackageJsonMain,
+        }];
+
+        let resolved_modules = vec![
+            ResolvedModule {
+                file_id: FileId(0),
+                path: PathBuf::from("/project/entry.ts"),
+                exports: vec![],
+                re_exports: vec![],
+                resolved_imports: vec![ResolvedImport {
+                    info: ImportInfo {
+                        source: "./utils".to_string(),
+                        imported_name: ImportedName::Namespace,
+                        local_name: "utils".to_string(),
+                        is_type_only: false,
+                        span: oxc_span::Span::new(0, 10),
+                    },
+                    target: ResolveResult::InternalModule(FileId(1)),
+                }],
+                resolved_dynamic_imports: vec![],
+                member_accesses: vec![],
+                has_cjs_exports: false,
+            },
+            ResolvedModule {
+                file_id: FileId(1),
+                path: PathBuf::from("/project/utils.ts"),
+                exports: vec![
+                    crate::extract::ExportInfo {
+                        name: ExportName::Named("foo".to_string()),
+                        local_name: Some("foo".to_string()),
+                        is_type_only: false,
+                        span: oxc_span::Span::new(0, 20),
+                        members: vec![],
+                    },
+                ],
+                re_exports: vec![],
+                resolved_imports: vec![],
+                resolved_dynamic_imports: vec![],
+                member_accesses: vec![],
+                has_cjs_exports: false,
+            },
+        ];
+
+        let graph = ModuleGraph::build(&resolved_modules, &entry_points, &files);
+        assert!(graph.has_namespace_import(FileId(1)), "utils should have namespace import");
+    }
+
+    #[test]
+    fn graph_has_namespace_import_out_of_bounds() {
+        let graph = build_simple_graph();
+        assert!(!graph.has_namespace_import(FileId(999)));
+    }
+
+    #[test]
+    fn graph_unreachable_module() {
+        // Three files: entry imports utils, orphan is not imported
+        let files = vec![
+            DiscoveredFile { id: FileId(0), path: PathBuf::from("/project/entry.ts"), size_bytes: 100 },
+            DiscoveredFile { id: FileId(1), path: PathBuf::from("/project/utils.ts"), size_bytes: 50 },
+            DiscoveredFile { id: FileId(2), path: PathBuf::from("/project/orphan.ts"), size_bytes: 30 },
+        ];
+
+        let entry_points = vec![EntryPoint {
+            path: PathBuf::from("/project/entry.ts"),
+            source: EntryPointSource::PackageJsonMain,
+        }];
+
+        let resolved_modules = vec![
+            ResolvedModule {
+                file_id: FileId(0),
+                path: PathBuf::from("/project/entry.ts"),
+                exports: vec![],
+                re_exports: vec![],
+                resolved_imports: vec![ResolvedImport {
+                    info: ImportInfo {
+                        source: "./utils".to_string(),
+                        imported_name: ImportedName::Named("foo".to_string()),
+                        local_name: "foo".to_string(),
+                        is_type_only: false,
+                        span: oxc_span::Span::new(0, 10),
+                    },
+                    target: ResolveResult::InternalModule(FileId(1)),
+                }],
+                resolved_dynamic_imports: vec![],
+                member_accesses: vec![],
+                has_cjs_exports: false,
+            },
+            ResolvedModule {
+                file_id: FileId(1),
+                path: PathBuf::from("/project/utils.ts"),
+                exports: vec![crate::extract::ExportInfo {
+                    name: ExportName::Named("foo".to_string()),
+                    local_name: Some("foo".to_string()),
+                    is_type_only: false,
+                    span: oxc_span::Span::new(0, 20),
+                    members: vec![],
+                }],
+                re_exports: vec![],
+                resolved_imports: vec![],
+                resolved_dynamic_imports: vec![],
+                member_accesses: vec![],
+                has_cjs_exports: false,
+            },
+            ResolvedModule {
+                file_id: FileId(2),
+                path: PathBuf::from("/project/orphan.ts"),
+                exports: vec![crate::extract::ExportInfo {
+                    name: ExportName::Named("orphan".to_string()),
+                    local_name: Some("orphan".to_string()),
+                    is_type_only: false,
+                    span: oxc_span::Span::new(0, 20),
+                    members: vec![],
+                }],
+                re_exports: vec![],
+                resolved_imports: vec![],
+                resolved_dynamic_imports: vec![],
+                member_accesses: vec![],
+                has_cjs_exports: false,
+            },
+        ];
+
+        let graph = ModuleGraph::build(&resolved_modules, &entry_points, &files);
+
+        assert!(graph.modules[0].is_reachable, "entry should be reachable");
+        assert!(graph.modules[1].is_reachable, "utils should be reachable");
+        assert!(!graph.modules[2].is_reachable, "orphan should NOT be reachable");
+    }
+
+    #[test]
+    fn graph_package_usage_tracked() {
+        let files = vec![
+            DiscoveredFile { id: FileId(0), path: PathBuf::from("/project/entry.ts"), size_bytes: 100 },
+        ];
+
+        let entry_points = vec![EntryPoint {
+            path: PathBuf::from("/project/entry.ts"),
+            source: EntryPointSource::PackageJsonMain,
+        }];
+
+        let resolved_modules = vec![
+            ResolvedModule {
+                file_id: FileId(0),
+                path: PathBuf::from("/project/entry.ts"),
+                exports: vec![],
+                re_exports: vec![],
+                resolved_imports: vec![
+                    ResolvedImport {
+                        info: ImportInfo {
+                            source: "react".to_string(),
+                            imported_name: ImportedName::Default,
+                            local_name: "React".to_string(),
+                            is_type_only: false,
+                            span: oxc_span::Span::new(0, 10),
+                        },
+                        target: ResolveResult::NpmPackage("react".to_string()),
+                    },
+                    ResolvedImport {
+                        info: ImportInfo {
+                            source: "lodash".to_string(),
+                            imported_name: ImportedName::Named("merge".to_string()),
+                            local_name: "merge".to_string(),
+                            is_type_only: false,
+                            span: oxc_span::Span::new(15, 30),
+                        },
+                        target: ResolveResult::NpmPackage("lodash".to_string()),
+                    },
+                ],
+                resolved_dynamic_imports: vec![],
+                member_accesses: vec![],
+                has_cjs_exports: false,
+            },
+        ];
+
+        let graph = ModuleGraph::build(&resolved_modules, &entry_points, &files);
+        assert!(graph.package_usage.contains_key("react"));
+        assert!(graph.package_usage.contains_key("lodash"));
+        assert!(!graph.package_usage.contains_key("express"));
+    }
+
+    #[test]
+    fn graph_re_export_chain_propagates_references() {
+        // entry.ts -> barrel.ts -re-exports-> source.ts
+        let files = vec![
+            DiscoveredFile { id: FileId(0), path: PathBuf::from("/project/entry.ts"), size_bytes: 100 },
+            DiscoveredFile { id: FileId(1), path: PathBuf::from("/project/barrel.ts"), size_bytes: 50 },
+            DiscoveredFile { id: FileId(2), path: PathBuf::from("/project/source.ts"), size_bytes: 50 },
+        ];
+
+        let entry_points = vec![EntryPoint {
+            path: PathBuf::from("/project/entry.ts"),
+            source: EntryPointSource::PackageJsonMain,
+        }];
+
+        let resolved_modules = vec![
+            // entry imports "foo" from barrel
+            ResolvedModule {
+                file_id: FileId(0),
+                path: PathBuf::from("/project/entry.ts"),
+                exports: vec![],
+                re_exports: vec![],
+                resolved_imports: vec![ResolvedImport {
+                    info: ImportInfo {
+                        source: "./barrel".to_string(),
+                        imported_name: ImportedName::Named("foo".to_string()),
+                        local_name: "foo".to_string(),
+                        is_type_only: false,
+                        span: oxc_span::Span::new(0, 10),
+                    },
+                    target: ResolveResult::InternalModule(FileId(1)),
+                }],
+                resolved_dynamic_imports: vec![],
+                member_accesses: vec![],
+                has_cjs_exports: false,
+            },
+            // barrel re-exports "foo" from source
+            ResolvedModule {
+                file_id: FileId(1),
+                path: PathBuf::from("/project/barrel.ts"),
+                exports: vec![
+                    crate::extract::ExportInfo {
+                        name: ExportName::Named("foo".to_string()),
+                        local_name: Some("foo".to_string()),
+                        is_type_only: false,
+                        span: oxc_span::Span::new(0, 20),
+                        members: vec![],
+                    },
+                ],
+                re_exports: vec![ResolvedReExport {
+                    info: crate::extract::ReExportInfo {
+                        source: "./source".to_string(),
+                        imported_name: "foo".to_string(),
+                        exported_name: "foo".to_string(),
+                        is_type_only: false,
+                    },
+                    target: ResolveResult::InternalModule(FileId(2)),
+                }],
+                resolved_imports: vec![],
+                resolved_dynamic_imports: vec![],
+                member_accesses: vec![],
+                has_cjs_exports: false,
+            },
+            // source has the actual export
+            ResolvedModule {
+                file_id: FileId(2),
+                path: PathBuf::from("/project/source.ts"),
+                exports: vec![
+                    crate::extract::ExportInfo {
+                        name: ExportName::Named("foo".to_string()),
+                        local_name: Some("foo".to_string()),
+                        is_type_only: false,
+                        span: oxc_span::Span::new(0, 20),
+                        members: vec![],
+                    },
+                ],
+                re_exports: vec![],
+                resolved_imports: vec![],
+                resolved_dynamic_imports: vec![],
+                member_accesses: vec![],
+                has_cjs_exports: false,
+            },
+        ];
+
+        let graph = ModuleGraph::build(&resolved_modules, &entry_points, &files);
+
+        // The source module's "foo" export should have references propagated through the barrel
+        let source_module = &graph.modules[2];
+        let foo_export = source_module.exports.iter().find(|e| e.name.to_string() == "foo").unwrap();
+        assert!(!foo_export.references.is_empty(), "source foo should have propagated references through barrel re-export chain");
+    }
+
+    #[test]
+    fn graph_empty() {
+        let graph = ModuleGraph::build(&[], &[], &[]);
+        assert_eq!(graph.module_count(), 0);
+        assert_eq!(graph.edge_count(), 0);
+    }
+
+    #[test]
+    fn graph_cjs_exports_tracked() {
+        let files = vec![
+            DiscoveredFile { id: FileId(0), path: PathBuf::from("/project/entry.ts"), size_bytes: 100 },
+        ];
+
+        let entry_points = vec![EntryPoint {
+            path: PathBuf::from("/project/entry.ts"),
+            source: EntryPointSource::PackageJsonMain,
+        }];
+
+        let resolved_modules = vec![
+            ResolvedModule {
+                file_id: FileId(0),
+                path: PathBuf::from("/project/entry.ts"),
+                exports: vec![],
+                re_exports: vec![],
+                resolved_imports: vec![],
+                resolved_dynamic_imports: vec![],
+                member_accesses: vec![],
+                has_cjs_exports: true,
+            },
+        ];
+
+        let graph = ModuleGraph::build(&resolved_modules, &entry_points, &files);
+        assert!(graph.modules[0].has_cjs_exports);
     }
 }
