@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nicholasgasior/fallow"
+    "url": "https://github.com/bartwaardenburg/fallow"
   },
   "keywords": [
     "dead-code",
@@ -28,10 +28,10 @@
     "postinstall": "node scripts/postinstall.js"
   },
   "optionalDependencies": {
-    "@nicholasgasior/fallow-darwin-arm64": "0.1.0",
-    "@nicholasgasior/fallow-darwin-x64": "0.1.0",
-    "@nicholasgasior/fallow-linux-x64-gnu": "0.1.0",
-    "@nicholasgasior/fallow-linux-arm64-gnu": "0.1.0",
-    "@nicholasgasior/fallow-win32-x64-msvc": "0.1.0"
+    "@fallow-cli/darwin-arm64": "0.1.0",
+    "@fallow-cli/darwin-x64": "0.1.0",
+    "@fallow-cli/linux-x64-gnu": "0.1.0",
+    "@fallow-cli/linux-arm64-gnu": "0.1.0",
+    "@fallow-cli/win32-x64-msvc": "0.1.0"
   }
 }

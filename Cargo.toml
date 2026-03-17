@@ -6,7 +6,7 @@ members = ["crates/*"]
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
-repository = "https://github.com/nicholasgasior/fallow"
+repository = "https://github.com/bartwaardenburg/fallow"
 
 [workspace.dependencies]
 fallow-core = { version = "0.1.0", path = "crates/core" }
