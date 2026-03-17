@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use criterion::{Criterion, criterion_group, criterion_main};
 
 use fallow_config::{DetectConfig, FallowConfig, OutputFormat};
@@ -164,5 +166,439 @@ export type Type{i} = {{ value: number }};
     let _ = std::fs::remove_dir_all(&temp_dir);
 }
 
-criterion_group!(benches, bench_parse_file, bench_full_pipeline);
+/// Generate a synthetic project with `file_count` source files.
+/// Half of the exports are consumed by the entry point, the other half are "dead".
+fn create_synthetic_project(name: &str, file_count: usize) -> (std::path::PathBuf, fallow_config::ResolvedConfig) {
+    let temp_dir = std::env::temp_dir().join(format!("fallow-bench-{name}"));
+    let _ = std::fs::remove_dir_all(&temp_dir);
+    std::fs::create_dir_all(temp_dir.join("src")).unwrap();
+
+    std::fs::write(
+        temp_dir.join("package.json"),
+        r#"{"name": "bench-project", "main": "src/index.ts", "dependencies": {"react": "^18"}}"#,
+    )
+    .unwrap();
+
+    for i in 0..file_count {
+        let content = format!(
+            r#"
+export const value{i} = {i};
+export function fn{i}() {{ return {i}; }}
+export type Type{i} = {{ value: number }};
+export const helper{i} = () => value{i} + 1;
+"#
+        );
+        std::fs::write(temp_dir.join(format!("src/module{i}.ts")), content).unwrap();
+    }
+
+    // Entry point imports from the first half of modules
+    let used_count = file_count / 2;
+    let imports: Vec<String> = (0..used_count)
+        .map(|i| format!("import {{ value{i} }} from './module{i}';"))
+        .collect();
+    let uses: Vec<String> = (0..used_count)
+        .map(|i| format!("console.log(value{i});"))
+        .collect();
+    std::fs::write(
+        temp_dir.join("src/index.ts"),
+        format!("{}\n{}\n", imports.join("\n"), uses.join("\n")),
+    )
+    .unwrap();
+
+    let config = create_test_config(temp_dir.clone());
+    (temp_dir, config)
+}
+
+fn bench_full_pipeline_100(c: &mut Criterion) {
+    let (temp_dir, config) = create_synthetic_project("100", 100);
+
+    c.bench_function("full_pipeline_100_files", |b| {
+        b.iter(|| {
+            let _ = fallow_core::analyze(&config);
+        });
+    });
+
+    let _ = std::fs::remove_dir_all(&temp_dir);
+}
+
+fn bench_full_pipeline_1000(c: &mut Criterion) {
+    let (temp_dir, config) = create_synthetic_project("1000", 1000);
+
+    c.bench_function("full_pipeline_1000_files", |b| {
+        b.iter(|| {
+            let _ = fallow_core::analyze(&config);
+        });
+    });
+
+    let _ = std::fs::remove_dir_all(&temp_dir);
+}
+
+fn bench_resolve_re_export_chains(c: &mut Criterion) {
+    use fallow_core::discover::{DiscoveredFile, EntryPoint, EntryPointSource, FileId};
+    use fallow_core::extract::{ExportInfo, ExportName, ImportInfo, ImportedName, ReExportInfo};
+    use fallow_core::resolve::{ResolveResult, ResolvedImport, ResolvedModule, ResolvedReExport};
+
+    // Build a graph with multiple re-export chains:
+    //
+    //   entry.ts -> barrel1.ts -> barrel2.ts -> source_a.ts
+    //                                        -> source_b.ts
+    //            -> barrel3.ts -> source_c.ts
+    //
+    // Each source file has 10 exports. Barrel files re-export all of them.
+    // This exercises the iterative re-export chain resolution with the HashSet optimization.
+
+    let source_count = 20;
+    let barrel_count = 10;
+    let exports_per_source = 10;
+    let total_files = 1 + barrel_count + source_count; // entry + barrels + sources
+
+    let mut files: Vec<DiscoveredFile> = Vec::with_capacity(total_files);
+    let mut resolved_modules: Vec<ResolvedModule> = Vec::with_capacity(total_files);
+
+    // FileId layout:
+    //   0        = entry.ts
+    //   1..=B    = barrel files (barrel_count)
+    //   B+1..=N  = source files (source_count)
+    let barrel_start: u32 = 1;
+    let source_start: u32 = barrel_start + barrel_count as u32;
+
+    // --- entry.ts (id=0) ---
+    files.push(DiscoveredFile {
+        id: FileId(0),
+        path: PathBuf::from("/project/src/entry.ts"),
+        size_bytes: 100,
+    });
+
+    // Entry imports from each barrel
+    let entry_imports: Vec<ResolvedImport> = (0..barrel_count)
+        .flat_map(|b| {
+            let barrel_id = FileId(barrel_start + b as u32);
+            // Import the first 3 re-exported symbols from each barrel
+            (0..3).map(move |e| ResolvedImport {
+                info: ImportInfo {
+                    source: format!("./barrel{b}"),
+                    imported_name: ImportedName::Named(format!("value{e}")),
+                    local_name: format!("barrel{b}_value{e}"),
+                    is_type_only: false,
+                    span: oxc_span::Span::new(0, 10),
+                },
+                target: ResolveResult::InternalModule(barrel_id),
+            })
+        })
+        .collect();
+
+    resolved_modules.push(ResolvedModule {
+        file_id: FileId(0),
+        path: PathBuf::from("/project/src/entry.ts"),
+        exports: vec![],
+        re_exports: vec![],
+        resolved_imports: entry_imports,
+        resolved_dynamic_imports: vec![],
+        member_accesses: vec![],
+        has_cjs_exports: false,
+    });
+
+    // --- Barrel files ---
+    // Each barrel re-exports from 2 sources (creating chains).
+    // barrels 0..4 also re-export from barrel 5..9, forming 2-level chains.
+    for b in 0..barrel_count {
+        let barrel_id = FileId(barrel_start + b as u32);
+        files.push(DiscoveredFile {
+            id: barrel_id,
+            path: PathBuf::from(format!("/project/src/barrel{b}.ts")),
+            size_bytes: 50,
+        });
+
+        let mut re_exports: Vec<ResolvedReExport> = Vec::new();
+
+        if b < barrel_count / 2 {
+            // First half of barrels re-export from a second-tier barrel (chaining)
+            let chained_barrel = barrel_count / 2 + (b % (barrel_count / 2));
+            let chained_id = FileId(barrel_start + chained_barrel as u32);
+            for e in 0..exports_per_source {
+                re_exports.push(ResolvedReExport {
+                    info: ReExportInfo {
+                        source: format!("./barrel{chained_barrel}"),
+                        imported_name: format!("value{e}"),
+                        exported_name: format!("value{e}"),
+                        is_type_only: false,
+                    },
+                    target: ResolveResult::InternalModule(chained_id),
+                });
+            }
+        } else {
+            // Second half of barrels re-export directly from source files
+            let src_a = (b * 2) % source_count;
+            let src_b = (b * 2 + 1) % source_count;
+            let src_a_id = FileId(source_start + src_a as u32);
+            let src_b_id = FileId(source_start + src_b as u32);
+
+            for e in 0..exports_per_source {
+                re_exports.push(ResolvedReExport {
+                    info: ReExportInfo {
+                        source: format!("./source{src_a}"),
+                        imported_name: format!("value{e}"),
+                        exported_name: format!("value{e}"),
+                        is_type_only: false,
+                    },
+                    target: ResolveResult::InternalModule(src_a_id),
+                });
+                re_exports.push(ResolvedReExport {
+                    info: ReExportInfo {
+                        source: format!("./source{src_b}"),
+                        imported_name: format!("fn{e}"),
+                        exported_name: format!("fn{e}"),
+                        is_type_only: false,
+                    },
+                    target: ResolveResult::InternalModule(src_b_id),
+                });
+            }
+        }
+
+        resolved_modules.push(ResolvedModule {
+            file_id: barrel_id,
+            path: PathBuf::from(format!("/project/src/barrel{b}.ts")),
+            exports: vec![],
+            re_exports,
+            resolved_imports: vec![],
+            resolved_dynamic_imports: vec![],
+            member_accesses: vec![],
+            has_cjs_exports: false,
+        });
+    }
+
+    // --- Source files ---
+    for s in 0..source_count {
+        let source_id = FileId(source_start + s as u32);
+        files.push(DiscoveredFile {
+            id: source_id,
+            path: PathBuf::from(format!("/project/src/source{s}.ts")),
+            size_bytes: 200,
+        });
+
+        let exports: Vec<ExportInfo> = (0..exports_per_source)
+            .flat_map(|e| {
+                vec![
+                    ExportInfo {
+                        name: ExportName::Named(format!("value{e}")),
+                        local_name: Some(format!("value{e}")),
+                        is_type_only: false,
+                        span: oxc_span::Span::new(0, 20),
+                        members: vec![],
+                    },
+                    ExportInfo {
+                        name: ExportName::Named(format!("fn{e}")),
+                        local_name: Some(format!("fn{e}")),
+                        is_type_only: false,
+                        span: oxc_span::Span::new(25, 45),
+                        members: vec![],
+                    },
+                ]
+            })
+            .collect();
+
+        resolved_modules.push(ResolvedModule {
+            file_id: source_id,
+            path: PathBuf::from(format!("/project/src/source{s}.ts")),
+            exports,
+            re_exports: vec![],
+            resolved_imports: vec![],
+            resolved_dynamic_imports: vec![],
+            member_accesses: vec![],
+            has_cjs_exports: false,
+        });
+    }
+
+    let entry_points = vec![EntryPoint {
+        path: PathBuf::from("/project/src/entry.ts"),
+        source: EntryPointSource::PackageJsonMain,
+    }];
+
+    c.bench_function("resolve_re_export_chains", |b| {
+        b.iter(|| {
+            fallow_core::graph::ModuleGraph::build(&resolved_modules, &entry_points, &files);
+        });
+    });
+}
+
+fn bench_cache_round_trip(c: &mut Criterion) {
+    use fallow_core::cache::{cached_to_module, module_to_cached};
+    use fallow_core::discover::FileId;
+    use fallow_core::extract::*;
+
+    // Build a representative ModuleInfo with realistic data:
+    // imports, exports (including enums and classes with members), re-exports,
+    // dynamic imports, require calls, and member accesses.
+    let module = ModuleInfo {
+        file_id: FileId(0),
+        exports: vec![
+            ExportInfo {
+                name: ExportName::Named("UserService".to_string()),
+                local_name: Some("UserService".to_string()),
+                is_type_only: false,
+                span: oxc_span::Span::new(100, 500),
+                members: vec![
+                    MemberInfo {
+                        name: "getUser".to_string(),
+                        kind: MemberKind::ClassMethod,
+                        span: oxc_span::Span::new(200, 300),
+                    },
+                    MemberInfo {
+                        name: "listUsers".to_string(),
+                        kind: MemberKind::ClassMethod,
+                        span: oxc_span::Span::new(310, 400),
+                    },
+                    MemberInfo {
+                        name: "baseUrl".to_string(),
+                        kind: MemberKind::ClassProperty,
+                        span: oxc_span::Span::new(120, 150),
+                    },
+                ],
+            },
+            ExportInfo {
+                name: ExportName::Named("Status".to_string()),
+                local_name: Some("Status".to_string()),
+                is_type_only: false,
+                span: oxc_span::Span::new(550, 700),
+                members: vec![
+                    MemberInfo {
+                        name: "Active".to_string(),
+                        kind: MemberKind::EnumMember,
+                        span: oxc_span::Span::new(570, 590),
+                    },
+                    MemberInfo {
+                        name: "Inactive".to_string(),
+                        kind: MemberKind::EnumMember,
+                        span: oxc_span::Span::new(595, 620),
+                    },
+                    MemberInfo {
+                        name: "Pending".to_string(),
+                        kind: MemberKind::EnumMember,
+                        span: oxc_span::Span::new(625, 650),
+                    },
+                ],
+            },
+            ExportInfo {
+                name: ExportName::Default,
+                local_name: None,
+                is_type_only: false,
+                span: oxc_span::Span::new(800, 1200),
+                members: vec![],
+            },
+            ExportInfo {
+                name: ExportName::Named("Props".to_string()),
+                local_name: Some("Props".to_string()),
+                is_type_only: true,
+                span: oxc_span::Span::new(10, 80),
+                members: vec![],
+            },
+            ExportInfo {
+                name: ExportName::Named("formatName".to_string()),
+                local_name: Some("formatName".to_string()),
+                is_type_only: false,
+                span: oxc_span::Span::new(720, 780),
+                members: vec![],
+            },
+        ],
+        imports: vec![
+            ImportInfo {
+                source: "react".to_string(),
+                imported_name: ImportedName::Named("useState".to_string()),
+                local_name: "useState".to_string(),
+                is_type_only: false,
+                span: oxc_span::Span::new(0, 50),
+            },
+            ImportInfo {
+                source: "react".to_string(),
+                imported_name: ImportedName::Named("useEffect".to_string()),
+                local_name: "useEffect".to_string(),
+                is_type_only: false,
+                span: oxc_span::Span::new(0, 50),
+            },
+            ImportInfo {
+                source: "react".to_string(),
+                imported_name: ImportedName::Default,
+                local_name: "React".to_string(),
+                is_type_only: false,
+                span: oxc_span::Span::new(55, 80),
+            },
+            ImportInfo {
+                source: "lodash".to_string(),
+                imported_name: ImportedName::Namespace,
+                local_name: "lodash".to_string(),
+                is_type_only: false,
+                span: oxc_span::Span::new(85, 110),
+            },
+            ImportInfo {
+                source: "./styles.css".to_string(),
+                imported_name: ImportedName::SideEffect,
+                local_name: String::new(),
+                is_type_only: false,
+                span: oxc_span::Span::new(115, 140),
+            },
+            ImportInfo {
+                source: "./types".to_string(),
+                imported_name: ImportedName::Named("Config".to_string()),
+                local_name: "Config".to_string(),
+                is_type_only: true,
+                span: oxc_span::Span::new(145, 180),
+            },
+        ],
+        re_exports: vec![
+            ReExportInfo {
+                source: "./utils".to_string(),
+                imported_name: "capitalize".to_string(),
+                exported_name: "capitalize".to_string(),
+                is_type_only: false,
+            },
+            ReExportInfo {
+                source: "./helpers".to_string(),
+                imported_name: "*".to_string(),
+                exported_name: "*".to_string(),
+                is_type_only: false,
+            },
+        ],
+        dynamic_imports: vec![DynamicImportInfo {
+            source: "./lazy-component".to_string(),
+            span: oxc_span::Span::new(900, 940),
+        }],
+        require_calls: vec![RequireCallInfo {
+            source: "fs".to_string(),
+            span: oxc_span::Span::new(950, 970),
+        }],
+        member_accesses: vec![
+            MemberAccess {
+                object: "Status".to_string(),
+                member: "Active".to_string(),
+            },
+            MemberAccess {
+                object: "lodash".to_string(),
+                member: "merge".to_string(),
+            },
+            MemberAccess {
+                object: "console".to_string(),
+                member: "log".to_string(),
+            },
+        ],
+        has_cjs_exports: false,
+        content_hash: 0xDEAD_BEEF_CAFE_1234,
+    };
+
+    c.bench_function("cache_round_trip", |b| {
+        b.iter(|| {
+            let cached = module_to_cached(&module);
+            let _restored = cached_to_module(&cached, FileId(0));
+        });
+    });
+}
+
+criterion_group!(
+    benches,
+    bench_parse_file,
+    bench_full_pipeline,
+    bench_full_pipeline_100,
+    bench_full_pipeline_1000,
+    bench_resolve_re_export_chains,
+    bench_cache_round_trip,
+);
 criterion_main!(benches);
