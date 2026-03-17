@@ -43,10 +43,25 @@ pub fn discover_workspaces(root: &Path) -> Vec<WorkspaceInfo> {
         return Vec::new();
     }
 
-    // 3. Expand patterns to find workspace directories
+    // 3. Separate positive and negated patterns.
+    // Negated patterns (e.g., `!**/test/**`) are used as exclusion filters —
+    // the `glob` crate does not support `!` prefixed patterns natively.
+    let (positive, negative): (Vec<&String>, Vec<&String>) =
+        patterns.iter().partition(|p| !p.starts_with('!'));
+    let negation_matchers: Vec<globset::GlobMatcher> = negative
+        .iter()
+        .filter_map(|p| {
+            let stripped = p.strip_prefix('!').unwrap_or(p);
+            globset::Glob::new(stripped)
+                .ok()
+                .map(|g| g.compile_matcher())
+        })
+        .collect();
+
+    // Expand patterns to find workspace directories
     let canonical_root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
     let mut workspaces = Vec::new();
-    for pattern in &patterns {
+    for pattern in &positive {
         // Normalize the pattern for directory matching:
         // - `packages/*` → glob for `packages/*` (find all subdirs)
         // - `packages/` → glob for `packages/*` (trailing slash means "contents of")
@@ -55,9 +70,9 @@ pub fn discover_workspaces(root: &Path) -> Vec<WorkspaceInfo> {
             format!("{}*", pattern)
         } else if !pattern.contains('*') && !pattern.contains('?') && !pattern.contains('{') {
             // Bare directory name — treat as exact match
-            pattern.clone()
+            (*pattern).clone()
         } else {
-            pattern.clone()
+            (*pattern).clone()
         };
 
         // Walk directories matching the glob
@@ -69,6 +84,17 @@ pub fn discover_workspaces(root: &Path) -> Vec<WorkspaceInfo> {
             if canonical_dir == canonical_root {
                 continue;
             }
+
+            // Check against negation patterns — skip directories that match any negated pattern
+            let relative = dir.strip_prefix(root).unwrap_or(&dir);
+            let relative_str = relative.to_string_lossy();
+            if negation_matchers
+                .iter()
+                .any(|m| m.is_match(relative_str.as_ref()))
+            {
+                continue;
+            }
+
             let ws_pkg_path = dir.join("package.json");
             if ws_pkg_path.exists()
                 && let Ok(pkg) = PackageJson::load(&ws_pkg_path)
