@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Instant;
@@ -265,6 +266,7 @@ fn main() -> ExitCode {
     // Set up tracing
     if !cli.quiet {
         tracing_subscriber::fmt()
+            .with_writer(std::io::stderr)
             .with_env_filter(
                 tracing_subscriber::EnvFilter::from_default_env()
                     .add_directive(tracing::Level::INFO.into()),
@@ -564,27 +566,38 @@ fn filter_new_issues(
     mut results: fallow_core::results::AnalysisResults,
     baseline: &BaselineData,
 ) -> fallow_core::results::AnalysisResults {
-    results.unused_files.retain(|f| {
-        !baseline
-            .unused_files
-            .contains(&f.path.to_string_lossy().to_string())
-    });
+    let baseline_files: HashSet<&str> = baseline.unused_files.iter().map(|s| s.as_str()).collect();
+    let baseline_exports: HashSet<&str> =
+        baseline.unused_exports.iter().map(|s| s.as_str()).collect();
+    let baseline_types: HashSet<&str> = baseline.unused_types.iter().map(|s| s.as_str()).collect();
+    let baseline_deps: HashSet<&str> = baseline
+        .unused_dependencies
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+    let baseline_dev_deps: HashSet<&str> = baseline
+        .unused_dev_dependencies
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+
+    results
+        .unused_files
+        .retain(|f| !baseline_files.contains(f.path.to_string_lossy().as_ref()));
     results.unused_exports.retain(|e| {
-        !baseline
-            .unused_exports
-            .contains(&format!("{}:{}", e.path.display(), e.export_name))
+        let key = format!("{}:{}", e.path.display(), e.export_name);
+        !baseline_exports.contains(key.as_str())
     });
     results.unused_types.retain(|e| {
-        !baseline
-            .unused_types
-            .contains(&format!("{}:{}", e.path.display(), e.export_name))
+        let key = format!("{}:{}", e.path.display(), e.export_name);
+        !baseline_types.contains(key.as_str())
     });
     results
         .unused_dependencies
-        .retain(|d| !baseline.unused_dependencies.contains(&d.package_name));
+        .retain(|d| !baseline_deps.contains(d.package_name.as_str()));
     results
         .unused_dev_dependencies
-        .retain(|d| !baseline.unused_dev_dependencies.contains(&d.package_name));
+        .retain(|d| !baseline_dev_deps.contains(d.package_name.as_str()));
     results
 }
 
@@ -751,11 +764,22 @@ fn run_fix(
     }
 
     for (path, file_exports) in &exports_by_file {
+        // Security: ensure path is within project root
+        if !path.starts_with(root) {
+            tracing::warn!(path = %path.display(), "Skipping fix for path outside project root");
+            continue;
+        }
         let content = match std::fs::read_to_string(path) {
             Ok(c) => c,
             Err(_) => continue,
         };
-        let lines: Vec<&str> = content.lines().collect();
+        // Detect line ending style
+        let line_ending = if content.contains("\r\n") {
+            "\r\n"
+        } else {
+            "\n"
+        };
+        let lines: Vec<&str> = content.split(line_ending).collect();
 
         struct ExportFix {
             line_idx: usize,
@@ -772,7 +796,7 @@ fn run_fix(
                     target_line = Some(i);
                     break;
                 }
-                current_offset += line.len() + 1; // +1 for newline
+                current_offset += line.len() + line_ending.len();
             }
 
             if let Some(line_idx) = target_line {
@@ -867,9 +891,9 @@ fn run_fix(
 
                 new_lines[fix.line_idx] = format!("{}{}", &" ".repeat(indent), replacement);
             }
-            let mut new_content = new_lines.join("\n");
-            if content.ends_with('\n') {
-                new_content.push('\n');
+            let mut new_content = new_lines.join(line_ending);
+            if content.ends_with(line_ending) && !new_content.ends_with(line_ending) {
+                new_content.push_str(line_ending);
             }
 
             // Atomic write: temp file then rename

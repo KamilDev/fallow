@@ -167,13 +167,21 @@ fn builtin_frameworks() -> Vec<FrameworkRule> {
                 pat("src/middleware.{ts,js}"),
                 pat("proxy.{ts,js}"),
                 pat("src/proxy.{ts,js}"),
-                // Instrumentation
+                // Instrumentation (Next.js 14+)
                 pat("instrumentation.{ts,js}"),
+                pat("instrumentation-client.{ts,js}"),
+                pat("src/instrumentation.{ts,js}"),
+                pat("src/instrumentation-client.{ts,js}"),
             ],
             always_used: vec![
                 "next.config.{ts,js,mjs,cjs}".to_string(),
                 "next-env.d.ts".to_string(),
                 "favicon.ico".to_string(),
+                // next-intl convention
+                "src/i18n/request.{ts,js}".to_string(),
+                "src/i18n/routing.{ts,js}".to_string(),
+                "i18n/request.{ts,js}".to_string(),
+                "i18n/routing.{ts,js}".to_string(),
             ],
             used_exports: vec![
                 FrameworkUsedExport {
@@ -339,10 +347,19 @@ fn builtin_frameworks() -> Vec<FrameworkRule> {
                 pat("**/*.test.{ts,tsx,js,jsx}"),
                 pat("**/*.spec.{ts,tsx,js,jsx}"),
                 pat("**/__tests__/**/*.{ts,tsx,js,jsx}"),
+                // Test setup/helper files
+                pat("test/setup*.{ts,tsx,js,jsx}"),
+                pat("tests/setup*.{ts,tsx,js,jsx}"),
+                pat("test/helpers/**/*.{ts,tsx,js,jsx}"),
+                pat("tests/helpers/**/*.{ts,tsx,js,jsx}"),
+                pat("test/utils/**/*.{ts,tsx,js,jsx}"),
+                pat("src/test/**/*.{ts,tsx,js,jsx}"),
+                pat("src/testing/**/*.{ts,tsx,js,jsx}"),
             ],
             always_used: vec![
                 "vitest.config.{ts,js,mts}".to_string(),
                 "vitest.setup.{ts,js}".to_string(),
+                "vitest.workspace.{ts,js}".to_string(),
             ],
             used_exports: vec![],
         },
@@ -356,6 +373,10 @@ fn builtin_frameworks() -> Vec<FrameworkRule> {
                 pat("**/*.test.{ts,tsx,js,jsx}"),
                 pat("**/*.spec.{ts,tsx,js,jsx}"),
                 pat("**/__tests__/**/*.{ts,tsx,js,jsx}"),
+                pat("test/setup*.{ts,tsx,js,jsx}"),
+                pat("tests/setup*.{ts,tsx,js,jsx}"),
+                pat("src/test/**/*.{ts,tsx,js,jsx}"),
+                pat("src/testing/**/*.{ts,tsx,js,jsx}"),
             ],
             always_used: vec![
                 "jest.config.{ts,js,mjs,cjs}".to_string(),
@@ -586,6 +607,63 @@ fn builtin_frameworks() -> Vec<FrameworkRule> {
             ],
             used_exports: vec![],
         },
+        // ── Sentry ──────────────────────────────────────────
+        FrameworkRule {
+            name: "sentry".to_string(),
+            detection: Some(FrameworkDetection::Any {
+                conditions: vec![
+                    FrameworkDetection::Dependency {
+                        package: "@sentry/nextjs".to_string(),
+                    },
+                    FrameworkDetection::Dependency {
+                        package: "@sentry/react".to_string(),
+                    },
+                    FrameworkDetection::Dependency {
+                        package: "@sentry/node".to_string(),
+                    },
+                ],
+            }),
+            entry_points: vec![],
+            always_used: vec![
+                "sentry.client.config.{ts,js,mjs}".to_string(),
+                "sentry.server.config.{ts,js,mjs}".to_string(),
+                "sentry.edge.config.{ts,js,mjs}".to_string(),
+            ],
+            used_exports: vec![],
+        },
+        // ── Drizzle ORM ────────────────────────────────────
+        FrameworkRule {
+            name: "drizzle".to_string(),
+            detection: Some(FrameworkDetection::Dependency {
+                package: "drizzle-orm".to_string(),
+            }),
+            entry_points: vec![pat("drizzle/**/*.{ts,js}")],
+            always_used: vec!["drizzle.config.{ts,js,mjs}".to_string()],
+            used_exports: vec![],
+        },
+        // ── Knex ───────────────────────────────────────────
+        FrameworkRule {
+            name: "knex".to_string(),
+            detection: Some(FrameworkDetection::Dependency {
+                package: "knex".to_string(),
+            }),
+            entry_points: vec![pat("migrations/**/*.{ts,js}"), pat("seeds/**/*.{ts,js}")],
+            always_used: vec!["knexfile.{ts,js}".to_string()],
+            used_exports: vec![],
+        },
+        // ── MSW (Mock Service Worker) ──────────────────────
+        FrameworkRule {
+            name: "msw".to_string(),
+            detection: Some(FrameworkDetection::Dependency {
+                package: "msw".to_string(),
+            }),
+            entry_points: vec![
+                pat("mocks/**/*.{ts,tsx,js,jsx}"),
+                pat("src/mocks/**/*.{ts,tsx,js,jsx}"),
+            ],
+            always_used: vec![],
+            used_exports: vec![],
+        },
         // ── React Router ────────────────────────────────────
         FrameworkRule {
             name: "react-router".to_string(),
@@ -679,6 +757,10 @@ mod tests {
         assert!(names.contains(&"webpack"));
         assert!(names.contains(&"tailwind"));
         assert!(names.contains(&"graphql-codegen"));
+        assert!(names.contains(&"sentry"));
+        assert!(names.contains(&"drizzle"));
+        assert!(names.contains(&"knex"));
+        assert!(names.contains(&"msw"));
         assert!(names.contains(&"react-router"));
     }
 

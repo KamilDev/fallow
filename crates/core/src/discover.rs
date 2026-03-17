@@ -128,8 +128,15 @@ pub fn discover_entry_points(config: &ResolvedConfig, files: &[DiscoveredFile]) 
     // 2. Package.json entries
     let pkg_path = config.root.join("package.json");
     if let Ok(pkg) = PackageJson::load(&pkg_path) {
+        let canonical_root = config.root.canonicalize().unwrap_or(config.root.clone());
         for entry_path in pkg.entry_points() {
             let resolved = config.root.join(&entry_path);
+            // Security: ensure resolved path stays within project root
+            let canonical_resolved = resolved.canonicalize().unwrap_or(resolved.clone());
+            if !canonical_resolved.starts_with(&canonical_root) {
+                tracing::warn!(path = %entry_path, "Skipping entry point outside project root");
+                continue;
+            }
             if resolved.exists() {
                 entries.push(EntryPoint {
                     path: resolved,
@@ -155,6 +162,12 @@ pub fn discover_entry_points(config: &ResolvedConfig, files: &[DiscoveredFile]) 
             for script_value in scripts.values() {
                 for file_ref in extract_script_file_refs(script_value) {
                     let resolved = config.root.join(&file_ref);
+                    // Security: ensure resolved path stays within project root
+                    let canonical_resolved = resolved.canonicalize().unwrap_or(resolved.clone());
+                    if !canonical_resolved.starts_with(&canonical_root) {
+                        tracing::warn!(path = %file_ref, "Skipping script entry point outside project root");
+                        continue;
+                    }
                     if resolved.exists() {
                         entries.push(EntryPoint {
                             path: resolved,
@@ -336,10 +349,20 @@ pub fn discover_workspace_entry_points(
 ) -> Vec<EntryPoint> {
     let mut entries = Vec::new();
 
+    // Also load root package.json for framework detection (monorepo deps are often at root)
+    let root_pkg = PackageJson::load(&config.root.join("package.json")).ok();
+
     let pkg_path = ws_root.join("package.json");
     if let Ok(pkg) = PackageJson::load(&pkg_path) {
+        let canonical_ws_root = ws_root.canonicalize().unwrap_or(ws_root.to_path_buf());
         for entry_path in pkg.entry_points() {
             let resolved = ws_root.join(&entry_path);
+            // Security: ensure resolved path stays within workspace root
+            let canonical_resolved = resolved.canonicalize().unwrap_or(resolved.clone());
+            if !canonical_resolved.starts_with(&canonical_ws_root) {
+                tracing::warn!(path = %entry_path, "Skipping entry point outside workspace root");
+                continue;
+            }
             if resolved.exists() {
                 entries.push(EntryPoint {
                     path: resolved,
@@ -364,6 +387,12 @@ pub fn discover_workspace_entry_points(
             for script_value in scripts.values() {
                 for file_ref in extract_script_file_refs(script_value) {
                     let resolved = ws_root.join(&file_ref);
+                    // Security: ensure resolved path stays within workspace root
+                    let canonical_resolved = resolved.canonicalize().unwrap_or(resolved.clone());
+                    if !canonical_resolved.starts_with(&canonical_ws_root) {
+                        tracing::warn!(path = %file_ref, "Skipping script entry point outside workspace root");
+                        continue;
+                    }
                     if resolved.exists() {
                         entries.push(EntryPoint {
                             path: resolved,
@@ -385,30 +414,49 @@ pub fn discover_workspace_entry_points(
             }
         }
 
-        // Apply framework rules to workspace
+        // Apply framework rules to workspace.
+        // Check activation against BOTH workspace and root package deps (monorepo hoisting).
         for rule in &config.framework_rules {
-            if !is_framework_active(rule, &pkg, ws_root) {
+            let ws_active = is_framework_active(rule, &pkg, ws_root);
+            let root_active = root_pkg
+                .as_ref()
+                .map(|rpkg| is_framework_active(rule, rpkg, &config.root))
+                .unwrap_or(false);
+
+            if !ws_active && !root_active {
                 continue;
             }
 
             // Pre-compile entry point matchers to avoid recompiling per file
-            let entry_matchers: Vec<(globset::GlobMatcher, &str)> = rule
+            let entry_matchers: Vec<globset::GlobMatcher> = rule
                 .entry_points
                 .iter()
                 .filter_map(|ep| {
                     globset::Glob::new(&ep.pattern)
                         .ok()
-                        .map(|g| (g.compile_matcher(), rule.name.as_str()))
+                        .map(|g| g.compile_matcher())
                 })
                 .collect();
 
+            // Pre-compile always_used matchers
+            let always_matchers: Vec<globset::GlobMatcher> = rule
+                .always_used
+                .iter()
+                .filter_map(|p| globset::Glob::new(p).ok().map(|g| g.compile_matcher()))
+                .collect();
+
+            // Only consider files within this workspace for framework rule matching
+            let canonical_ws = ws_root.canonicalize().unwrap_or(ws_root.to_path_buf());
             for file in all_files {
+                let canonical_file = file.path.canonicalize().unwrap_or(file.path.clone());
+                if !canonical_file.starts_with(&canonical_ws) {
+                    continue;
+                }
                 let relative = file.path.strip_prefix(ws_root).unwrap_or(&file.path);
                 let relative_str = relative.to_string_lossy();
-                if entry_matchers
-                    .iter()
-                    .any(|(m, _)| m.is_match(relative_str.as_ref()))
-                {
+                let matched = entry_matchers.iter().any(|m| m.is_match(relative_str.as_ref()))
+                    || always_matchers.iter().any(|m| m.is_match(relative_str.as_ref()));
+                if matched {
                     entries.push(EntryPoint {
                         path: file.path.clone(),
                         source: EntryPointSource::FrameworkRule {
@@ -416,6 +464,36 @@ pub fn discover_workspace_entry_points(
                         },
                     });
                 }
+            }
+        }
+    }
+
+    // Fall back to default index files if no entry points found for this workspace
+    if entries.is_empty() {
+        let default_patterns = [
+            "src/index.{ts,tsx,js,jsx}",
+            "src/main.{ts,tsx,js,jsx}",
+            "index.{ts,tsx,js,jsx}",
+            "main.{ts,tsx,js,jsx}",
+        ];
+        let default_matchers: Vec<globset::GlobMatcher> = default_patterns
+            .iter()
+            .filter_map(|p| globset::Glob::new(p).ok().map(|g| g.compile_matcher()))
+            .collect();
+
+        let canonical_ws = ws_root.canonicalize().unwrap_or(ws_root.to_path_buf());
+        for file in all_files {
+            let canonical_file = file.path.canonicalize().unwrap_or(file.path.clone());
+            if !canonical_file.starts_with(&canonical_ws) {
+                continue;
+            }
+            let relative = file.path.strip_prefix(ws_root).unwrap_or(&file.path);
+            let relative_str = relative.to_string_lossy();
+            if default_matchers.iter().any(|m| m.is_match(relative_str.as_ref())) {
+                entries.push(EntryPoint {
+                    path: file.path.clone(),
+                    source: EntryPointSource::DefaultIndex,
+                });
             }
         }
     }
@@ -591,12 +669,14 @@ fn walk_dir_recursive_depth(
     };
 
     for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_dir() {
-            if walk_dir_recursive_depth(&path, root, matcher, depth + 1) {
+        // Use symlink_metadata to avoid following symlinks (prevents cycles)
+        let is_real_dir = entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false);
+        if is_real_dir {
+            if walk_dir_recursive_depth(&entry.path(), root, matcher, depth + 1) {
                 return true;
             }
         } else {
+            let path = entry.path();
             let relative = path.strip_prefix(root).unwrap_or(&path);
             if matcher.is_match(relative) {
                 return true;

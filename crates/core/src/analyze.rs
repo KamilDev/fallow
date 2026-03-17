@@ -7,21 +7,16 @@ use crate::graph::ModuleGraph;
 use crate::resolve::ResolvedModule;
 use crate::results::*;
 
-/// Convert a byte offset in source text to a 1-based line and 0-based column.
+/// Convert a byte offset in source text to a 1-based line and 0-based column (byte offset from
+/// start of the line). Uses byte counting to stay consistent with Oxc's byte-offset spans.
 fn byte_offset_to_line_col(source: &str, byte_offset: u32) -> (u32, u32) {
-    let mut line = 1u32;
-    let mut col = 0u32;
-    for (i, ch) in source.char_indices() {
-        if i >= byte_offset as usize {
-            break;
-        }
-        if ch == '\n' {
-            line += 1;
-            col = 0;
-        } else if ch != '\r' {
-            col += 1;
-        }
-    }
+    let byte_offset = byte_offset as usize;
+    let prefix = &source[..byte_offset.min(source.len())];
+    let line = prefix.bytes().filter(|&b| b == b'\n').count() as u32 + 1;
+    let col = prefix
+        .rfind('\n')
+        .map(|pos| byte_offset - pos - 1)
+        .unwrap_or(byte_offset) as u32;
     (line, col)
 }
 
@@ -388,7 +383,10 @@ fn find_unlisted_dependencies(graph: &ModuleGraph, pkg: &PackageJson) -> Vec<Unl
     let mut unlisted: HashMap<String, Vec<std::path::PathBuf>> = HashMap::new();
 
     for (package_name, file_ids) in &graph.package_usage {
-        if !all_deps.contains(package_name) && !is_builtin_module(package_name) {
+        if !all_deps.contains(package_name)
+            && !is_builtin_module(package_name)
+            && !is_path_alias(package_name)
+        {
             let paths: Vec<std::path::PathBuf> = file_ids
                 .iter()
                 .filter_map(|id| graph.modules.get(id.0 as usize).map(|m| m.path.clone()))
@@ -404,6 +402,30 @@ fn find_unlisted_dependencies(graph: &ModuleGraph, pkg: &PackageJson) -> Vec<Unl
             imported_from: paths,
         })
         .collect()
+}
+
+/// Check if a package name looks like a TypeScript path alias rather than an npm package.
+///
+/// Common patterns: `@/components`, `@app/utils`, `~/lib`, `#internal/module`.
+/// These are typically defined in tsconfig.json `paths` or package.json `imports`.
+fn is_path_alias(name: &str) -> bool {
+    // `#` prefix is Node.js imports maps (package.json "imports" field)
+    if name.starts_with('#') {
+        return true;
+    }
+    // `~/` prefix is a common alias convention (e.g., Nuxt, custom tsconfig)
+    if name.starts_with("~/") {
+        return true;
+    }
+    // `@/` is a very common path alias (e.g., `@/components/Foo`).
+    // Distinguish from scoped npm packages (`@scope/pkg`) by checking:
+    // - `@/` (bare alias, not a valid npm scope)
+    // - `@something/` where `something` contains path-like chars (. or starts with uppercase)
+    if name.starts_with("@/") {
+        return true;
+    }
+
+    false
 }
 
 /// Find imports that could not be resolved.
@@ -436,11 +458,34 @@ fn find_unresolved_imports(
 }
 
 /// Find exports that appear with the same name in multiple files (potential duplicates).
+///
+/// Barrel re-exports (files that only re-export from other modules via `export { X } from './source'`)
+/// are excluded — having an index.ts re-export the same name as the source module is the normal
+/// barrel file pattern, not a true duplicate.
 fn find_duplicate_exports(graph: &ModuleGraph, _config: &ResolvedConfig) -> Vec<DuplicateExport> {
+    // Pre-compute which modules are pure barrel files (only re-exports, no local exports with spans)
+    let barrel_modules: HashSet<usize> = graph
+        .modules
+        .iter()
+        .enumerate()
+        .filter(|(_, m)| {
+            !m.re_exports.is_empty()
+                && m.exports
+                    .iter()
+                    .all(|e| e.span.start == 0 && e.span.end == 0)
+        })
+        .map(|(i, _)| i)
+        .collect();
+
     let mut export_locations: HashMap<String, Vec<std::path::PathBuf>> = HashMap::new();
 
-    for module in &graph.modules {
+    for (idx, module) in graph.modules.iter().enumerate() {
         if !module.is_reachable || module.is_entry_point {
+            continue;
+        }
+
+        // Skip barrel files — their re-exported names are not true duplicates
+        if barrel_modules.contains(&idx) {
             continue;
         }
 
@@ -514,7 +559,22 @@ fn is_builtin_module(name: &str) -> bool {
 
 /// Dependencies that are used implicitly (not via imports).
 fn is_implicit_dependency(name: &str) -> bool {
-    name.starts_with("@types/")
+    if name.starts_with("@types/") {
+        return true;
+    }
+
+    // Framework runtime dependencies that are used implicitly (e.g., JSX runtime,
+    // bundler injection) and never appear as explicit imports in source code.
+    let implicit_deps = [
+        "react-dom",
+        "react-dom/client",
+        "react-native",
+        "@next/font",
+        "@next/mdx",
+        "@next/bundle-analyzer",
+        "@next/env",
+    ];
+    implicit_deps.contains(&name)
 }
 
 /// Dev dependencies that are tooling (used by CLI, not imported in code).
@@ -536,6 +596,17 @@ fn is_tooling_dependency(name: &str) -> bool {
         "@jest/",
         "@testing-library/",
         "@playwright/",
+        "@storybook/",
+        "storybook",
+        "@babel/",
+        "babel-",
+        "@react-native-community/cli",
+        "@react-native/",
+        "react-native-",
+        "@sentry/",
+        "secretlint",
+        "@secretlint/",
+        "oxlint",
     ];
 
     let exact_matches = [
@@ -546,14 +617,29 @@ fn is_tooling_dependency(name: &str) -> bool {
         "cross-env",
         "rimraf",
         "npm-run-all",
+        "npm-run-all2",
         "nodemon",
         "ts-node",
         "tsx",
         "knip",
+        "fallow",
         "jest",
         "vitest",
         "happy-dom",
         "jsdom",
+        "vite",
+        "sass",
+        "sass-embedded",
+        "webpack",
+        "webpack-cli",
+        "webpack-dev-server",
+        "esbuild",
+        "rollup",
+        "swc",
+        "@swc/core",
+        "terser",
+        "cssnano",
+        "sharp",
     ];
 
     tooling_prefixes.iter().any(|p| name.starts_with(p)) || exact_matches.contains(&name)

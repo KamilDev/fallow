@@ -8,7 +8,7 @@ use oxc_span::Span;
 use crate::extract::{ExportName, MemberAccess, MemberKind};
 
 /// Cache version — bump when the cache format changes.
-const CACHE_VERSION: u32 = 2;
+const CACHE_VERSION: u32 = 3;
 
 /// Maximum cache file size to deserialize (256 MB).
 const MAX_CACHE_SIZE: usize = 256 * 1024 * 1024;
@@ -33,9 +33,9 @@ pub struct CachedModule {
     /// Re-export specifiers.
     pub re_exports: Vec<CachedReExport>,
     /// Dynamic import specifiers.
-    pub dynamic_imports: Vec<String>,
+    pub dynamic_imports: Vec<CachedDynamicImport>,
     /// Require() specifiers.
-    pub require_calls: Vec<String>,
+    pub require_calls: Vec<CachedRequireCall>,
     /// Static member accesses (e.g., `Status.Active`).
     pub member_accesses: Vec<MemberAccess>,
     /// Whether this module uses CJS exports.
@@ -62,6 +62,22 @@ pub struct CachedImport {
     pub is_namespace: bool,
     pub is_default: bool,
     pub is_side_effect: bool,
+    pub span_start: u32,
+    pub span_end: u32,
+}
+
+#[derive(Debug, Clone, Encode, Decode)]
+pub struct CachedDynamicImport {
+    pub source: String,
+    pub span_start: u32,
+    pub span_end: u32,
+}
+
+#[derive(Debug, Clone, Encode, Decode)]
+pub struct CachedRequireCall {
+    pub source: String,
+    pub span_start: u32,
+    pub span_end: u32,
 }
 
 #[derive(Debug, Clone, Encode, Decode)]
@@ -205,7 +221,7 @@ pub fn cached_to_module(
             },
             local_name: i.local_name.clone(),
             is_type_only: i.is_type_only,
-            span: Span::new(0, 0),
+            span: Span::new(i.span_start, i.span_end),
         })
         .collect();
 
@@ -223,18 +239,18 @@ pub fn cached_to_module(
     let dynamic_imports = cached
         .dynamic_imports
         .iter()
-        .map(|source| DynamicImportInfo {
-            source: source.clone(),
-            span: Span::new(0, 0),
+        .map(|d| DynamicImportInfo {
+            source: d.source.clone(),
+            span: Span::new(d.span_start, d.span_end),
         })
         .collect();
 
     let require_calls = cached
         .require_calls
         .iter()
-        .map(|source| RequireCallInfo {
-            source: source.clone(),
-            span: Span::new(0, 0),
+        .map(|r| RequireCallInfo {
+            source: r.source.clone(),
+            span: Span::new(r.span_start, r.span_end),
         })
         .collect();
 
@@ -300,6 +316,8 @@ pub fn module_to_cached(module: &crate::extract::ModuleInfo) -> CachedModule {
                 is_namespace: matches!(i.imported_name, crate::extract::ImportedName::Namespace),
                 is_default: matches!(i.imported_name, crate::extract::ImportedName::Default),
                 is_side_effect: matches!(i.imported_name, crate::extract::ImportedName::SideEffect),
+                span_start: i.span.start,
+                span_end: i.span.end,
             })
             .collect(),
         re_exports: module
@@ -315,12 +333,20 @@ pub fn module_to_cached(module: &crate::extract::ModuleInfo) -> CachedModule {
         dynamic_imports: module
             .dynamic_imports
             .iter()
-            .map(|d| d.source.clone())
+            .map(|d| CachedDynamicImport {
+                source: d.source.clone(),
+                span_start: d.span.start,
+                span_end: d.span.end,
+            })
             .collect(),
         require_calls: module
             .require_calls
             .iter()
-            .map(|r| r.source.clone())
+            .map(|r| CachedRequireCall {
+                source: r.source.clone(),
+                span_start: r.span.start,
+                span_end: r.span.end,
+            })
             .collect(),
         member_accesses: module.member_accesses.clone(),
         has_cjs_exports: module.has_cjs_exports,
@@ -529,9 +555,17 @@ mod tests {
             restored.imports[0].imported_name,
             ImportedName::Named("foo".to_string())
         );
+        assert_eq!(restored.imports[0].span.start, 0);
+        assert_eq!(restored.imports[0].span.end, 10);
         assert_eq!(restored.imports[1].imported_name, ImportedName::Default);
+        assert_eq!(restored.imports[1].span.start, 15);
+        assert_eq!(restored.imports[1].span.end, 30);
         assert_eq!(restored.imports[2].imported_name, ImportedName::Namespace);
+        assert_eq!(restored.imports[2].span.start, 35);
+        assert_eq!(restored.imports[2].span.end, 50);
         assert_eq!(restored.imports[3].imported_name, ImportedName::SideEffect);
+        assert_eq!(restored.imports[3].span.start, 55);
+        assert_eq!(restored.imports[3].span.end, 70);
     }
 
     #[test]
@@ -591,8 +625,12 @@ mod tests {
 
         assert_eq!(restored.dynamic_imports.len(), 1);
         assert_eq!(restored.dynamic_imports[0].source, "./lazy");
+        assert_eq!(restored.dynamic_imports[0].span.start, 0);
+        assert_eq!(restored.dynamic_imports[0].span.end, 10);
         assert_eq!(restored.require_calls.len(), 1);
         assert_eq!(restored.require_calls[0].source, "fs");
+        assert_eq!(restored.require_calls[0].span.start, 15);
+        assert_eq!(restored.require_calls[0].span.end, 25);
         assert_eq!(restored.member_accesses.len(), 1);
         assert_eq!(restored.member_accesses[0].object, "Status");
         assert_eq!(restored.member_accesses[0].member, "Active");
@@ -677,5 +715,7 @@ mod tests {
         let restored = cached_to_module(&cached, FileId(0));
 
         assert!(restored.imports[0].is_type_only);
+        assert_eq!(restored.imports[0].span.start, 0);
+        assert_eq!(restored.imports[0].span.end, 10);
     }
 }

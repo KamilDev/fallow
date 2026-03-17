@@ -44,13 +44,18 @@ pub fn discover_workspaces(root: &Path) -> Vec<WorkspaceInfo> {
     }
 
     // 3. Expand patterns to find workspace directories
+    let canonical_root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
     let mut workspaces = Vec::new();
     for pattern in &patterns {
-        let glob_pattern = if pattern.ends_with('/') || pattern.ends_with("/*") {
-            pattern
-                .trim_end_matches('/')
-                .trim_end_matches("/*")
-                .to_string()
+        // Normalize the pattern for directory matching:
+        // - `packages/*` → glob for `packages/*` (find all subdirs)
+        // - `packages/` → glob for `packages/*` (trailing slash means "contents of")
+        // - `apps`       → glob for `apps` (exact directory)
+        let glob_pattern = if pattern.ends_with('/') {
+            format!("{}*", pattern)
+        } else if !pattern.contains('*') && !pattern.contains('?') && !pattern.contains('{') {
+            // Bare directory name — treat as exact match
+            pattern.clone()
         } else {
             pattern.clone()
         };
@@ -58,6 +63,12 @@ pub fn discover_workspaces(root: &Path) -> Vec<WorkspaceInfo> {
         // Walk directories matching the glob
         let matched_dirs = expand_workspace_glob(root, &glob_pattern);
         for dir in matched_dirs {
+            // Skip workspace entries that point to the project root itself
+            // (e.g. pnpm-workspace.yaml listing `.` as a workspace)
+            let canonical_dir = dir.canonicalize().unwrap_or_else(|_| dir.clone());
+            if canonical_dir == canonical_root {
+                continue;
+            }
             let ws_pkg_path = dir.join("package.json");
             if ws_pkg_path.exists()
                 && let Ok(pkg) = PackageJson::load(&ws_pkg_path)
@@ -102,6 +113,13 @@ fn expand_workspace_glob(root: &Path, pattern: &str) -> Vec<PathBuf> {
         Ok(paths) => paths
             .filter_map(Result::ok)
             .filter(|p| p.is_dir())
+            .filter(|p| {
+                // Security: ensure workspace directory is within project root
+                p.canonicalize()
+                    .ok()
+                    .and_then(|cp| root.canonicalize().ok().map(|cr| cp.starts_with(cr)))
+                    .unwrap_or(false)
+            })
             .collect(),
         Err(e) => {
             eprintln!("Warning: Invalid workspace glob pattern '{pattern}': {e}");
@@ -128,7 +146,8 @@ fn parse_pnpm_workspace_yaml(content: &str) -> Vec<String> {
         if in_packages {
             if trimmed.starts_with("- ") {
                 let value = trimmed
-                    .trim_start_matches("- ")
+                    .strip_prefix("- ")
+                    .unwrap_or(trimmed)
                     .trim_matches('\'')
                     .trim_matches('"');
                 patterns.push(value.to_string());
