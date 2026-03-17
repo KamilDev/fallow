@@ -235,3 +235,243 @@ impl FallowConfig {
 const fn default_true() -> bool {
     true
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::PackageJson;
+
+    #[test]
+    fn detect_config_default_all_true() {
+        let config = DetectConfig::default();
+        assert!(config.unused_files);
+        assert!(config.unused_exports);
+        assert!(config.unused_dependencies);
+        assert!(config.unused_dev_dependencies);
+        assert!(config.unused_types);
+        assert!(config.unused_enum_members);
+        assert!(config.unused_class_members);
+        assert!(config.unresolved_imports);
+        assert!(config.unlisted_dependencies);
+        assert!(config.duplicate_exports);
+    }
+
+    #[test]
+    fn output_format_default_is_human() {
+        let format = OutputFormat::default();
+        assert!(matches!(format, OutputFormat::Human));
+    }
+
+    #[test]
+    fn fallow_config_deserialize_minimal() {
+        let toml_str = r#"
+entry = ["src/main.ts"]
+"#;
+        let config: FallowConfig = toml::from_str(toml_str).unwrap();
+        assert_eq!(config.entry, vec!["src/main.ts"]);
+        assert!(config.ignore.is_empty());
+        assert!(config.detect.unused_files); // default true
+    }
+
+    #[test]
+    fn fallow_config_deserialize_detect_overrides() {
+        let toml_str = r#"
+[detect]
+unused_files = false
+unused_exports = true
+unused_dependencies = false
+"#;
+        let config: FallowConfig = toml::from_str(toml_str).unwrap();
+        assert!(!config.detect.unused_files);
+        assert!(config.detect.unused_exports);
+        assert!(!config.detect.unused_dependencies);
+        // Others should default to true
+        assert!(config.detect.unused_types);
+    }
+
+    #[test]
+    fn fallow_config_deserialize_ignore_exports() {
+        let toml_str = r#"
+[[ignore_exports]]
+file = "src/types/*.ts"
+exports = ["*"]
+
+[[ignore_exports]]
+file = "src/constants.ts"
+exports = ["FOO", "BAR"]
+"#;
+        let config: FallowConfig = toml::from_str(toml_str).unwrap();
+        assert_eq!(config.ignore_exports.len(), 2);
+        assert_eq!(config.ignore_exports[0].file, "src/types/*.ts");
+        assert_eq!(config.ignore_exports[0].exports, vec!["*"]);
+        assert_eq!(config.ignore_exports[1].exports, vec!["FOO", "BAR"]);
+    }
+
+    #[test]
+    fn fallow_config_deserialize_ignore_dependencies() {
+        let toml_str = r#"
+ignore_dependencies = ["autoprefixer", "postcss"]
+"#;
+        let config: FallowConfig = toml::from_str(toml_str).unwrap();
+        assert_eq!(config.ignore_dependencies, vec!["autoprefixer", "postcss"]);
+    }
+
+    #[test]
+    fn fallow_config_resolve_default_ignores() {
+        let config = FallowConfig {
+            root: None,
+            entry: vec![],
+            ignore: vec![],
+            detect: DetectConfig::default(),
+            frameworks: None,
+            framework: vec![],
+            workspaces: None,
+            ignore_dependencies: vec![],
+            ignore_exports: vec![],
+            output: OutputFormat::Human,
+        };
+        let resolved = config.resolve(PathBuf::from("/tmp/test"), 4, true);
+
+        // Default ignores should be compiled
+        assert!(resolved.ignore_patterns.is_match("node_modules/foo/bar.ts"));
+        assert!(resolved.ignore_patterns.is_match("dist/bundle.js"));
+        assert!(resolved.ignore_patterns.is_match("build/output.js"));
+        assert!(resolved.ignore_patterns.is_match(".git/config"));
+        assert!(resolved.ignore_patterns.is_match("coverage/report.js"));
+        assert!(resolved.ignore_patterns.is_match("foo.min.js"));
+        assert!(resolved.ignore_patterns.is_match("bar.min.mjs"));
+    }
+
+    #[test]
+    fn fallow_config_resolve_custom_ignores() {
+        let config = FallowConfig {
+            root: None,
+            entry: vec!["src/**/*.ts".to_string()],
+            ignore: vec!["**/*.generated.ts".to_string()],
+            detect: DetectConfig::default(),
+            frameworks: None,
+            framework: vec![],
+            workspaces: None,
+            ignore_dependencies: vec![],
+            ignore_exports: vec![],
+            output: OutputFormat::Json,
+        };
+        let resolved = config.resolve(PathBuf::from("/tmp/test"), 4, false);
+
+        assert!(resolved.ignore_patterns.is_match("src/foo.generated.ts"));
+        assert_eq!(resolved.entry_patterns, vec!["src/**/*.ts"]);
+        assert!(matches!(resolved.output, OutputFormat::Json));
+        assert!(!resolved.no_cache);
+    }
+
+    #[test]
+    fn fallow_config_resolve_cache_dir() {
+        let config = FallowConfig {
+            root: None,
+            entry: vec![],
+            ignore: vec![],
+            detect: DetectConfig::default(),
+            frameworks: None,
+            framework: vec![],
+            workspaces: None,
+            ignore_dependencies: vec![],
+            ignore_exports: vec![],
+            output: OutputFormat::Human,
+        };
+        let resolved = config.resolve(PathBuf::from("/tmp/project"), 4, true);
+        assert_eq!(resolved.cache_dir, PathBuf::from("/tmp/project/.fallow"));
+        assert!(resolved.no_cache);
+    }
+
+    #[test]
+    fn package_json_entry_points_main() {
+        let pkg: PackageJson = serde_json::from_str(r#"{"main": "dist/index.js"}"#).unwrap();
+        let entries = pkg.entry_points();
+        assert!(entries.contains(&"dist/index.js".to_string()));
+    }
+
+    #[test]
+    fn package_json_entry_points_module() {
+        let pkg: PackageJson = serde_json::from_str(r#"{"module": "dist/index.mjs"}"#).unwrap();
+        let entries = pkg.entry_points();
+        assert!(entries.contains(&"dist/index.mjs".to_string()));
+    }
+
+    #[test]
+    fn package_json_entry_points_types() {
+        let pkg: PackageJson = serde_json::from_str(r#"{"types": "dist/index.d.ts"}"#).unwrap();
+        let entries = pkg.entry_points();
+        assert!(entries.contains(&"dist/index.d.ts".to_string()));
+    }
+
+    #[test]
+    fn package_json_entry_points_bin_string() {
+        let pkg: PackageJson = serde_json::from_str(r#"{"bin": "bin/cli.js"}"#).unwrap();
+        let entries = pkg.entry_points();
+        assert!(entries.contains(&"bin/cli.js".to_string()));
+    }
+
+    #[test]
+    fn package_json_entry_points_bin_object() {
+        let pkg: PackageJson = serde_json::from_str(r#"{"bin": {"cli": "bin/cli.js", "serve": "bin/serve.js"}}"#).unwrap();
+        let entries = pkg.entry_points();
+        assert!(entries.contains(&"bin/cli.js".to_string()));
+        assert!(entries.contains(&"bin/serve.js".to_string()));
+    }
+
+    #[test]
+    fn package_json_entry_points_exports_string() {
+        let pkg: PackageJson = serde_json::from_str(r#"{"exports": "./dist/index.js"}"#).unwrap();
+        let entries = pkg.entry_points();
+        assert!(entries.contains(&"./dist/index.js".to_string()));
+    }
+
+    #[test]
+    fn package_json_entry_points_exports_object() {
+        let pkg: PackageJson = serde_json::from_str(r#"{"exports": {".": {"import": "./dist/index.mjs", "require": "./dist/index.cjs"}}}"#).unwrap();
+        let entries = pkg.entry_points();
+        assert!(entries.contains(&"./dist/index.mjs".to_string()));
+        assert!(entries.contains(&"./dist/index.cjs".to_string()));
+    }
+
+    #[test]
+    fn package_json_dependency_names() {
+        let pkg: PackageJson = serde_json::from_str(r#"{
+            "dependencies": {"react": "^18", "lodash": "^4"},
+            "devDependencies": {"typescript": "^5"},
+            "peerDependencies": {"react-dom": "^18"}
+        }"#).unwrap();
+
+        let all = pkg.all_dependency_names();
+        assert!(all.contains(&"react".to_string()));
+        assert!(all.contains(&"lodash".to_string()));
+        assert!(all.contains(&"typescript".to_string()));
+        assert!(all.contains(&"react-dom".to_string()));
+
+        let prod = pkg.production_dependency_names();
+        assert!(prod.contains(&"react".to_string()));
+        assert!(!prod.contains(&"typescript".to_string()));
+
+        let dev = pkg.dev_dependency_names();
+        assert!(dev.contains(&"typescript".to_string()));
+        assert!(!dev.contains(&"react".to_string()));
+    }
+
+    #[test]
+    fn package_json_no_dependencies() {
+        let pkg: PackageJson = serde_json::from_str(r#"{"name": "test"}"#).unwrap();
+        assert!(pkg.all_dependency_names().is_empty());
+        assert!(pkg.production_dependency_names().is_empty());
+        assert!(pkg.dev_dependency_names().is_empty());
+        assert!(pkg.entry_points().is_empty());
+    }
+
+    #[test]
+    fn fallow_config_denies_unknown_fields() {
+        let toml_str = r#"
+unknown_field = true
+"#;
+        let result: Result<FallowConfig, _> = toml::from_str(toml_str);
+        assert!(result.is_err());
+    }
+}
