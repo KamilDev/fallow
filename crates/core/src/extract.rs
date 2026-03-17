@@ -251,8 +251,14 @@ fn extract_class_members(class: &Class<'_>) -> Vec<MemberInfo> {
             ClassElement::MethodDefinition(method) => {
                 if let Some(name) = method.key.static_name() {
                     let name_str = name.to_string();
-                    // Skip constructor and private methods
-                    if name_str != "constructor" {
+                    // Skip constructor, private, and protected methods
+                    if name_str != "constructor"
+                        && !matches!(
+                            method.accessibility,
+                            Some(oxc_ast::ast::TSAccessibility::Private)
+                                | Some(oxc_ast::ast::TSAccessibility::Protected)
+                        )
+                    {
                         members.push(MemberInfo {
                             name: name_str,
                             kind: MemberKind::ClassMethod,
@@ -262,7 +268,13 @@ fn extract_class_members(class: &Class<'_>) -> Vec<MemberInfo> {
                 }
             }
             ClassElement::PropertyDefinition(prop) => {
-                if let Some(name) = prop.key.static_name() {
+                if let Some(name) = prop.key.static_name()
+                    && !matches!(
+                        prop.accessibility,
+                        Some(oxc_ast::ast::TSAccessibility::Private)
+                            | Some(oxc_ast::ast::TSAccessibility::Protected)
+                    )
+                {
                     members.push(MemberInfo {
                         name: name.to_string(),
                         kind: MemberKind::ClassProperty,
@@ -505,6 +517,8 @@ impl<'a> Visit<'a> for ModuleInfoExtractor {
                 });
             }
         }
+
+        walk::walk_export_named_declaration(self, decl);
     }
 
     fn visit_export_default_declaration(&mut self, decl: &ExportDefaultDeclaration<'a>) {
@@ -515,6 +529,8 @@ impl<'a> Visit<'a> for ModuleInfoExtractor {
             span: decl.span,
             members: vec![],
         });
+
+        walk::walk_export_default_declaration(self, decl);
     }
 
     fn visit_export_all_declaration(&mut self, decl: &ExportAllDeclaration<'a>) {
@@ -530,6 +546,8 @@ impl<'a> Visit<'a> for ModuleInfoExtractor {
             exported_name,
             is_type_only: decl.export_kind.is_type(),
         });
+
+        walk::walk_export_all_declaration(self, decl);
     }
 
     fn visit_import_expression(&mut self, expr: &ImportExpression<'a>) {
@@ -928,5 +946,20 @@ mod tests {
         assert_eq!(info.exports.len(), 1);
         assert_eq!(info.exports[0].name, ExportName::Named("ID".to_string()));
         assert!(info.exports[0].is_type_only);
+    }
+
+    #[test]
+    fn extracts_member_accesses_inside_exported_functions() {
+        let info = parse_source(
+            "import { Color } from './types';\nexport const isRed = (c: Color) => c === Color.Red;",
+        );
+        let has_color_red = info
+            .member_accesses
+            .iter()
+            .any(|a| a.object == "Color" && a.member == "Red");
+        assert!(
+            has_color_red,
+            "Should capture Color.Red inside exported function body"
+        );
     }
 }

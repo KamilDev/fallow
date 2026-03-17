@@ -219,14 +219,18 @@ impl ModuleGraph {
                     }
                 }
 
-                // Dynamic imports
+                // Dynamic imports - treat as namespace import since caller can access any export
                 for import in &resolved.resolved_dynamic_imports {
                     if let ResolveResult::InternalModule(target_id) = &import.target {
+                        let idx = target_id.0 as usize;
+                        if idx < total_capacity {
+                            namespace_imported.insert(idx);
+                        }
                         edges_by_target
                             .entry(*target_id)
                             .or_default()
                             .push(ImportedSymbol {
-                                imported_name: ImportedName::SideEffect,
+                                imported_name: ImportedName::Namespace,
                                 local_name: String::new(),
                             });
                     }
@@ -458,6 +462,10 @@ impl ModuleGraph {
         let mut changed = true;
         let max_iterations = 20; // prevent infinite loops on cycles
         let mut iteration = 0;
+        // Reuse a single HashSet across iterations to avoid repeated allocations.
+        // In barrel-heavy monorepos, this loop can run up to max_iterations × re_export_info.len()
+        // × target_exports.len() times — reusing with .clear() avoids O(n) allocations.
+        let mut existing_refs: HashSet<FileId> = HashSet::new();
 
         while changed && iteration < max_iterations {
             changed = false;
@@ -502,18 +510,28 @@ impl ModuleGraph {
                 };
 
                 for export_idx in target_exports {
-                    for ref_item in &refs_on_barrel {
-                        let already_has = source.exports[export_idx]
+                    existing_refs.clear();
+                    existing_refs.extend(
+                        source.exports[export_idx]
                             .references
                             .iter()
-                            .any(|r| r.from_file == ref_item.from_file);
-                        if !already_has {
+                            .map(|r| r.from_file),
+                    );
+                    for ref_item in &refs_on_barrel {
+                        if !existing_refs.contains(&ref_item.from_file) {
                             source.exports[export_idx].references.push(ref_item.clone());
                             changed = true;
                         }
                     }
                 }
             }
+        }
+
+        if iteration >= max_iterations {
+            tracing::warn!(
+                iterations = max_iterations,
+                "Re-export chain resolution hit iteration limit, some chains may be incomplete"
+            );
         }
     }
 

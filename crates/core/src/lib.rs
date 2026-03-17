@@ -31,6 +31,21 @@ pub fn analyze(config: &ResolvedConfig) -> Result<AnalysisResults, FallowError> 
         files.extend(ws_files);
     }
 
+    // Deduplicate files by canonical path (workspace walkers may produce paths with
+    // `.` or `..` components, e.g. from pnpm-workspace.yaml listing `.` as a workspace,
+    // which would cause `/project/./src/foo.ts` != `/project/src/foo.ts` in raw comparison).
+    {
+        let mut seen_paths = std::collections::HashSet::new();
+        files.retain(|f| {
+            let canonical = f.path.canonicalize().unwrap_or_else(|_| f.path.clone());
+            seen_paths.insert(canonical)
+        });
+        // Re-assign IDs after deduplication to keep them contiguous
+        for (idx, file) in files.iter_mut().enumerate() {
+            file.id = discover::FileId(idx as u32);
+        }
+    }
+
     // Stage 2: Parse all files in parallel and extract imports/exports
     // Load cache if available
     let mut cache_store = if config.no_cache {

@@ -177,9 +177,14 @@ fn create_resolver(config: &ResolvedConfig) -> Resolver {
         ..Default::default()
     };
 
-    // Auto-detect tsconfig.json
-    let tsconfig = config.root.join("tsconfig.json");
-    if tsconfig.exists() {
+    // Auto-detect tsconfig.json (check common variants)
+    let tsconfig_candidates = ["tsconfig.json", "tsconfig.app.json", "tsconfig.build.json"];
+    let tsconfig = tsconfig_candidates
+        .iter()
+        .map(|name| config.root.join(name))
+        .find(|p| p.exists());
+
+    if let Some(tsconfig) = tsconfig {
         options.tsconfig = Some(oxc_resolver::TsconfigDiscovery::Manual(
             oxc_resolver::TsconfigOptions {
                 config_file: tsconfig,
@@ -271,9 +276,9 @@ fn extract_package_name_from_node_modules_path(path: &Path) -> Option<String> {
     }
 }
 
-/// Check if a specifier is a bare specifier (npm package).
+/// Check if a specifier is a bare specifier (npm package or Node.js imports map entry).
 fn is_bare_specifier(specifier: &str) -> bool {
-    !specifier.starts_with('.') && !specifier.starts_with('/') && !specifier.starts_with('#')
+    !specifier.starts_with('.') && !specifier.starts_with('/')
 }
 
 /// Extract the npm package name from a specifier.
@@ -308,6 +313,7 @@ mod tests {
     fn test_is_bare_specifier() {
         assert!(is_bare_specifier("react"));
         assert!(is_bare_specifier("@scope/pkg"));
+        assert!(is_bare_specifier("#internal/module"));
         assert!(!is_bare_specifier("./utils"));
         assert!(!is_bare_specifier("../lib"));
         assert!(!is_bare_specifier("/absolute"));
