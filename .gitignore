@@ -8,6 +8,9 @@ reference/
 # Coverage reports
 coverage/
 
+# Benchmark fixtures (generated/downloaded for local benchmarking)
+benchmarks/fixtures/
+
 # Incremental cache
 .fallow/
 
