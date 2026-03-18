@@ -5,8 +5,6 @@
 
 use super::Plugin;
 
-pub struct ReactNativePlugin;
-
 const ENABLERS: &[&str] = &["react-native"];
 
 const ENTRY_PATTERNS: &[&str] = &[
@@ -31,24 +29,10 @@ const TOOLING_DEPENDENCIES: &[&str] = &[
     "@react-native/metro-config",
 ];
 
-impl Plugin for ReactNativePlugin {
-    fn name(&self) -> &'static str {
-        "react-native"
-    }
-
-    fn enablers(&self) -> &'static [&'static str] {
-        ENABLERS
-    }
-
-    fn entry_patterns(&self) -> &'static [&'static str] {
-        ENTRY_PATTERNS
-    }
-
-    fn always_used(&self) -> &'static [&'static str] {
-        ALWAYS_USED
-    }
-
-    fn tooling_dependencies(&self) -> &'static [&'static str] {
-        TOOLING_DEPENDENCIES
-    }
+define_plugin! {
+    struct ReactNativePlugin => "react-native",
+    enablers: ENABLERS,
+    entry_patterns: ENTRY_PATTERNS,
+    always_used: ALWAYS_USED,
+    tooling_dependencies: TOOLING_DEPENDENCIES,
 }

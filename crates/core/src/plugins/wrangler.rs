@@ -5,8 +5,6 @@
 
 use super::Plugin;
 
-pub struct WranglerPlugin;
-
 const ENABLERS: &[&str] = &["wrangler"];
 
 const ENTRY_PATTERNS: &[&str] = &[
@@ -19,24 +17,10 @@ const ALWAYS_USED: &[&str] = &["wrangler.toml", "wrangler.json", "wrangler.jsonc
 
 const TOOLING_DEPENDENCIES: &[&str] = &["wrangler", "@cloudflare/workers-types"];
 
-impl Plugin for WranglerPlugin {
-    fn name(&self) -> &'static str {
-        "wrangler"
-    }
-
-    fn enablers(&self) -> &'static [&'static str] {
-        ENABLERS
-    }
-
-    fn entry_patterns(&self) -> &'static [&'static str] {
-        ENTRY_PATTERNS
-    }
-
-    fn always_used(&self) -> &'static [&'static str] {
-        ALWAYS_USED
-    }
-
-    fn tooling_dependencies(&self) -> &'static [&'static str] {
-        TOOLING_DEPENDENCIES
-    }
+define_plugin! {
+    struct WranglerPlugin => "wrangler",
+    enablers: ENABLERS,
+    entry_patterns: ENTRY_PATTERNS,
+    always_used: ALWAYS_USED,
+    tooling_dependencies: TOOLING_DEPENDENCIES,
 }

@@ -16,17 +16,17 @@ impl BaselineData {
             unused_files: results
                 .unused_files
                 .iter()
-                .map(|f| f.path.to_string_lossy().to_string())
+                .map(|f| f.path.to_string_lossy().replace('\\', "/"))
                 .collect(),
             unused_exports: results
                 .unused_exports
                 .iter()
-                .map(|e| format!("{}:{}", e.path.display(), e.export_name))
+                .map(|e| format!("{}:{}", e.path.to_string_lossy().replace('\\', "/"), e.export_name))
                 .collect(),
             unused_types: results
                 .unused_types
                 .iter()
-                .map(|e| format!("{}:{}", e.path.display(), e.export_name))
+                .map(|e| format!("{}:{}", e.path.to_string_lossy().replace('\\', "/"), e.export_name))
                 .collect(),
             unused_dependencies: results
                 .unused_dependencies
@@ -64,13 +64,13 @@ pub(crate) fn filter_new_issues(
 
     results
         .unused_files
-        .retain(|f| !baseline_files.contains(f.path.to_string_lossy().as_ref()));
+        .retain(|f| !baseline_files.contains(f.path.to_string_lossy().replace('\\', "/").as_str()));
     results.unused_exports.retain(|e| {
-        let key = format!("{}:{}", e.path.display(), e.export_name);
+        let key = format!("{}:{}", e.path.to_string_lossy().replace('\\', "/"), e.export_name);
         !baseline_exports.contains(key.as_str())
     });
     results.unused_types.retain(|e| {
-        let key = format!("{}:{}", e.path.display(), e.export_name);
+        let key = format!("{}:{}", e.path.to_string_lossy().replace('\\', "/"), e.export_name);
         !baseline_types.contains(key.as_str())
     });
     results

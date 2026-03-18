@@ -6,8 +6,6 @@
 
 use super::Plugin;
 
-pub struct NuxtPlugin;
-
 const ENABLERS: &[&str] = &["nuxt"];
 
 const ENTRY_PATTERNS: &[&str] = &[
@@ -34,31 +32,14 @@ const TOOLING_DEPENDENCIES: &[&str] = &["nuxt", "@nuxt/devtools", "@nuxt/test-ut
 const USED_EXPORTS_SERVER_API: &[&str] = &["default", "defineEventHandler"];
 const USED_EXPORTS_MIDDLEWARE: &[&str] = &["default"];
 
-impl Plugin for NuxtPlugin {
-    fn name(&self) -> &'static str {
-        "nuxt"
-    }
-
-    fn enablers(&self) -> &'static [&'static str] {
-        ENABLERS
-    }
-
-    fn entry_patterns(&self) -> &'static [&'static str] {
-        ENTRY_PATTERNS
-    }
-
-    fn always_used(&self) -> &'static [&'static str] {
-        ALWAYS_USED
-    }
-
-    fn tooling_dependencies(&self) -> &'static [&'static str] {
-        TOOLING_DEPENDENCIES
-    }
-
-    fn used_exports(&self) -> Vec<(&'static str, &'static [&'static str])> {
-        vec![
-            ("server/api/**/*.{ts,js}", USED_EXPORTS_SERVER_API),
-            ("middleware/**/*.{ts,js}", USED_EXPORTS_MIDDLEWARE),
-        ]
-    }
+define_plugin! {
+    struct NuxtPlugin => "nuxt",
+    enablers: ENABLERS,
+    entry_patterns: ENTRY_PATTERNS,
+    always_used: ALWAYS_USED,
+    tooling_dependencies: TOOLING_DEPENDENCIES,
+    used_exports: [
+        ("server/api/**/*.{ts,js}", USED_EXPORTS_SERVER_API),
+        ("middleware/**/*.{ts,js}", USED_EXPORTS_MIDDLEWARE),
+    ],
 }

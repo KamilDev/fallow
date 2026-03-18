@@ -89,13 +89,10 @@ pub enum ReferenceKind {
 
 /// An edge in the module graph.
 #[derive(Debug)]
-#[allow(dead_code)]
 struct Edge {
     source: FileId,
     target: FileId,
     symbols: Vec<ImportedSymbol>,
-    is_dynamic: bool,
-    is_side_effect: bool,
 }
 
 /// A symbol imported across an edge.
@@ -146,13 +143,8 @@ impl ModuleGraph {
             .filter_map(|ep| {
                 // Try direct lookup first (fast path)
                 path_to_id.get(&ep.path).copied().or_else(|| {
-                    // Fallback: canonicalize entry point and match
-                    ep.path.canonicalize().ok().and_then(|c| {
-                        path_to_id
-                            .iter()
-                            .find(|(p, _)| p.canonicalize().ok().as_ref() == Some(&c))
-                            .map(|(_, &id)| id)
-                    })
+                    // Fallback: canonicalize entry point and do a direct HashMap lookup
+                    ep.path.canonicalize().ok().and_then(|c| path_to_id.get(&c).copied())
                 })
             })
             .collect();
@@ -252,16 +244,10 @@ impl ModuleGraph {
                 }
 
                 for (target_id, symbols) in edges_by_target {
-                    let is_side_effect = symbols
-                        .iter()
-                        .any(|s| matches!(s.imported_name, ImportedName::SideEffect));
-
                     all_edges.push(Edge {
                         source: file.id,
                         target: target_id,
                         symbols,
-                        is_dynamic: false,
-                        is_side_effect,
                     });
 
                     if (target_id.0 as usize) < reverse_deps.len() {

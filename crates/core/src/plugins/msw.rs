@@ -4,8 +4,6 @@
 
 use super::Plugin;
 
-pub struct MswPlugin;
-
 const ENABLERS: &[&str] = &["msw"];
 
 const ENTRY_PATTERNS: &[&str] = &[
@@ -18,24 +16,10 @@ const ALWAYS_USED: &[&str] = &["public/mockServiceWorker.js"];
 
 const TOOLING_DEPENDENCIES: &[&str] = &["msw", "msw-storybook-addon"];
 
-impl Plugin for MswPlugin {
-    fn name(&self) -> &'static str {
-        "msw"
-    }
-
-    fn enablers(&self) -> &'static [&'static str] {
-        ENABLERS
-    }
-
-    fn entry_patterns(&self) -> &'static [&'static str] {
-        ENTRY_PATTERNS
-    }
-
-    fn always_used(&self) -> &'static [&'static str] {
-        ALWAYS_USED
-    }
-
-    fn tooling_dependencies(&self) -> &'static [&'static str] {
-        TOOLING_DEPENDENCIES
-    }
+define_plugin! {
+    struct MswPlugin => "msw",
+    enablers: ENABLERS,
+    entry_patterns: ENTRY_PATTERNS,
+    always_used: ALWAYS_USED,
+    tooling_dependencies: TOOLING_DEPENDENCIES,
 }

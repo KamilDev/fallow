@@ -4,28 +4,15 @@
 
 use super::Plugin;
 
-pub struct TurborepoPlugin;
-
 const ENABLERS: &[&str] = &["turbo"];
 
 const ALWAYS_USED: &[&str] = &["turbo.json"];
 
 const TOOLING_DEPENDENCIES: &[&str] = &["turbo"];
 
-impl Plugin for TurborepoPlugin {
-    fn name(&self) -> &'static str {
-        "turborepo"
-    }
-
-    fn enablers(&self) -> &'static [&'static str] {
-        ENABLERS
-    }
-
-    fn always_used(&self) -> &'static [&'static str] {
-        ALWAYS_USED
-    }
-
-    fn tooling_dependencies(&self) -> &'static [&'static str] {
-        TOOLING_DEPENDENCIES
-    }
+define_plugin! {
+    struct TurborepoPlugin => "turborepo",
+    enablers: ENABLERS,
+    always_used: ALWAYS_USED,
+    tooling_dependencies: TOOLING_DEPENDENCIES,
 }

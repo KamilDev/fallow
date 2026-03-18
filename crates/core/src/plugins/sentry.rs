@@ -4,8 +4,6 @@
 
 use super::Plugin;
 
-pub struct SentryPlugin;
-
 const ENABLERS: &[&str] = &[
     "@sentry/nextjs",
     "@sentry/react",
@@ -29,20 +27,9 @@ const TOOLING_DEPENDENCIES: &[&str] = &[
     "@sentry/vite-plugin",
 ];
 
-impl Plugin for SentryPlugin {
-    fn name(&self) -> &'static str {
-        "sentry"
-    }
-
-    fn enablers(&self) -> &'static [&'static str] {
-        ENABLERS
-    }
-
-    fn always_used(&self) -> &'static [&'static str] {
-        ALWAYS_USED
-    }
-
-    fn tooling_dependencies(&self) -> &'static [&'static str] {
-        TOOLING_DEPENDENCIES
-    }
+define_plugin! {
+    struct SentryPlugin => "sentry",
+    enablers: ENABLERS,
+    always_used: ALWAYS_USED,
+    tooling_dependencies: TOOLING_DEPENDENCIES,
 }

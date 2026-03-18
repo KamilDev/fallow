@@ -4,7 +4,7 @@
 //! sort) followed by an O(N) LCP scan. This avoids quadratic pairwise
 //! comparisons and naturally finds all maximal clones in a single linear pass.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 use super::normalize::HashedToken;
@@ -264,14 +264,13 @@ impl CloneDetector {
 
         for rg in surviving_groups {
             // Build instances, deduplicating by (file_id, offset).
-            let mut seen: HashMap<(usize, usize), bool> = HashMap::new();
+            let mut seen: HashSet<(usize, usize)> = HashSet::new();
             let mut group_instances: Vec<CloneInstance> = Vec::new();
 
             for &(file_id, offset) in &rg.instances {
-                if seen.contains_key(&(file_id, offset)) {
+                if !seen.insert((file_id, offset)) {
                     continue;
                 }
-                seen.insert((file_id, offset), true);
 
                 let file = &files[file_id];
                 if let Some(inst) =
@@ -791,57 +790,6 @@ fn build_clone_instance_fast(
     let source = &file.file_tokens.source;
     let (start_line, start_col) = byte_offset_to_line_col_fast(source, start_byte, line_table);
     let (end_line, end_col) = byte_offset_to_line_col_fast(source, end_byte, line_table);
-
-    // Extract the fragment.
-    let fragment = if end_byte <= source.len() {
-        source[start_byte..end_byte].to_string()
-    } else {
-        String::new()
-    };
-
-    Some(CloneInstance {
-        file: file.path.clone(),
-        start_line,
-        end_line,
-        start_col,
-        end_col,
-        fragment,
-    })
-}
-
-/// Build a `CloneInstance` from file data and token offset/length.
-#[cfg(test)]
-fn build_clone_instance(
-    file: &FileData,
-    token_offset: usize,
-    token_length: usize,
-) -> Option<CloneInstance> {
-    let tokens = &file.hashed_tokens;
-    let source_tokens = &file.file_tokens.tokens;
-
-    if token_offset + token_length > tokens.len() {
-        return None;
-    }
-
-    // Map from hashed token indices back to source token spans.
-    let first_hashed = &tokens[token_offset];
-    let last_hashed = &tokens[token_offset + token_length - 1];
-
-    let first_source = &source_tokens[first_hashed.original_index];
-    let last_source = &source_tokens[last_hashed.original_index];
-
-    let start_byte = first_source.span.start as usize;
-    let end_byte = last_source.span.end as usize;
-
-    // Guard against inverted spans that can occur when normalization reorders
-    // token original_index values for very small windows.
-    if start_byte > end_byte {
-        return None;
-    }
-
-    let source = &file.file_tokens.source;
-    let (start_line, start_col) = byte_offset_to_line_col(source, start_byte);
-    let (end_line, end_col) = byte_offset_to_line_col(source, end_byte);
 
     // Extract the fragment.
     let fragment = if end_byte <= source.len() {

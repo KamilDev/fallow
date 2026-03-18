@@ -4,8 +4,6 @@
 
 use super::Plugin;
 
-pub struct KnexPlugin;
-
 const ENABLERS: &[&str] = &["knex"];
 
 const ENTRY_PATTERNS: &[&str] = &["migrations/**/*.{ts,js}", "seeds/**/*.{ts,js}"];
@@ -14,24 +12,10 @@ const ALWAYS_USED: &[&str] = &["knexfile.{ts,js}"];
 
 const TOOLING_DEPENDENCIES: &[&str] = &["knex"];
 
-impl Plugin for KnexPlugin {
-    fn name(&self) -> &'static str {
-        "knex"
-    }
-
-    fn enablers(&self) -> &'static [&'static str] {
-        ENABLERS
-    }
-
-    fn entry_patterns(&self) -> &'static [&'static str] {
-        ENTRY_PATTERNS
-    }
-
-    fn always_used(&self) -> &'static [&'static str] {
-        ALWAYS_USED
-    }
-
-    fn tooling_dependencies(&self) -> &'static [&'static str] {
-        TOOLING_DEPENDENCIES
-    }
+define_plugin! {
+    struct KnexPlugin => "knex",
+    enablers: ENABLERS,
+    entry_patterns: ENTRY_PATTERNS,
+    always_used: ALWAYS_USED,
+    tooling_dependencies: TOOLING_DEPENDENCIES,
 }
