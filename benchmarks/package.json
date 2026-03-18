@@ -4,12 +4,17 @@
   "type": "module",
   "scripts": {
     "generate": "node generate-fixtures.mjs",
+    "generate:dupes": "node generate-dupes-fixtures.mjs",
     "download-fixtures": "node download-fixtures.mjs",
     "bench": "node bench.mjs",
     "bench:synthetic": "node bench.mjs --synthetic",
-    "bench:real-world": "node bench.mjs --real-world"
+    "bench:real-world": "node bench.mjs --real-world",
+    "bench:dupes": "node bench-dupes.mjs",
+    "bench:dupes:synthetic": "node bench-dupes.mjs --synthetic",
+    "bench:dupes:real-world": "node bench-dupes.mjs --real-world"
   },
   "dependencies": {
+    "jscpd": "^4.0.0",
     "knip": "^5.0.0",
     "tinybench": "^3.0.0"
   }

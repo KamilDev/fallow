@@ -153,7 +153,7 @@ const fn default_true() -> bool {
 }
 
 const fn default_min_tokens() -> usize {
-    50
+    30
 }
 
 const fn default_min_lines() -> usize {
@@ -169,7 +169,7 @@ mod tests {
         let config = DuplicatesConfig::default();
         assert!(config.enabled);
         assert_eq!(config.mode, DetectionMode::Mild);
-        assert_eq!(config.min_tokens, 50);
+        assert_eq!(config.min_tokens, 30);
         assert_eq!(config.min_lines, 5);
         assert_eq!(config.threshold, 0.0);
         assert!(config.ignore.is_empty());
@@ -237,7 +237,7 @@ ignore = ["**/*.generated.ts"]
         let config: DuplicatesConfig = toml::from_str(toml_str).unwrap();
         assert!(config.enabled);
         assert_eq!(config.mode, DetectionMode::Mild);
-        assert_eq!(config.min_tokens, 50);
+        assert_eq!(config.min_tokens, 30);
         assert_eq!(config.min_lines, 5);
     }
 }

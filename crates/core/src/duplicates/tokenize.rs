@@ -5,7 +5,7 @@ use oxc_ast::ast::*;
 use oxc_ast_visit::Visit;
 use oxc_ast_visit::walk;
 use oxc_parser::Parser;
-use oxc_span::{SourceType, Span};
+use oxc_span::{GetSpan, SourceType, Span};
 use oxc_syntax::scope::ScopeFlags;
 
 /// A single token extracted from the AST with its source location.
@@ -171,8 +171,56 @@ pub struct FileTokens {
     pub line_count: usize,
 }
 
+/// Create a 1-byte span at the given byte position.
+///
+/// Used for synthetic punctuation tokens (`(`, `)`, `,`, `.`) that don't
+/// have their own AST span. Using the parent expression's full span would
+/// inflate clone line ranges, especially in chained method calls.
+fn point_span(pos: u32) -> Span {
+    Span::new(pos, pos + 1)
+}
+
 /// Tokenize a source file into a sequence of normalized tokens.
+///
+/// For Vue/Svelte SFC files, extracts `<script>` blocks first and tokenizes
+/// their content, mirroring the main analysis pipeline's SFC handling.
 pub fn tokenize_file(path: &Path, source: &str) -> FileTokens {
+    use crate::extract::{extract_sfc_scripts, is_sfc_file};
+
+    // For Vue/Svelte SFCs, extract and tokenize `<script>` blocks.
+    if is_sfc_file(path) {
+        let scripts = extract_sfc_scripts(source);
+        let mut all_tokens = Vec::new();
+
+        for script in &scripts {
+            let source_type = if script.is_typescript {
+                SourceType::tsx()
+            } else {
+                SourceType::jsx()
+            };
+            let allocator = Allocator::default();
+            let parser_return = Parser::new(&allocator, &script.body, source_type).parse();
+
+            let mut extractor = TokenExtractor::new();
+            extractor.visit_program(&parser_return.program);
+
+            // Adjust token spans to reference positions in the full SFC source
+            // rather than the extracted script block.
+            let offset = script.byte_offset as u32;
+            for token in &mut extractor.tokens {
+                token.span = Span::new(token.span.start + offset, token.span.end + offset);
+            }
+            all_tokens.extend(extractor.tokens);
+        }
+
+        let line_count = source.lines().count().max(1);
+        return FileTokens {
+            tokens: all_tokens,
+            source: source.to_string(),
+            line_count,
+        };
+    }
+
     let source_type = SourceType::from_path(path).unwrap_or_default();
     let allocator = Allocator::default();
     let parser_return = Parser::new(&allocator, source, source_type).parse();
@@ -395,28 +443,39 @@ impl<'a> Visit<'a> for TokenExtractor {
 
     fn visit_call_expression(&mut self, expr: &CallExpression<'a>) {
         self.visit_expression(&expr.callee);
-        self.push_punc(PunctuationType::OpenParen, expr.span);
+        // Use point spans for synthetic punctuation to avoid inflating clone
+        // ranges when call expressions are chained (expr.span covers the
+        // entire chain, not just this call's parentheses).
+        let open = point_span(expr.callee.span().end);
+        self.push_punc(PunctuationType::OpenParen, open);
         for arg in &expr.arguments {
             self.visit_argument(arg);
-            self.push_op(OperatorType::Comma, expr.span);
+            let comma = point_span(arg.span().end);
+            self.push_op(OperatorType::Comma, comma);
         }
-        self.push_punc(PunctuationType::CloseParen, expr.span);
+        let close = point_span(expr.span.end.saturating_sub(1));
+        self.push_punc(PunctuationType::CloseParen, close);
     }
 
     fn visit_new_expression(&mut self, expr: &NewExpression<'a>) {
         self.push_keyword(KeywordType::New, expr.span);
         self.visit_expression(&expr.callee);
-        self.push_punc(PunctuationType::OpenParen, expr.span);
+        let open = point_span(expr.callee.span().end);
+        self.push_punc(PunctuationType::OpenParen, open);
         for arg in &expr.arguments {
             self.visit_argument(arg);
-            self.push_op(OperatorType::Comma, expr.span);
+            let comma = point_span(arg.span().end);
+            self.push_op(OperatorType::Comma, comma);
         }
-        self.push_punc(PunctuationType::CloseParen, expr.span);
+        let close = point_span(expr.span.end.saturating_sub(1));
+        self.push_punc(PunctuationType::CloseParen, close);
     }
 
     fn visit_static_member_expression(&mut self, expr: &StaticMemberExpression<'a>) {
         self.visit_expression(&expr.object);
-        self.push_punc(PunctuationType::Dot, expr.span);
+        // Use point span at the dot position (right after the object).
+        let dot = point_span(expr.object.span().end);
+        self.push_punc(PunctuationType::Dot, dot);
         self.push(
             TokenKind::Identifier(expr.property.name.to_string()),
             expr.property.span,
@@ -425,9 +484,11 @@ impl<'a> Visit<'a> for TokenExtractor {
 
     fn visit_computed_member_expression(&mut self, expr: &ComputedMemberExpression<'a>) {
         self.visit_expression(&expr.object);
-        self.push_punc(PunctuationType::OpenBracket, expr.span);
+        let open = point_span(expr.object.span().end);
+        self.push_punc(PunctuationType::OpenBracket, open);
         self.visit_expression(&expr.expression);
-        self.push_punc(PunctuationType::CloseBracket, expr.span);
+        let close = point_span(expr.span.end.saturating_sub(1));
+        self.push_punc(PunctuationType::CloseBracket, close);
     }
 
     fn visit_assignment_expression(&mut self, expr: &AssignmentExpression<'a>) {
@@ -547,13 +608,14 @@ impl<'a> Visit<'a> for TokenExtractor {
         if expr.r#async {
             self.push_keyword(KeywordType::Async, expr.span);
         }
-        self.push_punc(PunctuationType::OpenParen, expr.span);
+        let params_span = expr.params.span;
+        self.push_punc(PunctuationType::OpenParen, point_span(params_span.start));
         for param in &expr.params.items {
             self.visit_binding_pattern(&param.pattern);
-            self.push_op(OperatorType::Comma, expr.span);
+            self.push_op(OperatorType::Comma, point_span(param.span.end));
         }
-        self.push_punc(PunctuationType::CloseParen, expr.span);
-        self.push_op(OperatorType::Arrow, expr.span);
+        self.push_punc(PunctuationType::CloseParen, point_span(params_span.end.saturating_sub(1)));
+        self.push_op(OperatorType::Arrow, point_span(params_span.end));
         walk::walk_arrow_function_expression(self, expr);
     }
 
@@ -591,12 +653,13 @@ impl<'a> Visit<'a> for TokenExtractor {
         if let Some(id) = &func.id {
             self.push(TokenKind::Identifier(id.name.to_string()), id.span);
         }
-        self.push_punc(PunctuationType::OpenParen, func.span);
+        let params_span = func.params.span;
+        self.push_punc(PunctuationType::OpenParen, point_span(params_span.start));
         for param in &func.params.items {
             self.visit_binding_pattern(&param.pattern);
-            self.push_op(OperatorType::Comma, func.span);
+            self.push_op(OperatorType::Comma, point_span(param.span.end));
         }
-        self.push_punc(PunctuationType::CloseParen, func.span);
+        self.push_punc(PunctuationType::CloseParen, point_span(params_span.end.saturating_sub(1)));
         walk::walk_function(self, func, flags);
     }
 
@@ -643,6 +706,108 @@ impl<'a> Visit<'a> for TokenExtractor {
             TokenKind::StringLiteral(decl.source.value.to_string()),
             decl.source.span,
         );
+    }
+
+    // ── TypeScript declarations ────────────────────────────
+
+    fn visit_ts_interface_declaration(&mut self, decl: &TSInterfaceDeclaration<'a>) {
+        self.push_keyword(KeywordType::Interface, decl.span);
+        walk::walk_ts_interface_declaration(self, decl);
+    }
+
+    fn visit_ts_interface_body(&mut self, body: &TSInterfaceBody<'a>) {
+        self.push_punc(PunctuationType::OpenBrace, body.span);
+        walk::walk_ts_interface_body(self, body);
+        self.push_punc(PunctuationType::CloseBrace, body.span);
+    }
+
+    fn visit_ts_type_alias_declaration(&mut self, decl: &TSTypeAliasDeclaration<'a>) {
+        self.push_keyword(KeywordType::Type, decl.span);
+        walk::walk_ts_type_alias_declaration(self, decl);
+    }
+
+    fn visit_ts_enum_declaration(&mut self, decl: &TSEnumDeclaration<'a>) {
+        self.push_keyword(KeywordType::Enum, decl.span);
+        walk::walk_ts_enum_declaration(self, decl);
+    }
+
+    fn visit_ts_enum_body(&mut self, body: &TSEnumBody<'a>) {
+        self.push_punc(PunctuationType::OpenBrace, body.span);
+        walk::walk_ts_enum_body(self, body);
+        self.push_punc(PunctuationType::CloseBrace, body.span);
+    }
+
+    fn visit_ts_property_signature(&mut self, sig: &TSPropertySignature<'a>) {
+        walk::walk_ts_property_signature(self, sig);
+        self.push_punc(PunctuationType::Semicolon, sig.span);
+    }
+
+    fn visit_ts_type_annotation(&mut self, ann: &TSTypeAnnotation<'a>) {
+        self.push_punc(PunctuationType::Colon, ann.span);
+        walk::walk_ts_type_annotation(self, ann);
+    }
+
+    fn visit_identifier_name(&mut self, ident: &IdentifierName<'a>) {
+        self.push(TokenKind::Identifier(ident.name.to_string()), ident.span);
+    }
+
+    fn visit_ts_string_keyword(&mut self, it: &TSStringKeyword) {
+        self.push(TokenKind::Identifier("string".to_string()), it.span);
+    }
+
+    fn visit_ts_number_keyword(&mut self, it: &TSNumberKeyword) {
+        self.push(TokenKind::Identifier("number".to_string()), it.span);
+    }
+
+    fn visit_ts_boolean_keyword(&mut self, it: &TSBooleanKeyword) {
+        self.push(TokenKind::Identifier("boolean".to_string()), it.span);
+    }
+
+    fn visit_ts_any_keyword(&mut self, it: &TSAnyKeyword) {
+        self.push(TokenKind::Identifier("any".to_string()), it.span);
+    }
+
+    fn visit_ts_void_keyword(&mut self, it: &TSVoidKeyword) {
+        self.push(TokenKind::Identifier("void".to_string()), it.span);
+    }
+
+    fn visit_ts_null_keyword(&mut self, it: &TSNullKeyword) {
+        self.push(TokenKind::NullLiteral, it.span);
+    }
+
+    fn visit_ts_undefined_keyword(&mut self, it: &TSUndefinedKeyword) {
+        self.push(TokenKind::Identifier("undefined".to_string()), it.span);
+    }
+
+    fn visit_ts_never_keyword(&mut self, it: &TSNeverKeyword) {
+        self.push(TokenKind::Identifier("never".to_string()), it.span);
+    }
+
+    fn visit_ts_unknown_keyword(&mut self, it: &TSUnknownKeyword) {
+        self.push(TokenKind::Identifier("unknown".to_string()), it.span);
+    }
+
+    // ── JSX ─────────────────────────────────────────────────
+
+    fn visit_jsx_opening_element(&mut self, elem: &JSXOpeningElement<'a>) {
+        self.push_punc(PunctuationType::OpenBracket, elem.span);
+        walk::walk_jsx_opening_element(self, elem);
+        self.push_punc(PunctuationType::CloseBracket, elem.span);
+    }
+
+    fn visit_jsx_closing_element(&mut self, elem: &JSXClosingElement<'a>) {
+        self.push_punc(PunctuationType::OpenBracket, elem.span);
+        walk::walk_jsx_closing_element(self, elem);
+        self.push_punc(PunctuationType::CloseBracket, elem.span);
+    }
+
+    fn visit_jsx_identifier(&mut self, ident: &JSXIdentifier<'a>) {
+        self.push(TokenKind::Identifier(ident.name.to_string()), ident.span);
+    }
+
+    fn visit_jsx_spread_attribute(&mut self, attr: &JSXSpreadAttribute<'a>) {
+        self.push_op(OperatorType::Spread, attr.span);
+        walk::walk_jsx_spread_attribute(self, attr);
     }
 
     // ── Misc ────────────────────────────────────────────────
@@ -762,5 +927,79 @@ mod tests {
     fn tokenize_empty_file() {
         let tokens = tokenize("");
         assert!(tokens.is_empty());
+    }
+
+    #[test]
+    fn tokenize_ts_interface() {
+        let tokens = tokenize("interface Foo { bar: string; baz: number; }");
+        let has_interface = tokens
+            .iter()
+            .any(|t| matches!(t.kind, TokenKind::Keyword(KeywordType::Interface)));
+        assert!(has_interface, "Should contain interface keyword");
+        let has_bar = tokens
+            .iter()
+            .any(|t| matches!(&t.kind, TokenKind::Identifier(name) if name == "bar"));
+        assert!(has_bar, "Should contain property name 'bar'");
+        let has_string = tokens
+            .iter()
+            .any(|t| matches!(&t.kind, TokenKind::Identifier(name) if name == "string"));
+        assert!(has_string, "Should contain type 'string'");
+        // Should have enough tokens for clone detection
+        assert!(
+            tokens.len() >= 10,
+            "Interface should produce sufficient tokens, got {}",
+            tokens.len()
+        );
+    }
+
+    #[test]
+    fn tokenize_ts_type_alias() {
+        let tokens = tokenize("type Result = { ok: boolean; error: string; }");
+        let has_type = tokens
+            .iter()
+            .any(|t| matches!(t.kind, TokenKind::Keyword(KeywordType::Type)));
+        assert!(has_type, "Should contain type keyword");
+    }
+
+    #[test]
+    fn tokenize_ts_enum() {
+        let tokens = tokenize("enum Color { Red, Green, Blue }");
+        let has_enum = tokens
+            .iter()
+            .any(|t| matches!(t.kind, TokenKind::Keyword(KeywordType::Enum)));
+        assert!(has_enum, "Should contain enum keyword");
+        let has_red = tokens
+            .iter()
+            .any(|t| matches!(&t.kind, TokenKind::Identifier(name) if name == "Red"));
+        assert!(has_red, "Should contain enum member 'Red'");
+    }
+
+    fn tokenize_tsx(code: &str) -> Vec<SourceToken> {
+        let path = PathBuf::from("test.tsx");
+        tokenize_file(&path, code).tokens
+    }
+
+    #[test]
+    fn tokenize_jsx_element() {
+        let tokens = tokenize_tsx("const x = <div className=\"foo\"><Button onClick={handler} /></div>;");
+        let has_div = tokens
+            .iter()
+            .any(|t| matches!(&t.kind, TokenKind::Identifier(name) if name == "div"));
+        assert!(has_div, "Should contain JSX element name 'div'");
+        let has_classname = tokens
+            .iter()
+            .any(|t| matches!(&t.kind, TokenKind::Identifier(name) if name == "className"));
+        assert!(has_classname, "Should contain JSX attribute 'className'");
+        let brackets = tokens
+            .iter()
+            .filter(|t| {
+                matches!(
+                    t.kind,
+                    TokenKind::Punctuation(PunctuationType::OpenBracket)
+                        | TokenKind::Punctuation(PunctuationType::CloseBracket)
+                )
+            })
+            .count();
+        assert!(brackets >= 4, "Should contain JSX angle brackets, got {brackets}");
     }
 }

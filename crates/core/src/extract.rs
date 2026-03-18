@@ -228,18 +228,21 @@ static SCRIPT_BLOCK_RE: LazyLock<regex::Regex> = LazyLock::new(|| {
 static LANG_ATTR_RE: LazyLock<regex::Regex> =
     LazyLock::new(|| regex::Regex::new(r#"lang\s*=\s*["'](\w+)["']"#).expect("valid regex"));
 
-struct SfcScript {
-    body: String,
-    is_typescript: bool,
+pub(crate) struct SfcScript {
+    pub body: String,
+    pub is_typescript: bool,
+    /// Byte offset of the script body within the full SFC source.
+    pub byte_offset: usize,
 }
 
-fn extract_sfc_scripts(source: &str) -> Vec<SfcScript> {
+pub(crate) fn extract_sfc_scripts(source: &str) -> Vec<SfcScript> {
     SCRIPT_BLOCK_RE
         .captures_iter(source)
         .map(|cap| {
             let attrs = cap.name("attrs").map(|m| m.as_str()).unwrap_or("");
-            let body = cap
-                .name("body")
+            let body_match = cap.name("body");
+            let byte_offset = body_match.map(|m| m.start()).unwrap_or(0);
+            let body = body_match
                 .map(|m| m.as_str())
                 .unwrap_or("")
                 .to_string();
@@ -251,12 +254,13 @@ fn extract_sfc_scripts(source: &str) -> Vec<SfcScript> {
             SfcScript {
                 body,
                 is_typescript,
+                byte_offset,
             }
         })
         .collect()
 }
 
-fn is_sfc_file(path: &Path) -> bool {
+pub(crate) fn is_sfc_file(path: &Path) -> bool {
     path.extension()
         .and_then(|e| e.to_str())
         .is_some_and(|ext| ext == "vue" || ext == "svelte")

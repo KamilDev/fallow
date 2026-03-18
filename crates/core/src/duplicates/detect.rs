@@ -154,11 +154,25 @@ impl CloneDetector {
             group_instances
                 .sort_by(|a, b| a.file.cmp(&b.file).then(a.start_line.cmp(&b.start_line)));
 
-            // Deduplicate instances that map to the same or overlapping line
-            // ranges within the same file (different token offsets can resolve
-            // to the same source span).
+            // Deduplicate instances that map to overlapping line ranges within
+            // the same file (different token offsets can resolve to overlapping
+            // source spans). When two instances overlap, keep the wider one.
             group_instances.dedup_by(|b, a| {
-                a.file == b.file && a.start_line == b.start_line && a.end_line == b.end_line
+                if a.file != b.file {
+                    return false;
+                }
+                // Instances are sorted by start_line. `b` starts at or after `a`.
+                // If b's start overlaps with a's range, merge by extending a.
+                if b.start_line <= a.end_line {
+                    // Keep the wider range in `a`.
+                    if b.end_line > a.end_line {
+                        a.end_line = b.end_line;
+                        a.end_col = b.end_col;
+                    }
+                    true
+                } else {
+                    false
+                }
             });
 
             if group_instances.len() < 2 {
@@ -172,10 +186,20 @@ impl CloneDetector {
             });
         }
 
-        // Sort groups by token count (largest first) for better display.
-        clone_groups.sort_by(|a, b| b.token_count.cmp(&a.token_count));
+        // Sort groups by token count (largest first), breaking ties by instance
+        // count (most instances first). This ensures that for equal token counts,
+        // N-way groups come before M-way (M<N) subsets, so subset removal works
+        // correctly regardless of the suffix array's extraction order.
+        clone_groups.sort_by(|a, b| {
+            b.token_count
+                .cmp(&a.token_count)
+                .then(b.instances.len().cmp(&a.instances.len()))
+        });
 
-        // Remove groups that are subsets of larger groups.
+        // Remove groups whose line ranges are fully contained within another
+        // group's line ranges. Check bidirectionally: a group with more tokens
+        // but a narrower line range can still be a subset of a group with fewer
+        // tokens but a wider line range.
         let mut keep = vec![true; clone_groups.len()];
         for i in 0..clone_groups.len() {
             if !keep[i] {
@@ -187,6 +211,9 @@ impl CloneDetector {
                 }
                 if is_subset_group(&clone_groups[j], &clone_groups[i]) {
                     keep[j] = false;
+                } else if is_subset_group(&clone_groups[i], &clone_groups[j]) {
+                    keep[i] = false;
+                    break;
                 }
             }
         }
@@ -622,6 +649,10 @@ fn compute_stats(
     } else {
         0.0
     };
+
+    // Cap duplicated_tokens to total_tokens to avoid impossible values
+    // when overlapping clone groups double-count the same token positions.
+    let duplicated_tokens = duplicated_tokens.min(total_tokens);
 
     DuplicationStats {
         total_files,
