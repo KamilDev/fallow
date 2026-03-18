@@ -5,8 +5,6 @@
 
 use super::Plugin;
 
-pub struct RemixPlugin;
-
 const ENABLERS: &[&str] = &[
     "@remix-run/node",
     "@remix-run/react",
@@ -44,28 +42,11 @@ const ROUTE_EXPORTS: &[&str] = &[
     "HydrateFallback",
 ];
 
-impl Plugin for RemixPlugin {
-    fn name(&self) -> &'static str {
-        "remix"
-    }
-
-    fn enablers(&self) -> &'static [&'static str] {
-        ENABLERS
-    }
-
-    fn entry_patterns(&self) -> &'static [&'static str] {
-        ENTRY_PATTERNS
-    }
-
-    fn always_used(&self) -> &'static [&'static str] {
-        ALWAYS_USED
-    }
-
-    fn tooling_dependencies(&self) -> &'static [&'static str] {
-        TOOLING_DEPENDENCIES
-    }
-
-    fn used_exports(&self) -> Vec<(&'static str, &'static [&'static str])> {
-        vec![("app/routes/**/*.{ts,tsx,js,jsx}", ROUTE_EXPORTS)]
-    }
+define_plugin! {
+    struct RemixPlugin => "remix",
+    enablers: ENABLERS,
+    entry_patterns: ENTRY_PATTERNS,
+    always_used: ALWAYS_USED,
+    tooling_dependencies: TOOLING_DEPENDENCIES,
+    used_exports: [("app/routes/**/*.{ts,tsx,js,jsx}", ROUTE_EXPORTS)],
 }

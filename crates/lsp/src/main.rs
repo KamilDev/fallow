@@ -28,6 +28,8 @@ struct FallowLspServer {
     results: Arc<RwLock<Option<AnalysisResults>>>,
     previous_diagnostic_uris: Arc<RwLock<HashSet<Url>>>,
     last_analysis: Arc<Mutex<Instant>>,
+    analysis_guard: Arc<tokio::sync::Mutex<()>>,
+    documents: Arc<RwLock<HashMap<Url, String>>>,
 }
 
 #[tower_lsp::async_trait]
@@ -92,8 +94,18 @@ impl LanguageServer for FallowLspServer {
         self.run_analysis().await;
     }
 
-    async fn did_change(&self, _params: DidChangeTextDocumentParams) {
-        // Re-analysis is triggered on save, not on every change
+    async fn did_change(&self, params: DidChangeTextDocumentParams) {
+        // Store latest document text for code actions
+        if let Some(change) = params.content_changes.into_iter().last() {
+            self.documents
+                .write()
+                .await
+                .insert(params.text_document.uri, change.text);
+        }
+    }
+
+    async fn did_close(&self, params: DidCloseTextDocumentParams) {
+        self.documents.write().await.remove(&params.text_document.uri);
     }
 
     async fn code_action(&self, params: CodeActionParams) -> Result<Option<CodeActionResponse>> {
@@ -110,8 +122,14 @@ impl LanguageServer for FallowLspServer {
 
         let mut actions = Vec::new();
 
-        // Read file content once for computing line positions and edit ranges
-        let file_content = std::fs::read_to_string(&file_path).unwrap_or_default();
+        // Read file content once for computing line positions and edit ranges.
+        // Prefer in-memory document text (from did_change), fall back to disk.
+        let documents = self.documents.read().await;
+        let file_content = match documents.get(uri) {
+            Some(text) => text.clone(),
+            None => std::fs::read_to_string(&file_path).unwrap_or_default(),
+        };
+        drop(documents);
         let file_lines: Vec<&str> = file_content.lines().collect();
 
         // Generate "Remove export" code actions for unused exports
@@ -255,17 +273,22 @@ impl FallowLspServer {
         let root = self.root.read().await.clone();
         let Some(root) = root else { return };
 
+        let _guard = match self.analysis_guard.try_lock() {
+            Ok(guard) => guard,
+            Err(_) => return, // analysis already running
+        };
+
         self.client
             .log_message(MessageType::INFO, "Running fallow analysis...")
             .await;
 
+        let root_clone = root.clone();
         let join_result =
-            tokio::task::spawn_blocking(move || fallow_core::analyze_project(&root)).await;
+            tokio::task::spawn_blocking(move || fallow_core::analyze_project(&root_clone)).await;
 
         match join_result {
             Ok(Ok(results)) => {
-                let root_path = self.root.read().await.clone().unwrap();
-                self.publish_diagnostics(&results, &root_path).await;
+                self.publish_diagnostics(&results, &root).await;
                 *self.results.write().await = Some(results);
 
                 self.client
@@ -535,6 +558,8 @@ async fn main() {
         last_analysis: Arc::new(Mutex::new(
             Instant::now() - std::time::Duration::from_secs(10),
         )),
+        analysis_guard: Arc::new(tokio::sync::Mutex::new(())),
+        documents: Arc::new(RwLock::new(HashMap::new())),
     });
 
     Server::new(stdin, stdout, socket).serve(service).await;

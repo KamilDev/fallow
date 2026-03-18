@@ -5,8 +5,6 @@
 
 use super::Plugin;
 
-pub struct NestJsPlugin;
-
 const ENABLERS: &[&str] = &["@nestjs/core"];
 
 const ENTRY_PATTERNS: &[&str] = &[
@@ -39,24 +37,10 @@ const TOOLING_DEPENDENCIES: &[&str] = &[
     "@nestjs/mongoose",
 ];
 
-impl Plugin for NestJsPlugin {
-    fn name(&self) -> &'static str {
-        "nestjs"
-    }
-
-    fn enablers(&self) -> &'static [&'static str] {
-        ENABLERS
-    }
-
-    fn entry_patterns(&self) -> &'static [&'static str] {
-        ENTRY_PATTERNS
-    }
-
-    fn always_used(&self) -> &'static [&'static str] {
-        ALWAYS_USED
-    }
-
-    fn tooling_dependencies(&self) -> &'static [&'static str] {
-        TOOLING_DEPENDENCIES
-    }
+define_plugin! {
+    struct NestJsPlugin => "nestjs",
+    enablers: ENABLERS,
+    entry_patterns: ENTRY_PATTERNS,
+    always_used: ALWAYS_USED,
+    tooling_dependencies: TOOLING_DEPENDENCIES,
 }

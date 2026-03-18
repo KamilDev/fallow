@@ -8,7 +8,7 @@
 pub mod detect;
 pub mod normalize;
 pub mod tokenize;
-pub mod types;
+pub(crate) mod types;
 
 use std::path::{Path, PathBuf};
 

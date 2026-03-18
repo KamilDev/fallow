@@ -48,7 +48,7 @@ pub struct FallowConfig {
 }
 
 /// Configuration for code duplication detection.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DuplicatesConfig {
     /// Whether duplication detection is enabled.
     #[serde(default = "default_true")]
@@ -56,7 +56,7 @@ pub struct DuplicatesConfig {
 
     /// Detection mode: strict, mild, weak, or semantic.
     #[serde(default)]
-    pub mode: DuplicatesMode,
+    pub mode: DetectionMode,
 
     /// Minimum number of tokens for a clone.
     #[serde(default = "default_min_tokens")]
@@ -83,7 +83,7 @@ impl Default for DuplicatesConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            mode: DuplicatesMode::default(),
+            mode: DetectionMode::default(),
             min_tokens: default_min_tokens(),
             min_lines: default_min_lines(),
             threshold: 0.0,
@@ -93,19 +93,50 @@ impl Default for DuplicatesConfig {
     }
 }
 
-/// Detection mode for duplication analysis.
+/// Detection mode controlling how aggressively tokens are normalized.
+///
+/// Since fallow uses AST-based tokenization (not lexer-based), whitespace and
+/// comments are inherently absent from the token stream. The `Strict` and `Mild`
+/// modes are currently equivalent. `Weak` mode additionally blinds string
+/// literals. `Semantic` mode blinds all identifiers and literal values for
+/// Type-2 (renamed variable) clone detection.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum DuplicatesMode {
-    /// All tokens preserved (Type-1 only).
+pub enum DetectionMode {
+    /// All tokens preserved including identifier names and literal values (Type-1 only).
     Strict,
-    /// Skip whitespace/newline tokens (default).
+    /// Default mode -- equivalent to strict for AST-based tokenization.
     #[default]
     Mild,
-    /// Also skip comment tokens.
+    /// Blind string literal values (structure-preserving).
     Weak,
-    /// Blind identifiers and literals (Type-2 detection).
+    /// Blind all identifiers and literal values for structural (Type-2) detection.
     Semantic,
+}
+
+impl std::fmt::Display for DetectionMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Strict => write!(f, "strict"),
+            Self::Mild => write!(f, "mild"),
+            Self::Weak => write!(f, "weak"),
+            Self::Semantic => write!(f, "semantic"),
+        }
+    }
+}
+
+impl std::str::FromStr for DetectionMode {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "strict" => Ok(Self::Strict),
+            "mild" => Ok(Self::Mild),
+            "weak" => Ok(Self::Weak),
+            "semantic" => Ok(Self::Semantic),
+            other => Err(format!("unknown detection mode: '{other}'")),
+        }
+    }
 }
 
 const fn default_min_tokens() -> usize {

@@ -4,8 +4,6 @@
 
 use super::Plugin;
 
-pub struct AvaPlugin;
-
 const ENABLERS: &[&str] = &["ava"];
 
 const ENTRY_PATTERNS: &[&str] = &[
@@ -19,24 +17,10 @@ const ALWAYS_USED: &[&str] = &["ava.config.{js,cjs,mjs}"];
 
 const TOOLING_DEPENDENCIES: &[&str] = &["ava", "@ava/typescript"];
 
-impl Plugin for AvaPlugin {
-    fn name(&self) -> &'static str {
-        "ava"
-    }
-
-    fn enablers(&self) -> &'static [&'static str] {
-        ENABLERS
-    }
-
-    fn entry_patterns(&self) -> &'static [&'static str] {
-        ENTRY_PATTERNS
-    }
-
-    fn always_used(&self) -> &'static [&'static str] {
-        ALWAYS_USED
-    }
-
-    fn tooling_dependencies(&self) -> &'static [&'static str] {
-        TOOLING_DEPENDENCIES
-    }
+define_plugin! {
+    struct AvaPlugin => "ava",
+    enablers: ENABLERS,
+    entry_patterns: ENTRY_PATTERNS,
+    always_used: ALWAYS_USED,
+    tooling_dependencies: TOOLING_DEPENDENCIES,
 }

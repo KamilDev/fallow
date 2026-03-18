@@ -5,8 +5,6 @@
 
 use super::Plugin;
 
-pub struct AngularPlugin;
-
 const ENABLERS: &[&str] = &["@angular/core"];
 
 const ENTRY_PATTERNS: &[&str] = &[
@@ -33,24 +31,10 @@ const TOOLING_DEPENDENCIES: &[&str] = &[
     "@angular/compiler-cli",
 ];
 
-impl Plugin for AngularPlugin {
-    fn name(&self) -> &'static str {
-        "angular"
-    }
-
-    fn enablers(&self) -> &'static [&'static str] {
-        ENABLERS
-    }
-
-    fn entry_patterns(&self) -> &'static [&'static str] {
-        ENTRY_PATTERNS
-    }
-
-    fn always_used(&self) -> &'static [&'static str] {
-        ALWAYS_USED
-    }
-
-    fn tooling_dependencies(&self) -> &'static [&'static str] {
-        TOOLING_DEPENDENCIES
-    }
+define_plugin! {
+    struct AngularPlugin => "angular",
+    enablers: ENABLERS,
+    entry_patterns: ENTRY_PATTERNS,
+    always_used: ALWAYS_USED,
+    tooling_dependencies: TOOLING_DEPENDENCIES,
 }

@@ -4,8 +4,6 @@
 
 use super::Plugin;
 
-pub struct ExpoPlugin;
-
 const ENABLERS: &[&str] = &["expo"];
 
 const ENTRY_PATTERNS: &[&str] = &[
@@ -23,24 +21,10 @@ const ALWAYS_USED: &[&str] = &[
 
 const TOOLING_DEPENDENCIES: &[&str] = &["expo", "expo-cli", "@expo/webpack-config"];
 
-impl Plugin for ExpoPlugin {
-    fn name(&self) -> &'static str {
-        "expo"
-    }
-
-    fn enablers(&self) -> &'static [&'static str] {
-        ENABLERS
-    }
-
-    fn entry_patterns(&self) -> &'static [&'static str] {
-        ENTRY_PATTERNS
-    }
-
-    fn always_used(&self) -> &'static [&'static str] {
-        ALWAYS_USED
-    }
-
-    fn tooling_dependencies(&self) -> &'static [&'static str] {
-        TOOLING_DEPENDENCIES
-    }
+define_plugin! {
+    struct ExpoPlugin => "expo",
+    enablers: ENABLERS,
+    entry_patterns: ENTRY_PATTERNS,
+    always_used: ALWAYS_USED,
+    tooling_dependencies: TOOLING_DEPENDENCIES,
 }

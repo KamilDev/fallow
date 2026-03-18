@@ -5,8 +5,6 @@
 
 use super::Plugin;
 
-pub struct ReactRouterPlugin;
-
 const ENABLERS: &[&str] = &["@react-router/dev"];
 
 const ENTRY_PATTERNS: &[&str] = &[
@@ -39,28 +37,11 @@ const ROUTE_EXPORTS: &[&str] = &[
     "shouldRevalidate",
 ];
 
-impl Plugin for ReactRouterPlugin {
-    fn name(&self) -> &'static str {
-        "react-router"
-    }
-
-    fn enablers(&self) -> &'static [&'static str] {
-        ENABLERS
-    }
-
-    fn entry_patterns(&self) -> &'static [&'static str] {
-        ENTRY_PATTERNS
-    }
-
-    fn always_used(&self) -> &'static [&'static str] {
-        ALWAYS_USED
-    }
-
-    fn tooling_dependencies(&self) -> &'static [&'static str] {
-        TOOLING_DEPENDENCIES
-    }
-
-    fn used_exports(&self) -> Vec<(&'static str, &'static [&'static str])> {
-        vec![("app/routes/**/*.{ts,tsx,js,jsx}", ROUTE_EXPORTS)]
-    }
+define_plugin! {
+    struct ReactRouterPlugin => "react-router",
+    enablers: ENABLERS,
+    entry_patterns: ENTRY_PATTERNS,
+    always_used: ALWAYS_USED,
+    tooling_dependencies: TOOLING_DEPENDENCIES,
+    used_exports: [("app/routes/**/*.{ts,tsx,js,jsx}", ROUTE_EXPORTS)],
 }

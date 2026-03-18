@@ -1,10 +1,21 @@
+use std::path::Path;
 use std::process::ExitCode;
 use std::time::Duration;
 
 use colored::Colorize;
 use fallow_config::{OutputFormat, ResolvedConfig};
 use fallow_core::duplicates::DuplicationReport;
-use fallow_core::results::AnalysisResults;
+use fallow_core::results::{AnalysisResults, UnusedDependency, UnusedExport, UnusedMember};
+
+/// Strip the project root prefix from a path for display, falling back to the full path.
+fn relative_path<'a>(path: &'a Path, root: &Path) -> &'a Path {
+    path.strip_prefix(root).unwrap_or(path)
+}
+
+/// Compute a SARIF-compatible relative URI from an absolute path and project root.
+fn relative_uri(path: &Path, root: &Path) -> String {
+    normalize_uri(&relative_path(path, root).display().to_string())
+}
 
 /// Print analysis results in the configured format.
 /// Returns exit code 2 if serialization fails, SUCCESS otherwise.
@@ -28,205 +39,139 @@ pub fn print_results(
     }
 }
 
-fn print_human(results: &AnalysisResults, root: &std::path::Path, elapsed: Duration, quiet: bool) {
+fn print_human(results: &AnalysisResults, root: &Path, elapsed: Duration, quiet: bool) {
     if !quiet {
         eprintln!();
     }
 
-    // Warning-level: unused files
-    if !results.unused_files.is_empty() {
-        print_section_header("Unused files", results.unused_files.len(), Level::Warn);
-        for file in &results.unused_files {
-            let relative = file.path.strip_prefix(root).unwrap_or(&file.path);
-            println!("  {}", relative.display());
+    let format_export = |e: &UnusedExport| -> String {
+        let tag = if e.is_re_export {
+            " (re-export)".dimmed().to_string()
+        } else {
+            String::new()
+        };
+        format!(
+            "{} {}{}",
+            format!(":{}", e.line).dimmed(),
+            e.export_name.bold(),
+            tag
+        )
+    };
+
+    let format_member = |m: &UnusedMember| -> String {
+        format!(
+            "{} {}",
+            format!(":{}", m.line).dimmed(),
+            format!("{}.{}", m.parent_name, m.member_name).bold()
+        )
+    };
+
+    let format_dep = |dep: &UnusedDependency| -> String {
+        let pkg_label = relative_path(&dep.path, root).display().to_string();
+        if pkg_label == "package.json" {
+            format!("{}", dep.package_name.bold())
+        } else {
+            format!("{} ({})", dep.package_name.bold(), pkg_label.dimmed())
         }
-        println!();
-    }
+    };
+
+    // Warning-level: unused files
+    print_human_section(&results.unused_files, "Unused files", Level::Warn, |file| {
+        vec![format!("  {}", relative_path(&file.path, root).display())]
+    });
 
     // Info-level: unused exports (grouped by file)
-    if !results.unused_exports.is_empty() {
-        print_section_header("Unused exports", results.unused_exports.len(), Level::Info);
-        print_grouped_by_file(
-            &results.unused_exports,
-            root,
-            |e| e.path.as_path(),
-            |e| {
-                let tag = if e.is_re_export {
-                    " (re-export)".dimmed().to_string()
-                } else {
-                    String::new()
-                };
-                format!(
-                    "{} {}{}",
-                    format!(":{}", e.line).dimmed(),
-                    e.export_name.bold(),
-                    tag
-                )
-            },
-        );
-        println!();
-    }
+    print_human_grouped_section(
+        &results.unused_exports,
+        "Unused exports",
+        Level::Info,
+        root,
+        |e| e.path.as_path(),
+        format_export,
+    );
 
     // Info-level: unused types (grouped by file)
-    if !results.unused_types.is_empty() {
-        print_section_header(
-            "Unused type exports",
-            results.unused_types.len(),
-            Level::Info,
-        );
-        print_grouped_by_file(
-            &results.unused_types,
-            root,
-            |e| e.path.as_path(),
-            |e| {
-                let tag = if e.is_re_export {
-                    " (re-export)".dimmed().to_string()
-                } else {
-                    String::new()
-                };
-                format!(
-                    "{} {}{}",
-                    format!(":{}", e.line).dimmed(),
-                    e.export_name.bold(),
-                    tag
-                )
-            },
-        );
-        println!();
-    }
+    print_human_grouped_section(
+        &results.unused_types,
+        "Unused type exports",
+        Level::Info,
+        root,
+        |e| e.path.as_path(),
+        format_export,
+    );
 
     // Warning-level: unused dependencies
-    if !results.unused_dependencies.is_empty() {
-        print_section_header(
-            "Unused dependencies",
-            results.unused_dependencies.len(),
-            Level::Warn,
-        );
-        for dep in &results.unused_dependencies {
-            let rel_path = dep.path.strip_prefix(root).unwrap_or(&dep.path);
-            let pkg_label = rel_path.display().to_string();
-            if pkg_label == "package.json" {
-                println!("  {}", dep.package_name.bold());
-            } else {
-                println!("  {} ({})", dep.package_name.bold(), pkg_label.dimmed());
-            }
-        }
-        println!();
-    }
+    print_human_section(
+        &results.unused_dependencies,
+        "Unused dependencies",
+        Level::Warn,
+        |dep| vec![format!("  {}", format_dep(dep))],
+    );
 
     // Warning-level: unused devDependencies
-    if !results.unused_dev_dependencies.is_empty() {
-        print_section_header(
-            "Unused devDependencies",
-            results.unused_dev_dependencies.len(),
-            Level::Warn,
-        );
-        for dep in &results.unused_dev_dependencies {
-            let rel_path = dep.path.strip_prefix(root).unwrap_or(&dep.path);
-            let pkg_label = rel_path.display().to_string();
-            if pkg_label == "package.json" {
-                println!("  {}", dep.package_name.bold());
-            } else {
-                println!("  {} ({})", dep.package_name.bold(), pkg_label.dimmed());
-            }
-        }
-        println!();
-    }
+    print_human_section(
+        &results.unused_dev_dependencies,
+        "Unused devDependencies",
+        Level::Warn,
+        |dep| vec![format!("  {}", format_dep(dep))],
+    );
 
     // Info-level: unused enum members (grouped by file)
-    if !results.unused_enum_members.is_empty() {
-        print_section_header(
-            "Unused enum members",
-            results.unused_enum_members.len(),
-            Level::Info,
-        );
-        print_grouped_by_file(
-            &results.unused_enum_members,
-            root,
-            |m| m.path.as_path(),
-            |m| {
-                format!(
-                    "{} {}",
-                    format!(":{}", m.line).dimmed(),
-                    format!("{}.{}", m.parent_name, m.member_name).bold()
-                )
-            },
-        );
-        println!();
-    }
+    print_human_grouped_section(
+        &results.unused_enum_members,
+        "Unused enum members",
+        Level::Info,
+        root,
+        |m| m.path.as_path(),
+        format_member,
+    );
 
     // Info-level: unused class members (grouped by file)
-    if !results.unused_class_members.is_empty() {
-        print_section_header(
-            "Unused class members",
-            results.unused_class_members.len(),
-            Level::Info,
-        );
-        print_grouped_by_file(
-            &results.unused_class_members,
-            root,
-            |m| m.path.as_path(),
-            |m| {
-                format!(
-                    "{} {}",
-                    format!(":{}", m.line).dimmed(),
-                    format!("{}.{}", m.parent_name, m.member_name).bold()
-                )
-            },
-        );
-        println!();
-    }
+    print_human_grouped_section(
+        &results.unused_class_members,
+        "Unused class members",
+        Level::Info,
+        root,
+        |m| m.path.as_path(),
+        format_member,
+    );
 
     // Error-level: unresolved imports (grouped by file)
-    if !results.unresolved_imports.is_empty() {
-        print_section_header(
-            "Unresolved imports",
-            results.unresolved_imports.len(),
-            Level::Error,
-        );
-        print_grouped_by_file(
-            &results.unresolved_imports,
-            root,
-            |i| i.path.as_path(),
-            |i| format!("{} {}", format!(":{}", i.line).dimmed(), i.specifier.bold()),
-        );
-        println!();
-    }
+    print_human_grouped_section(
+        &results.unresolved_imports,
+        "Unresolved imports",
+        Level::Error,
+        root,
+        |i| i.path.as_path(),
+        |i| format!("{} {}", format!(":{}", i.line).dimmed(), i.specifier.bold()),
+    );
 
     // Warning-level: unlisted dependencies
-    if !results.unlisted_dependencies.is_empty() {
-        print_section_header(
-            "Unlisted dependencies",
-            results.unlisted_dependencies.len(),
-            Level::Warn,
-        );
-        for dep in &results.unlisted_dependencies {
-            println!("  {}", dep.package_name.bold());
-        }
-        println!();
-    }
+    print_human_section(
+        &results.unlisted_dependencies,
+        "Unlisted dependencies",
+        Level::Warn,
+        |dep| vec![format!("  {}", dep.package_name.bold())],
+    );
 
     // Info-level: duplicate exports
-    if !results.duplicate_exports.is_empty() {
-        print_section_header(
-            "Duplicate exports",
-            results.duplicate_exports.len(),
-            Level::Info,
-        );
-        for dup in &results.duplicate_exports {
+    print_human_section(
+        &results.duplicate_exports,
+        "Duplicate exports",
+        Level::Info,
+        |dup| {
             let locations: Vec<String> = dup
                 .locations
                 .iter()
-                .map(|p| p.strip_prefix(root).unwrap_or(p).display().to_string())
+                .map(|p| relative_path(p, root).display().to_string())
                 .collect();
-            println!(
+            vec![format!(
                 "  {}  {}",
                 dup.export_name.bold(),
                 locations.join(", ").dimmed()
-            );
-        }
-        println!();
-    }
+            )]
+        },
+    );
 
     if !quiet {
         let total = results.total_issues();
@@ -253,6 +198,42 @@ fn print_human(results: &AnalysisResults, root: &std::path::Path, elapsed: Durat
     }
 }
 
+/// Print a non-empty section with a header and per-item lines.
+fn print_human_section<T>(
+    items: &[T],
+    title: &str,
+    level: Level,
+    format_lines: impl Fn(&T) -> Vec<String>,
+) {
+    if items.is_empty() {
+        return;
+    }
+    print_section_header(title, items.len(), level);
+    for item in items {
+        for line in format_lines(item) {
+            println!("{line}");
+        }
+    }
+    println!();
+}
+
+/// Print a non-empty section whose items are grouped by file path.
+fn print_human_grouped_section<'a, T>(
+    items: &'a [T],
+    title: &str,
+    level: Level,
+    root: &Path,
+    get_path: impl Fn(&'a T) -> &'a Path,
+    format_detail: impl Fn(&T) -> String,
+) {
+    if items.is_empty() {
+        return;
+    }
+    print_section_header(title, items.len(), level);
+    print_grouped_by_file(items, root, get_path, format_detail);
+    println!();
+}
+
 enum Level {
     Warn,
     Info,
@@ -273,8 +254,8 @@ fn print_section_header(title: &str, count: usize, level: Level) {
 /// once as a dimmed header and each item indented beneath it.
 fn print_grouped_by_file<'a, T>(
     items: &'a [T],
-    root: &std::path::Path,
-    get_path: impl Fn(&'a T) -> &'a std::path::Path,
+    root: &Path,
+    get_path: impl Fn(&'a T) -> &'a Path,
     format_detail: impl Fn(&T) -> String,
 ) {
     let mut indices: Vec<usize> = (0..items.len()).collect();
@@ -283,8 +264,7 @@ fn print_grouped_by_file<'a, T>(
     let mut last_file = String::new();
     for &i in &indices {
         let item = &items[i];
-        let relative = get_path(item).strip_prefix(root).unwrap_or(get_path(item));
-        let file_str = relative.display().to_string();
+        let file_str = relative_path(get_path(item), root).display().to_string();
         if file_str != last_file {
             println!("  {}", file_str.dimmed());
             last_file = file_str;
@@ -312,7 +292,7 @@ fn print_json(results: &AnalysisResults, elapsed: Duration) -> ExitCode {
     }
 }
 
-fn print_compact(results: &AnalysisResults, root: &std::path::Path) {
+fn print_compact(results: &AnalysisResults, root: &Path) {
     for line in build_compact_lines(results, root) {
         println!("{line}");
     }
@@ -323,7 +303,7 @@ fn normalize_uri(path_str: &str) -> String {
     path_str.replace('\\', "/")
 }
 
-fn print_sarif(results: &AnalysisResults, root: &std::path::Path) -> ExitCode {
+fn print_sarif(results: &AnalysisResults, root: &Path) -> ExitCode {
     let sarif = build_sarif(results, root);
     match serde_json::to_string_pretty(&sarif) {
         Ok(json) => {
@@ -339,41 +319,44 @@ fn print_sarif(results: &AnalysisResults, root: &std::path::Path) -> ExitCode {
 
 /// Build compact output lines for analysis results.
 /// Each issue is represented as a single `prefix:details` line.
-fn build_compact_lines(results: &AnalysisResults, root: &std::path::Path) -> Vec<String> {
+fn build_compact_lines(results: &AnalysisResults, root: &Path) -> Vec<String> {
+    let rel = |p: &Path| relative_path(p, root).display().to_string();
+
+    let compact_export = |export: &UnusedExport, kind: &str, re_kind: &str| -> String {
+        let tag = if export.is_re_export { re_kind } else { kind };
+        format!(
+            "{}:{}:{}:{}",
+            tag,
+            rel(&export.path),
+            export.line,
+            export.export_name
+        )
+    };
+
+    let compact_member = |member: &UnusedMember, kind: &str| -> String {
+        format!(
+            "{}:{}:{}:{}.{}",
+            kind,
+            rel(&member.path),
+            member.line,
+            member.parent_name,
+            member.member_name
+        )
+    };
+
     let mut lines = Vec::new();
 
     for file in &results.unused_files {
-        let relative = file.path.strip_prefix(root).unwrap_or(&file.path);
-        lines.push(format!("unused-file:{}", relative.display()));
+        lines.push(format!("unused-file:{}", rel(&file.path)));
     }
     for export in &results.unused_exports {
-        let relative = export.path.strip_prefix(root).unwrap_or(&export.path);
-        let kind = if export.is_re_export {
-            "unused-re-export"
-        } else {
-            "unused-export"
-        };
-        lines.push(format!(
-            "{}:{}:{}:{}",
-            kind,
-            relative.display(),
-            export.line,
-            export.export_name
-        ));
+        lines.push(compact_export(export, "unused-export", "unused-re-export"));
     }
     for export in &results.unused_types {
-        let relative = export.path.strip_prefix(root).unwrap_or(&export.path);
-        let kind = if export.is_re_export {
-            "unused-re-export-type"
-        } else {
-            "unused-type"
-        };
-        lines.push(format!(
-            "{}:{}:{}:{}",
-            kind,
-            relative.display(),
-            export.line,
-            export.export_name
+        lines.push(compact_export(
+            export,
+            "unused-type",
+            "unused-re-export-type",
         ));
     }
     for dep in &results.unused_dependencies {
@@ -383,30 +366,15 @@ fn build_compact_lines(results: &AnalysisResults, root: &std::path::Path) -> Vec
         lines.push(format!("unused-devdep:{}", dep.package_name));
     }
     for member in &results.unused_enum_members {
-        let relative = member.path.strip_prefix(root).unwrap_or(&member.path);
-        lines.push(format!(
-            "unused-enum-member:{}:{}:{}.{}",
-            relative.display(),
-            member.line,
-            member.parent_name,
-            member.member_name
-        ));
+        lines.push(compact_member(member, "unused-enum-member"));
     }
     for member in &results.unused_class_members {
-        let relative = member.path.strip_prefix(root).unwrap_or(&member.path);
-        lines.push(format!(
-            "unused-class-member:{}:{}:{}.{}",
-            relative.display(),
-            member.line,
-            member.parent_name,
-            member.member_name
-        ));
+        lines.push(compact_member(member, "unused-class-member"));
     }
     for import in &results.unresolved_imports {
-        let relative = import.path.strip_prefix(root).unwrap_or(&import.path);
         lines.push(format!(
             "unresolved-import:{}:{}:{}",
-            relative.display(),
+            rel(&import.path),
             import.line,
             import.specifier
         ));
@@ -472,224 +440,166 @@ fn sarif_result(
     })
 }
 
-pub(crate) fn build_sarif(results: &AnalysisResults, root: &std::path::Path) -> serde_json::Value {
+/// Append SARIF results for a slice of items using a closure to extract fields.
+fn push_sarif_results<T>(
+    sarif_results: &mut Vec<serde_json::Value>,
+    items: &[T],
+    extract: impl Fn(&T) -> SarifFields,
+) {
+    for item in items {
+        let fields = extract(item);
+        let mut result = sarif_result(
+            fields.rule_id,
+            fields.level,
+            &fields.message,
+            &fields.uri,
+            fields.region,
+        );
+        if let Some(props) = fields.properties {
+            result["properties"] = props;
+        }
+        sarif_results.push(result);
+    }
+}
+
+/// Intermediate fields extracted from an issue for SARIF result construction.
+struct SarifFields {
+    rule_id: &'static str,
+    level: &'static str,
+    message: String,
+    uri: String,
+    region: Option<(u32, u32)>,
+    properties: Option<serde_json::Value>,
+}
+
+pub(crate) fn build_sarif(results: &AnalysisResults, root: &Path) -> serde_json::Value {
     let mut sarif_results = Vec::new();
 
-    for file in &results.unused_files {
-        let uri = normalize_uri(
-            &file
-                .path
-                .strip_prefix(root)
-                .unwrap_or(&file.path)
-                .display()
-                .to_string(),
-        );
-        sarif_results.push(sarif_result(
-            "fallow/unused-file",
-            "warning",
-            "File is not reachable from any entry point",
-            &uri,
-            None,
-        ));
-    }
-    for export in &results.unused_exports {
-        let uri = normalize_uri(
-            &export
-                .path
-                .strip_prefix(root)
-                .unwrap_or(&export.path)
-                .display()
-                .to_string(),
-        );
-        let (rule_id, message) = if export.is_re_export {
-            (
-                "fallow/unused-export",
-                format!(
-                    "Re-export '{}' is never imported by other modules",
-                    export.export_name
-                ),
-            )
-        } else {
-            (
-                "fallow/unused-export",
-                format!(
-                    "Export '{}' is never imported by other modules",
-                    export.export_name
-                ),
-            )
-        };
-        let mut result = sarif_result(
-            rule_id,
-            "warning",
-            &message,
-            &uri,
-            Some((export.line, export.col + 1)),
-        );
-        if export.is_re_export {
-            result["properties"] = serde_json::json!({ "is_re_export": true });
+    push_sarif_results(&mut sarif_results, &results.unused_files, |file| {
+        SarifFields {
+            rule_id: "fallow/unused-file",
+            level: "warning",
+            message: "File is not reachable from any entry point".to_string(),
+            uri: relative_uri(&file.path, root),
+            region: None,
+            properties: None,
         }
-        sarif_results.push(result);
-    }
-    for export in &results.unused_types {
-        let uri = normalize_uri(
-            &export
-                .path
-                .strip_prefix(root)
-                .unwrap_or(&export.path)
-                .display()
-                .to_string(),
-        );
-        let (rule_id, message) = if export.is_re_export {
-            (
-                "fallow/unused-type",
-                format!(
-                    "Type re-export '{}' is never imported by other modules",
-                    export.export_name
+    });
+
+    let sarif_export =
+        |export: &UnusedExport, rule_id: &'static str, kind: &str, re_kind: &str| -> SarifFields {
+            let label = if export.is_re_export { re_kind } else { kind };
+            SarifFields {
+                rule_id,
+                level: "warning",
+                message: format!(
+                    "{} '{}' is never imported by other modules",
+                    label, export.export_name
                 ),
-            )
-        } else {
-            (
-                "fallow/unused-type",
-                format!(
-                    "Type export '{}' is never imported by other modules",
-                    export.export_name
-                ),
-            )
+                uri: relative_uri(&export.path, root),
+                region: Some((export.line, export.col + 1)),
+                properties: if export.is_re_export {
+                    Some(serde_json::json!({ "is_re_export": true }))
+                } else {
+                    None
+                },
+            }
         };
-        let mut result = sarif_result(
+
+    push_sarif_results(&mut sarif_results, &results.unused_exports, |export| {
+        sarif_export(export, "fallow/unused-export", "Export", "Re-export")
+    });
+
+    push_sarif_results(&mut sarif_results, &results.unused_types, |export| {
+        sarif_export(
+            export,
+            "fallow/unused-type",
+            "Type export",
+            "Type re-export",
+        )
+    });
+
+    let sarif_dep = |dep: &UnusedDependency, rule_id: &'static str, section: &str| -> SarifFields {
+        SarifFields {
             rule_id,
-            "warning",
-            &message,
-            &uri,
-            Some((export.line, export.col + 1)),
-        );
-        if export.is_re_export {
-            result["properties"] = serde_json::json!({ "is_re_export": true });
+            level: "warning",
+            message: format!(
+                "Package '{}' is in {} but never imported",
+                dep.package_name, section
+            ),
+            uri: relative_uri(&dep.path, root),
+            region: None,
+            properties: None,
         }
-        sarif_results.push(result);
-    }
-    for dep in &results.unused_dependencies {
-        let dep_uri = normalize_uri(
-            &dep.path
-                .strip_prefix(root)
-                .unwrap_or(&dep.path)
-                .display()
-                .to_string(),
-        );
-        sarif_results.push(sarif_result(
-            "fallow/unused-dependency",
-            "warning",
-            &format!(
-                "Package '{}' is in dependencies but never imported",
-                dep.package_name
+    };
+
+    push_sarif_results(&mut sarif_results, &results.unused_dependencies, |dep| {
+        sarif_dep(dep, "fallow/unused-dependency", "dependencies")
+    });
+
+    push_sarif_results(
+        &mut sarif_results,
+        &results.unused_dev_dependencies,
+        |dep| sarif_dep(dep, "fallow/unused-dev-dependency", "devDependencies"),
+    );
+
+    let sarif_member = |member: &UnusedMember, rule_id: &'static str, kind: &str| -> SarifFields {
+        SarifFields {
+            rule_id,
+            level: "warning",
+            message: format!(
+                "{} member '{}.{}' is never referenced",
+                kind, member.parent_name, member.member_name
             ),
-            &dep_uri,
-            None,
-        ));
-    }
-    for dep in &results.unused_dev_dependencies {
-        let dep_uri = normalize_uri(
-            &dep.path
-                .strip_prefix(root)
-                .unwrap_or(&dep.path)
-                .display()
-                .to_string(),
-        );
-        sarif_results.push(sarif_result(
-            "fallow/unused-dev-dependency",
-            "warning",
-            &format!(
-                "Package '{}' is in devDependencies but never imported",
-                dep.package_name
-            ),
-            &dep_uri,
-            None,
-        ));
-    }
-    for member in &results.unused_enum_members {
-        let uri = normalize_uri(
-            &member
-                .path
-                .strip_prefix(root)
-                .unwrap_or(&member.path)
-                .display()
-                .to_string(),
-        );
-        sarif_results.push(sarif_result(
-            "fallow/unused-enum-member",
-            "warning",
-            &format!(
-                "Enum member '{}.{}' is never referenced",
-                member.parent_name, member.member_name
-            ),
-            &uri,
-            Some((member.line, member.col + 1)),
-        ));
-    }
-    for member in &results.unused_class_members {
-        let uri = normalize_uri(
-            &member
-                .path
-                .strip_prefix(root)
-                .unwrap_or(&member.path)
-                .display()
-                .to_string(),
-        );
-        sarif_results.push(sarif_result(
-            "fallow/unused-class-member",
-            "warning",
-            &format!(
-                "Class member '{}.{}' is never referenced",
-                member.parent_name, member.member_name
-            ),
-            &uri,
-            Some((member.line, member.col + 1)),
-        ));
-    }
-    for import in &results.unresolved_imports {
-        let uri = normalize_uri(
-            &import
-                .path
-                .strip_prefix(root)
-                .unwrap_or(&import.path)
-                .display()
-                .to_string(),
-        );
-        sarif_results.push(sarif_result(
-            "fallow/unresolved-import",
-            "error",
-            &format!("Import '{}' could not be resolved", import.specifier),
-            &uri,
-            Some((import.line, import.col + 1)),
-        ));
-    }
-    for dep in &results.unlisted_dependencies {
-        sarif_results.push(sarif_result(
-            "fallow/unlisted-dependency",
-            "error",
-            &format!(
+            uri: relative_uri(&member.path, root),
+            region: Some((member.line, member.col + 1)),
+            properties: None,
+        }
+    };
+
+    push_sarif_results(&mut sarif_results, &results.unused_enum_members, |member| {
+        sarif_member(member, "fallow/unused-enum-member", "Enum")
+    });
+
+    push_sarif_results(
+        &mut sarif_results,
+        &results.unused_class_members,
+        |member| sarif_member(member, "fallow/unused-class-member", "Class"),
+    );
+
+    push_sarif_results(&mut sarif_results, &results.unresolved_imports, |import| {
+        SarifFields {
+            rule_id: "fallow/unresolved-import",
+            level: "error",
+            message: format!("Import '{}' could not be resolved", import.specifier),
+            uri: relative_uri(&import.path, root),
+            region: Some((import.line, import.col + 1)),
+            properties: None,
+        }
+    });
+
+    push_sarif_results(&mut sarif_results, &results.unlisted_dependencies, |dep| {
+        SarifFields {
+            rule_id: "fallow/unlisted-dependency",
+            level: "error",
+            message: format!(
                 "Package '{}' is imported but not listed in package.json",
                 dep.package_name
             ),
-            "package.json",
-            None,
-        ));
-    }
+            uri: "package.json".to_string(),
+            region: None,
+            properties: None,
+        }
+    });
+
+    // Duplicate exports: one result per location (SARIF 2.1.0 section 3.27.12)
     for dup in &results.duplicate_exports {
-        // Emit one result per location (SARIF 2.1.0 section 3.27.12)
         for loc_path in &dup.locations {
-            let uri = normalize_uri(
-                &loc_path
-                    .strip_prefix(root)
-                    .unwrap_or(loc_path)
-                    .display()
-                    .to_string(),
-            );
             sarif_results.push(sarif_result(
                 "fallow/duplicate-export",
                 "warning",
                 &format!("Export '{}' appears in multiple modules", dup.export_name),
-                &uri,
+                &relative_uri(loc_path, root),
                 None,
             ));
         }
@@ -789,7 +699,7 @@ pub fn print_duplication_report(
 
 fn print_duplication_human(
     report: &DuplicationReport,
-    root: &std::path::Path,
+    root: &Path,
     elapsed: Duration,
     quiet: bool,
 ) {
@@ -826,7 +736,7 @@ fn print_duplication_human(
         );
 
         for (j, instance) in group.instances.iter().enumerate() {
-            let relative = instance.file.strip_prefix(root).unwrap_or(&instance.file);
+            let relative = relative_path(&instance.file, root);
             let location = format!(
                 "{}:{}-{}",
                 relative.display(),
@@ -910,10 +820,10 @@ fn print_duplication_json(report: &DuplicationReport, elapsed: Duration) -> Exit
     }
 }
 
-fn print_duplication_compact(report: &DuplicationReport, root: &std::path::Path) {
+fn print_duplication_compact(report: &DuplicationReport, root: &Path) {
     for (i, group) in report.clone_groups.iter().enumerate() {
         for instance in &group.instances {
-            let relative = instance.file.strip_prefix(root).unwrap_or(&instance.file);
+            let relative = relative_path(&instance.file, root);
             println!(
                 "clone-group-{}:{}:{}-{}:{}tokens",
                 i + 1,
@@ -926,19 +836,11 @@ fn print_duplication_compact(report: &DuplicationReport, root: &std::path::Path)
     }
 }
 
-fn print_duplication_sarif(report: &DuplicationReport, root: &std::path::Path) -> ExitCode {
+fn print_duplication_sarif(report: &DuplicationReport, root: &Path) -> ExitCode {
     let mut sarif_results = Vec::new();
 
     for (i, group) in report.clone_groups.iter().enumerate() {
         for instance in &group.instances {
-            let uri = normalize_uri(
-                &instance
-                    .file
-                    .strip_prefix(root)
-                    .unwrap_or(&instance.file)
-                    .display()
-                    .to_string(),
-            );
             sarif_results.push(sarif_result(
                 "fallow/code-duplication",
                 "warning",
@@ -948,7 +850,7 @@ fn print_duplication_sarif(report: &DuplicationReport, root: &std::path::Path) -
                     group.line_count,
                     group.instances.len()
                 ),
-                &uri,
+                &relative_uri(&instance.file, root),
                 Some((instance.start_line as u32, (instance.start_col + 1) as u32)),
             ));
         }
@@ -995,7 +897,7 @@ mod tests {
     use std::time::Duration;
 
     /// Helper: build an `AnalysisResults` populated with one issue of every type.
-    fn sample_results(root: &std::path::Path) -> AnalysisResults {
+    fn sample_results(root: &Path) -> AnalysisResults {
         let mut r = AnalysisResults::default();
 
         r.unused_files.push(UnusedFile {

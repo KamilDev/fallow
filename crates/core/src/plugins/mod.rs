@@ -9,49 +9,6 @@
 //! - **Dynamic resolution**: Parse tool config files to discover additional entries,
 //!   referenced dependencies, and setup files
 
-pub mod config_parser;
-
-mod angular;
-mod astro;
-mod ava;
-mod babel;
-mod biome;
-mod changesets;
-mod commitlint;
-mod cypress;
-mod docusaurus;
-mod drizzle;
-mod eslint;
-mod expo;
-mod graphql_codegen;
-mod jest;
-mod knex;
-mod mocha;
-mod msw;
-mod nestjs;
-mod nextjs;
-mod nuxt;
-mod nx;
-mod playwright;
-mod postcss;
-mod prisma;
-mod react_native;
-mod react_router;
-mod remix;
-mod rollup;
-mod semantic_release;
-mod sentry;
-mod storybook;
-mod stylelint;
-mod tailwind;
-mod tsup;
-mod turborepo;
-mod typescript;
-mod vite;
-mod vitest;
-mod webpack;
-mod wrangler;
-
 use std::path::{Path, PathBuf};
 
 use fallow_config::PackageJson;
@@ -141,6 +98,119 @@ pub trait Plugin: Send + Sync {
         PluginResult::default()
     }
 }
+
+/// Macro to eliminate boilerplate in plugin implementations.
+///
+/// Generates a struct and a `Plugin` trait impl with the standard static methods
+/// (name, enablers, entry_patterns, config_patterns, always_used, tooling_dependencies,
+/// used_exports).
+///
+/// For plugins that need custom `resolve_config()` or `is_enabled()`, keep those as
+/// manual `impl Plugin for ...` blocks instead of using this macro.
+///
+/// # Usage
+///
+/// ```ignore
+/// // Simple plugin (most common):
+/// define_plugin! {
+///     struct VitePlugin => "vite",
+///     enablers: ENABLERS,
+///     entry_patterns: ENTRY_PATTERNS,
+///     config_patterns: CONFIG_PATTERNS,
+///     always_used: ALWAYS_USED,
+///     tooling_dependencies: TOOLING_DEPENDENCIES,
+/// }
+///
+/// // Plugin with used_exports:
+/// define_plugin! {
+///     struct RemixPlugin => "remix",
+///     enablers: ENABLERS,
+///     entry_patterns: ENTRY_PATTERNS,
+///     always_used: ALWAYS_USED,
+///     tooling_dependencies: TOOLING_DEPENDENCIES,
+///     used_exports: [("app/routes/**/*.{ts,tsx}", ROUTE_EXPORTS)],
+/// }
+/// ```
+///
+/// All fields except `struct` and `enablers` are optional and default to `&[]` / `vec![]`.
+macro_rules! define_plugin {
+    (
+        struct $name:ident => $display:expr,
+        enablers: $enablers:expr
+        $(, entry_patterns: $entry:expr)?
+        $(, config_patterns: $config:expr)?
+        $(, always_used: $always:expr)?
+        $(, tooling_dependencies: $tooling:expr)?
+        $(, used_exports: [$( ($pat:expr, $exports:expr) ),* $(,)?])?
+        $(,)?
+    ) => {
+        pub struct $name;
+
+        impl Plugin for $name {
+            fn name(&self) -> &'static str {
+                $display
+            }
+
+            fn enablers(&self) -> &'static [&'static str] {
+                $enablers
+            }
+
+            $( fn entry_patterns(&self) -> &'static [&'static str] { $entry } )?
+            $( fn config_patterns(&self) -> &'static [&'static str] { $config } )?
+            $( fn always_used(&self) -> &'static [&'static str] { $always } )?
+            $( fn tooling_dependencies(&self) -> &'static [&'static str] { $tooling } )?
+
+            $(
+                fn used_exports(&self) -> Vec<(&'static str, &'static [&'static str])> {
+                    vec![$( ($pat, $exports) ),*]
+                }
+            )?
+        }
+    };
+}
+
+pub mod config_parser;
+
+mod angular;
+mod astro;
+mod ava;
+mod babel;
+mod biome;
+mod changesets;
+mod commitlint;
+mod cypress;
+mod docusaurus;
+mod drizzle;
+mod eslint;
+mod expo;
+mod graphql_codegen;
+mod jest;
+mod knex;
+mod mocha;
+mod msw;
+mod nestjs;
+mod nextjs;
+mod nuxt;
+mod nx;
+mod playwright;
+mod postcss;
+mod prisma;
+mod react_native;
+mod react_router;
+mod remix;
+mod rollup;
+mod semantic_release;
+mod sentry;
+mod storybook;
+mod stylelint;
+mod tailwind;
+mod tsup;
+mod turborepo;
+mod typescript;
+mod vite;
+mod vitest;
+mod webpack;
+mod wrangler;
 
 /// Registry of all available plugins.
 pub struct PluginRegistry {

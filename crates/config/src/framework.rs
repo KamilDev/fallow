@@ -58,36 +58,14 @@ pub struct FrameworkUsedExport {
 }
 
 /// Resolved framework rule (after loading custom presets).
-#[derive(Debug, Clone)]
-pub struct FrameworkRule {
-    pub name: String,
-    pub detection: Option<FrameworkDetection>,
-    pub entry_points: Vec<FrameworkEntryPattern>,
-    pub always_used: Vec<String>,
-    pub used_exports: Vec<FrameworkUsedExport>,
-}
-
-impl From<FrameworkPreset> for FrameworkRule {
-    fn from(preset: FrameworkPreset) -> Self {
-        Self {
-            name: preset.name,
-            detection: preset.detection,
-            entry_points: preset.entry_points,
-            always_used: preset.always_used,
-            used_exports: preset.used_exports,
-        }
-    }
-}
+pub type FrameworkRule = FrameworkPreset;
 
 /// Load user-defined framework rules from fallow.toml.
 ///
 /// Built-in framework support is handled by the plugin system in fallow-core.
 /// This function only processes custom user-defined presets.
 pub fn resolve_framework_rules(custom: &[FrameworkPreset]) -> Vec<FrameworkRule> {
-    custom
-        .iter()
-        .map(|p| FrameworkRule::from(p.clone()))
-        .collect()
+    custom.to_vec()
 }
 
 #[cfg(test)]
@@ -117,8 +95,8 @@ mod tests {
     }
 
     #[test]
-    fn framework_preset_to_rule() {
-        let preset = FrameworkPreset {
+    fn framework_preset_is_rule() {
+        let rule: FrameworkRule = FrameworkPreset {
             name: "test".to_string(),
             detection: Some(FrameworkDetection::Dependency {
                 package: "test-pkg".to_string(),
@@ -132,7 +110,6 @@ mod tests {
                 exports: vec!["default".to_string()],
             }],
         };
-        let rule: FrameworkRule = preset.into();
         assert_eq!(rule.name, "test");
         assert!(rule.detection.is_some());
         assert_eq!(rule.entry_points.len(), 1);

@@ -150,7 +150,7 @@ enum Command {
         mode: DupesMode,
 
         /// Minimum token count for a clone
-        #[arg(long, default_value = "30")]
+        #[arg(long, default_value = "50")]
         min_tokens: usize,
 
         /// Minimum line count for a clone
@@ -573,7 +573,7 @@ fn get_changed_files(
     git_ref: &str,
 ) -> Option<std::collections::HashSet<std::path::PathBuf>> {
     let output = match std::process::Command::new("git")
-        .args(["diff", "--name-only", git_ref])
+        .args(["diff", "--name-only", &format!("{}...HEAD", git_ref)])
         .current_dir(root)
         .output()
     {
@@ -685,7 +685,10 @@ fn run_watch(
                     let config =
                         match load_config(root, config_path, output.clone(), no_cache, threads) {
                             Ok(c) => c,
-                            Err(code) => return code,
+                            Err(_) => {
+                                eprintln!("Warning: failed to reload config, using previous configuration");
+                                continue;
+                            },
                         };
                     let start = Instant::now();
                     match fallow_core::analyze(&config) {
@@ -737,13 +740,13 @@ fn run_dupes(
 
     // Build duplication config: start from fallow.toml, override with CLI args
     let toml_dupes = &config.duplicates;
-    let dupes_config = fallow_core::duplicates::DuplicatesConfig {
+    let dupes_config = fallow_config::DuplicatesConfig {
         enabled: true,
         mode: match mode {
-            DupesMode::Strict => fallow_core::duplicates::DetectionMode::Strict,
-            DupesMode::Mild => fallow_core::duplicates::DetectionMode::Mild,
-            DupesMode::Weak => fallow_core::duplicates::DetectionMode::Weak,
-            DupesMode::Semantic => fallow_core::duplicates::DetectionMode::Semantic,
+            DupesMode::Strict => fallow_config::DetectionMode::Strict,
+            DupesMode::Mild => fallow_config::DetectionMode::Mild,
+            DupesMode::Weak => fallow_config::DetectionMode::Weak,
+            DupesMode::Semantic => fallow_config::DetectionMode::Semantic,
         },
         min_tokens,
         min_lines,

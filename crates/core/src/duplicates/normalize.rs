@@ -1,7 +1,7 @@
 use xxhash_rust::xxh3::xxh3_64;
 
 use super::tokenize::{SourceToken, TokenKind};
-use super::types::DetectionMode;
+use fallow_config::DetectionMode;
 
 /// A token with a precomputed hash for use in the detection engine.
 #[derive(Debug, Clone)]
