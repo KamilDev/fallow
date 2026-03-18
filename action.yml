@@ -1,5 +1,5 @@
 name: 'Fallow - Dead Code Analysis'
-description: 'Find unused files, exports, and dependencies in JavaScript/TypeScript projects'
+description: 'Find unused files, exports, and dependencies in JavaScript/TypeScript projects. Supports SARIF upload, PR comments, and job summaries.'
 author: 'Bart Waardenburg'
 
 branding:
@@ -20,72 +20,257 @@ inputs:
     required: false
     default: 'true'
   changed-since:
-    description: 'Only report issues in files changed since this git ref'
+    description: 'Only report issues in files changed since this git ref (requires fetch-depth: 0)'
     required: false
   baseline:
     description: 'Path to baseline file for comparison'
     required: false
   version:
-    description: 'Fallow version to use'
+    description: 'Fallow version to use (pin to a specific version for reproducible builds)'
     required: false
     default: 'latest'
   args:
-    description: 'Additional arguments to pass to fallow'
+    description: 'Additional arguments to pass to fallow (space-separated, no quoted values with spaces)'
     required: false
     default: ''
+  comment:
+    description: 'Post results as a PR comment (only works on pull_request events, requires pull-requests: write permission)'
+    required: false
+    default: 'false'
+  github-token:
+    description: 'GitHub token for PR comments and SARIF upload'
+    required: false
+    default: ${{ github.token }}
 
 outputs:
   results:
-    description: 'Analysis results in the specified format'
+    description: 'Path to JSON results file'
+    value: ${{ steps.analyze.outputs.results }}
   sarif:
     description: 'Path to SARIF results file (when format=sarif)'
+    value: ${{ steps.analyze.outputs.sarif }}
   issues:
     description: 'Total number of issues found'
+    value: ${{ steps.analyze.outputs.issues }}
 
 runs:
   using: 'composite'
   steps:
-    - name: Install fallow
+    # Write the jq summary script early so both Job summary and PR comment can use it
+    - name: Prepare summary script
       shell: bash
       run: |
-        if [ "${{ inputs.version }}" = "latest" ]; then
+        cat > /tmp/fallow-summary.jq << 'JQEOF'
+        def table_row(name; key):
+          (.[key] | length) as $n |
+          if $n > 0 then "| \(name) | \($n) |" else empty end;
+
+        def detail_section(name; key; fmt):
+          (.[key] | length) as $n |
+          if $n > 0 then
+            "**\(name) (\($n))**\n" +
+            ([.[key][:25][] | fmt] | join("\n")) +
+            (if $n > 25 then "\n- *... and \($n - 25) more*" else "" end) +
+            "\n"
+          else "" end;
+
+        if .total_issues == 0 then
+          "## Fallow — Dead Code Analysis\n\nNo dead code found.\n\n*Analyzed in \(.elapsed_ms)ms*"
+        else
+          "## Fallow — Dead Code Analysis\n\nFound **\(.total_issues) issues** in \(.elapsed_ms)ms\n\n" +
+          "| Category | Issues |\n|----------|--------|\n" +
+          ([
+            table_row("Unused files"; "unused_files"),
+            table_row("Unused exports"; "unused_exports"),
+            table_row("Unused types"; "unused_types"),
+            table_row("Unused dependencies"; "unused_dependencies"),
+            table_row("Unused devDependencies"; "unused_dev_dependencies"),
+            table_row("Unused enum members"; "unused_enum_members"),
+            table_row("Unused class members"; "unused_class_members"),
+            table_row("Unresolved imports"; "unresolved_imports"),
+            table_row("Unlisted dependencies"; "unlisted_dependencies"),
+            table_row("Duplicate exports"; "duplicate_exports")
+          ] | join("\n")) +
+          "\n\n<details>\n<summary>View details</summary>\n\n" +
+          detail_section("Unused files"; "unused_files";
+            "- `\(.path)`") +
+          detail_section("Unused exports"; "unused_exports";
+            "- `\(.path):\(.line)` — `\(.export_name)`") +
+          detail_section("Unused types"; "unused_types";
+            "- `\(.path):\(.line)` — `\(.export_name)`") +
+          detail_section("Unused dependencies"; "unused_dependencies";
+            "- `\(.package_name)`") +
+          detail_section("Unused devDependencies"; "unused_dev_dependencies";
+            "- `\(.package_name)`") +
+          detail_section("Unused enum members"; "unused_enum_members";
+            "- `\(.path):\(.line)` — `\(.parent_name).\(.member_name)`") +
+          detail_section("Unused class members"; "unused_class_members";
+            "- `\(.path):\(.line)` — `\(.parent_name).\(.member_name)`") +
+          detail_section("Unresolved imports"; "unresolved_imports";
+            "- `\(.path):\(.line)` — `\(.specifier)`") +
+          detail_section("Unlisted dependencies"; "unlisted_dependencies";
+            "- `\(.package_name)` (used in \(.imported_from[:3] | join(", ")))") +
+          detail_section("Duplicate exports"; "duplicate_exports";
+            "- `\(.export_name)` in \(.locations[:5] | join(", "))\(if (.locations | length) > 5 then " *(+\((.locations | length) - 5) more)*" else "" end)") +
+          "</details>"
+        end
+        JQEOF
+
+    - name: Install fallow
+      shell: bash
+      env:
+        FALLOW_VERSION: ${{ inputs.version }}
+      run: |
+        if [ "$FALLOW_VERSION" = "latest" ]; then
           npm install -g fallow
         else
-          npm install -g fallow@${{ inputs.version }}
+          npm install -g "fallow@${FALLOW_VERSION}"
         fi
+        echo "Installed fallow $(fallow --version 2>/dev/null || echo 'unknown version')"
 
     - name: Run analysis
       id: analyze
       shell: bash
+      env:
+        INPUT_ROOT: ${{ inputs.root }}
+        INPUT_FORMAT: ${{ inputs.format }}
+        INPUT_CHANGED_SINCE: ${{ inputs.changed-since }}
+        INPUT_BASELINE: ${{ inputs.baseline }}
+        INPUT_ARGS: ${{ inputs.args }}
       run: |
-        ARGS="check --root ${{ inputs.root }} --format ${{ inputs.format }}"
-
-        if [ "${{ inputs.fail-on-issues }}" = "true" ]; then
-          ARGS="$ARGS --fail-on-issues"
+        # Check if installed fallow supports --sarif-file (added in v0.1.7)
+        HAS_SARIF_FILE=false
+        if fallow check --help 2>/dev/null | grep -q -- '--sarif-file'; then
+          HAS_SARIF_FILE=true
         fi
 
-        if [ -n "${{ inputs.changed-since }}" ]; then
-          ARGS="$ARGS --changed-since ${{ inputs.changed-since }}"
+        # Build arguments safely using arrays to prevent shell injection
+        ARGS=(check --root "$INPUT_ROOT" --quiet --format json)
+
+        if [ -n "$INPUT_CHANGED_SINCE" ]; then
+          ARGS+=(--changed-since "$INPUT_CHANGED_SINCE")
         fi
 
-        if [ -n "${{ inputs.baseline }}" ]; then
-          ARGS="$ARGS --baseline ${{ inputs.baseline }}"
+        if [ -n "$INPUT_BASELINE" ]; then
+          ARGS+=(--baseline "$INPUT_BASELINE")
         fi
 
-        if [ -n "${{ inputs.args }}" ]; then
-          ARGS="$ARGS ${{ inputs.args }}"
+        # Write SARIF alongside JSON in a single pass when supported
+        if [ "$INPUT_FORMAT" = "sarif" ] && [ "$HAS_SARIF_FILE" = "true" ]; then
+          ARGS+=(--sarif-file fallow-results.sarif)
         fi
 
-        if [ "${{ inputs.format }}" = "sarif" ]; then
-          fallow $ARGS > fallow-results.sarif 2>&1 || true
-          echo "sarif=fallow-results.sarif" >> $GITHUB_OUTPUT
-        else
-          fallow $ARGS
+        # Parse INPUT_ARGS into array to prevent glob expansion
+        read -ra EXTRA_ARGS <<< "$INPUT_ARGS"
+
+        # Run analysis — intentionally no --fail-on-issues so subsequent steps always run
+        if ! fallow "${ARGS[@]}" "${EXTRA_ARGS[@]}" > fallow-results.json 2> fallow-stderr.log; then
+          # Exit code 2 = fallow error (not "issues found"), propagate it
+          if [ ! -s fallow-results.json ] || ! jq -e '.total_issues' fallow-results.json > /dev/null 2>&1; then
+            echo "::error::Fallow failed to run"
+            [ -s fallow-stderr.log ] && cat fallow-stderr.log
+            [ -s fallow-results.json ] && cat fallow-results.json
+            exit 2
+          fi
         fi
+
+        # Fallback: generate SARIF in a second run if --sarif-file wasn't available
+        if [ "$INPUT_FORMAT" = "sarif" ] && [ ! -f fallow-results.sarif ]; then
+          SARIF_ARGS=(check --root "$INPUT_ROOT" --quiet --format sarif)
+          [ -n "$INPUT_CHANGED_SINCE" ] && SARIF_ARGS+=(--changed-since "$INPUT_CHANGED_SINCE")
+          [ -n "$INPUT_BASELINE" ] && SARIF_ARGS+=(--baseline "$INPUT_BASELINE")
+          if ! fallow "${SARIF_ARGS[@]}" > fallow-results.sarif 2>/dev/null; then
+            echo "::warning::SARIF generation failed"
+          fi
+        fi
+
+        # Surface any warnings from stderr
+        if [ -s fallow-stderr.log ]; then
+          while IFS= read -r line; do
+            echo "::debug::${line}"
+          done < fallow-stderr.log
+        fi
+
+        # Extract issue count and validate it is numeric
+        ISSUES=$(jq -r '.total_issues' fallow-results.json)
+        if ! [[ "$ISSUES" =~ ^[0-9]+$ ]]; then
+          echo "::error::Unexpected total_issues value: ${ISSUES}"
+          exit 2
+        fi
+        echo "issues=${ISSUES}" >> "$GITHUB_OUTPUT"
+        echo "results=fallow-results.json" >> "$GITHUB_OUTPUT"
+
+        # Set SARIF output if generated
+        if [ -f fallow-results.sarif ]; then
+          echo "sarif=fallow-results.sarif" >> "$GITHUB_OUTPUT"
+        fi
+
+        if [ "$ISSUES" -gt 0 ]; then
+          echo "::warning::Fallow found ${ISSUES} dead code issues"
+        fi
+
+    - name: Job summary
+      if: always() && steps.analyze.outputs.issues != ''
+      shell: bash
+      run: |
+        jq -r -f /tmp/fallow-summary.jq fallow-results.json >> "$GITHUB_STEP_SUMMARY"
 
     - name: Upload SARIF
-      if: inputs.format == 'sarif' && always()
+      if: inputs.format == 'sarif' && steps.analyze.outputs.sarif != '' && always()
       uses: github/codeql-action/upload-sarif@v4
       with:
         sarif_file: fallow-results.sarif
         category: fallow
+        token: ${{ inputs.github-token }}
+
+    - name: Post PR comment
+      if: >-
+        inputs.comment == 'true' &&
+        github.event_name == 'pull_request' &&
+        always() &&
+        steps.analyze.outputs.issues != ''
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        GH_REPO: ${{ github.repository }}
+      run: |
+        # Generate comment body
+        COMMENT_BODY="$(jq -r -f /tmp/fallow-summary.jq fallow-results.json)
+
+<!-- fallow-results -->"
+
+        # Find existing fallow comment to update (avoids spam on busy PRs)
+        COMMENT_ID=$(gh api \
+          --paginate \
+          "repos/${GH_REPO}/issues/${PR_NUMBER}/comments" \
+          --jq '.[] | select(.body | contains("<!-- fallow-results -->")) | .id' \
+          2>/dev/null | head -1)
+
+        if [ -n "$COMMENT_ID" ]; then
+          gh api \
+            "repos/${GH_REPO}/issues/comments/${COMMENT_ID}" \
+            --method PATCH \
+            --field body="$COMMENT_BODY" \
+            > /dev/null
+          echo "Updated existing PR comment"
+        else
+          gh api \
+            "repos/${GH_REPO}/issues/${PR_NUMBER}/comments" \
+            --method POST \
+            --field body="$COMMENT_BODY" \
+            > /dev/null
+          echo "Created new PR comment"
+        fi
+
+    - name: Check threshold
+      if: always() && steps.analyze.outputs.issues != ''
+      shell: bash
+      env:
+        INPUT_FAIL_ON_ISSUES: ${{ inputs.fail-on-issues }}
+        ISSUES: ${{ steps.analyze.outputs.issues }}
+      run: |
+        if [ "$INPUT_FAIL_ON_ISSUES" = "true" ] && [ "$ISSUES" -gt 0 ]; then
+          echo "::error::Fallow found ${ISSUES} dead code issues"
+          exit 1
+        fi

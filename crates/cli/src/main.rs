@@ -74,6 +74,10 @@ enum Command {
         #[arg(long)]
         fail_on_issues: bool,
 
+        /// Write SARIF output to a file (in addition to the primary --format output)
+        #[arg(long, value_name = "PATH")]
+        sarif_file: Option<PathBuf>,
+
         /// Only report unused files
         #[arg(long)]
         unused_files: bool,
@@ -338,6 +342,7 @@ fn main() -> ExitCode {
 
     match cli.command.unwrap_or(Command::Check {
         fail_on_issues: false,
+        sarif_file: None,
         unused_files: false,
         unused_exports: false,
         unused_deps: false,
@@ -350,6 +355,7 @@ fn main() -> ExitCode {
     }) {
         Command::Check {
             fail_on_issues,
+            sarif_file,
             unused_files,
             unused_exports,
             unused_deps,
@@ -383,6 +389,7 @@ fn main() -> ExitCode {
                 cli.changed_since.as_deref(),
                 cli.baseline.as_deref(),
                 cli.save_baseline.as_deref(),
+                sarif_file.as_deref(),
             )
         }
         Command::Watch => run_watch(
@@ -454,6 +461,7 @@ fn run_check(
     changed_since: Option<&str>,
     baseline: Option<&std::path::Path>,
     save_baseline: Option<&std::path::Path>,
+    sarif_file: Option<&std::path::Path>,
 ) -> ExitCode {
     let start = Instant::now();
 
@@ -514,6 +522,36 @@ fn run_check(
         results = filter_new_issues(results, &baseline_data);
         if !quiet {
             eprintln!("Comparing against baseline: {}", baseline_path.display());
+        }
+    }
+
+    // Write SARIF to file if requested (independent of --format)
+    if let Some(sarif_path) = sarif_file {
+        let sarif = report::build_sarif(&results, &config.root);
+        match serde_json::to_string_pretty(&sarif) {
+            Ok(json) => {
+                // Ensure parent directories exist
+                if let Some(parent) = sarif_path.parent()
+                    && !parent.as_os_str().is_empty()
+                    && let Err(e) = std::fs::create_dir_all(parent)
+                {
+                    eprintln!(
+                        "Warning: failed to create directory for SARIF file '{}': {e}",
+                        sarif_path.display()
+                    );
+                }
+                if let Err(e) = std::fs::write(sarif_path, json) {
+                    eprintln!(
+                        "Warning: failed to write SARIF file '{}': {e}",
+                        sarif_path.display()
+                    );
+                } else if !quiet {
+                    eprintln!("SARIF output written to {}", sarif_path.display());
+                }
+            }
+            Err(e) => {
+                eprintln!("Warning: failed to serialize SARIF output: {e}");
+            }
         }
     }
 
