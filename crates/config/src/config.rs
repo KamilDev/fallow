@@ -1,15 +1,28 @@
+use std::io::Read as _;
 use std::path::{Path, PathBuf};
 
 use globset::{Glob, GlobSet, GlobSetBuilder};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::framework::FrameworkPreset;
 use crate::workspace::WorkspaceConfig;
 
-/// User-facing configuration loaded from `fallow.toml`.
-#[derive(Debug, Deserialize, Serialize)]
+/// Supported config file names in priority order.
+///
+/// `find_and_load` checks these names in order within each directory,
+/// returning the first match found.
+const CONFIG_NAMES: &[&str] = &["fallow.jsonc", "fallow.json", "fallow.toml", ".fallow.toml"];
+
+/// User-facing configuration loaded from `fallow.jsonc`, `fallow.json`, or `fallow.toml`.
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct FallowConfig {
+    /// JSON Schema reference (ignored during deserialization).
+    #[serde(rename = "$schema", default, skip_serializing)]
+    #[schemars(skip)]
+    pub schema: Option<String>,
+
     /// Additional entry point glob patterns.
     #[serde(default)]
     pub entry: Vec<String>,
@@ -49,10 +62,14 @@ pub struct FallowConfig {
     /// Per-issue-type severity rules.
     #[serde(default)]
     pub rules: RulesConfig,
+
+    /// Production mode: exclude test/dev files, only start/build scripts.
+    #[serde(default)]
+    pub production: bool,
 }
 
 /// Configuration for code duplication detection.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct DuplicatesConfig {
     /// Whether duplication detection is enabled.
     #[serde(default = "default_true")]
@@ -104,7 +121,7 @@ impl Default for DuplicatesConfig {
 /// modes are currently equivalent. `Weak` mode additionally blinds string
 /// literals. `Semantic` mode blinds all identifiers and literal values for
 /// Type-2 (renamed variable) clone detection.
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum DetectionMode {
     /// All tokens preserved including identifier names and literal values (Type-1 only).
@@ -152,7 +169,7 @@ const fn default_min_lines() -> usize {
 }
 
 /// Controls which analyses to run.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct DetectConfig {
     /// Detect unused files (not reachable from entry points).
     #[serde(default = "default_true")]
@@ -213,7 +230,7 @@ impl Default for DetectConfig {
 }
 
 /// Output format for results.
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum OutputFormat {
     /// Human-readable terminal output with source context.
@@ -228,7 +245,7 @@ pub enum OutputFormat {
 }
 
 /// Rule for ignoring specific exports.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct IgnoreExportRule {
     /// Glob pattern for files.
     pub file: String,
@@ -252,18 +269,64 @@ pub struct ResolvedConfig {
     pub ignore_export_rules: Vec<IgnoreExportRule>,
     pub duplicates: DuplicatesConfig,
     pub rules: RulesConfig,
+    /// Whether production mode is active.
+    pub production: bool,
+}
+
+/// Detect config format from file extension.
+enum ConfigFormat {
+    Toml,
+    Json,
+    Jsonc,
+}
+
+impl ConfigFormat {
+    fn from_path(path: &Path) -> Self {
+        match path.extension().and_then(|e| e.to_str()) {
+            Some("toml") => Self::Toml,
+            Some("jsonc") => Self::Jsonc,
+            Some("json") => Self::Json,
+            _ => Self::Toml,
+        }
+    }
 }
 
 impl FallowConfig {
-    /// Load config from a `fallow.toml` file.
+    /// Load config from a fallow config file (TOML, JSON, or JSONC).
+    ///
+    /// The format is detected from the file extension:
+    /// - `.toml` → TOML
+    /// - `.json` → JSON
+    /// - `.jsonc` → JSONC (JSON with comments)
     pub fn load(path: &Path) -> Result<Self, miette::Report> {
         let content = std::fs::read_to_string(path)
             .map_err(|e| miette::miette!("Failed to read config file {}: {}", path.display(), e))?;
-        toml::from_str(&content)
-            .map_err(|e| miette::miette!("Failed to parse config file {}: {}", path.display(), e))
+
+        match ConfigFormat::from_path(path) {
+            ConfigFormat::Toml => toml::from_str(&content).map_err(|e| {
+                miette::miette!("Failed to parse config file {}: {}", path.display(), e)
+            }),
+            ConfigFormat::Json => serde_json::from_str(&content).map_err(|e| {
+                miette::miette!("Failed to parse config file {}: {}", path.display(), e)
+            }),
+            ConfigFormat::Jsonc => {
+                let mut stripped = String::new();
+                json_comments::StripComments::new(content.as_bytes())
+                    .read_to_string(&mut stripped)
+                    .map_err(|e| {
+                        miette::miette!("Failed to strip comments from {}: {}", path.display(), e)
+                    })?;
+                serde_json::from_str(&stripped).map_err(|e| {
+                    miette::miette!("Failed to parse config file {}: {}", path.display(), e)
+                })
+            }
+        }
     }
 
     /// Find and load config from the current directory or ancestors.
+    ///
+    /// Checks for config files in priority order:
+    /// `fallow.jsonc` > `fallow.json` > `fallow.toml` > `.fallow.toml`
     ///
     /// Stops searching at the first directory containing `.git` or `package.json`,
     /// to avoid picking up unrelated config files above the project root.
@@ -271,11 +334,9 @@ impl FallowConfig {
     /// Returns `Ok(Some(...))` if a config was found and parsed, `Ok(None)` if
     /// no config file exists, and `Err(...)` if a config file exists but fails to parse.
     pub fn find_and_load(start: &Path) -> Result<Option<(Self, PathBuf)>, String> {
-        let config_names = ["fallow.toml", ".fallow.toml"];
-
         let mut dir = start;
         loop {
-            for name in &config_names {
+            for name in CONFIG_NAMES {
                 let candidate = dir.join(name);
                 if candidate.exists() {
                     match Self::load(&candidate) {
@@ -296,6 +357,11 @@ impl FallowConfig {
             };
         }
         Ok(None)
+    }
+
+    /// Generate JSON Schema for the configuration format.
+    pub fn json_schema() -> serde_json::Value {
+        serde_json::to_value(schemars::schema_for!(FallowConfig)).unwrap_or_default()
     }
 
     /// Resolve into a fully resolved config with compiled globs.
@@ -337,6 +403,12 @@ impl FallowConfig {
         let mut rules = self.rules;
         rules.merge_detect(&self.detect);
 
+        // In production mode, force unused_dev_dependencies off
+        let production = self.production;
+        if production {
+            rules.unused_dev_dependencies = Severity::Off;
+        }
+
         ResolvedConfig {
             root,
             entry_patterns: self.entry,
@@ -351,6 +423,7 @@ impl FallowConfig {
             ignore_export_rules: self.ignore_exports,
             duplicates: self.duplicates,
             rules,
+            production,
         }
     }
 }
@@ -363,7 +436,7 @@ const fn default_true() -> bool {
 ///
 /// Controls whether an issue type causes CI failure (`error`), is reported
 /// without failing (`warn`), or is suppressed entirely (`off`).
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum Severity {
     /// Report and fail CI (non-zero exit code).
@@ -405,7 +478,7 @@ impl std::str::FromStr for Severity {
 /// Controls which issue types cause CI failure, are reported as warnings,
 /// or are suppressed entirely. All fields default to `Severity::Error`
 /// for backwards compatibility.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct RulesConfig {
     #[serde(default)]
     pub unused_files: Severity,
@@ -565,6 +638,7 @@ ignore_dependencies = ["autoprefixer", "postcss"]
     #[test]
     fn fallow_config_resolve_default_ignores() {
         let config = FallowConfig {
+            schema: None,
             entry: vec![],
             ignore: vec![],
             detect: DetectConfig::default(),
@@ -575,6 +649,7 @@ ignore_dependencies = ["autoprefixer", "postcss"]
             output: OutputFormat::Human,
             duplicates: DuplicatesConfig::default(),
             rules: RulesConfig::default(),
+            production: false,
         };
         let resolved = config.resolve(PathBuf::from("/tmp/test"), 4, true);
 
@@ -591,6 +666,7 @@ ignore_dependencies = ["autoprefixer", "postcss"]
     #[test]
     fn fallow_config_resolve_custom_ignores() {
         let config = FallowConfig {
+            schema: None,
             entry: vec!["src/**/*.ts".to_string()],
             ignore: vec!["**/*.generated.ts".to_string()],
             detect: DetectConfig::default(),
@@ -601,6 +677,7 @@ ignore_dependencies = ["autoprefixer", "postcss"]
             output: OutputFormat::Json,
             duplicates: DuplicatesConfig::default(),
             rules: RulesConfig::default(),
+            production: false,
         };
         let resolved = config.resolve(PathBuf::from("/tmp/test"), 4, false);
 
@@ -613,6 +690,7 @@ ignore_dependencies = ["autoprefixer", "postcss"]
     #[test]
     fn fallow_config_resolve_cache_dir() {
         let config = FallowConfig {
+            schema: None,
             entry: vec![],
             ignore: vec![],
             detect: DetectConfig::default(),
@@ -623,6 +701,7 @@ ignore_dependencies = ["autoprefixer", "postcss"]
             output: OutputFormat::Human,
             duplicates: DuplicatesConfig::default(),
             rules: RulesConfig::default(),
+            production: false,
         };
         let resolved = config.resolve(PathBuf::from("/tmp/project"), 4, true);
         assert_eq!(resolved.cache_dir, PathBuf::from("/tmp/project/.fallow"));
@@ -808,5 +887,118 @@ unknown_field = true
 "#;
         let result: Result<FallowConfig, _> = toml::from_str(toml_str);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn fallow_config_deserialize_json() {
+        let json_str = r#"{"entry": ["src/main.ts"], "detect": {"unused_files": false}}"#;
+        let config: FallowConfig = serde_json::from_str(json_str).unwrap();
+        assert_eq!(config.entry, vec!["src/main.ts"]);
+        assert!(!config.detect.unused_files);
+        assert!(config.detect.unused_exports); // default true
+    }
+
+    #[test]
+    fn fallow_config_deserialize_jsonc() {
+        let jsonc_str = r#"{
+            // This is a comment
+            "entry": ["src/main.ts"],
+            "rules": {
+                "unused_files": "warn"
+            }
+        }"#;
+        let mut stripped = String::new();
+        json_comments::StripComments::new(jsonc_str.as_bytes())
+            .read_to_string(&mut stripped)
+            .unwrap();
+        let config: FallowConfig = serde_json::from_str(&stripped).unwrap();
+        assert_eq!(config.entry, vec!["src/main.ts"]);
+        assert_eq!(config.rules.unused_files, Severity::Warn);
+    }
+
+    #[test]
+    fn fallow_config_json_with_schema_field() {
+        let json_str = r#"{"$schema": "https://fallow.dev/schema.json", "entry": ["src/main.ts"]}"#;
+        let config: FallowConfig = serde_json::from_str(json_str).unwrap();
+        assert_eq!(config.entry, vec!["src/main.ts"]);
+    }
+
+    #[test]
+    fn fallow_config_json_schema_generation() {
+        let schema = FallowConfig::json_schema();
+        assert!(schema.is_object());
+        let obj = schema.as_object().unwrap();
+        assert!(obj.contains_key("properties"));
+    }
+
+    #[test]
+    fn config_format_detection() {
+        assert!(matches!(
+            ConfigFormat::from_path(Path::new("fallow.toml")),
+            ConfigFormat::Toml
+        ));
+        assert!(matches!(
+            ConfigFormat::from_path(Path::new("fallow.json")),
+            ConfigFormat::Json
+        ));
+        assert!(matches!(
+            ConfigFormat::from_path(Path::new("fallow.jsonc")),
+            ConfigFormat::Jsonc
+        ));
+        assert!(matches!(
+            ConfigFormat::from_path(Path::new(".fallow.toml")),
+            ConfigFormat::Toml
+        ));
+    }
+
+    #[test]
+    fn config_names_priority_order() {
+        assert_eq!(CONFIG_NAMES[0], "fallow.jsonc");
+        assert_eq!(CONFIG_NAMES[1], "fallow.json");
+        assert_eq!(CONFIG_NAMES[2], "fallow.toml");
+        assert_eq!(CONFIG_NAMES[3], ".fallow.toml");
+    }
+
+    #[test]
+    fn load_json_config_file() {
+        let dir = std::env::temp_dir().join("fallow-test-json-config");
+        let _ = std::fs::create_dir_all(&dir);
+        let config_path = dir.join("fallow.json");
+        std::fs::write(
+            &config_path,
+            r#"{"entry": ["src/index.ts"], "rules": {"unused_exports": "warn"}}"#,
+        )
+        .unwrap();
+
+        let config = FallowConfig::load(&config_path).unwrap();
+        assert_eq!(config.entry, vec!["src/index.ts"]);
+        assert_eq!(config.rules.unused_exports, Severity::Warn);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn load_jsonc_config_file() {
+        let dir = std::env::temp_dir().join("fallow-test-jsonc-config");
+        let _ = std::fs::create_dir_all(&dir);
+        let config_path = dir.join("fallow.jsonc");
+        std::fs::write(
+            &config_path,
+            r#"{
+                // Entry points for analysis
+                "entry": ["src/index.ts"],
+                /* Block comment */
+                "rules": {
+                    "unused_exports": "warn"
+                }
+            }"#,
+        )
+        .unwrap();
+
+        let config = FallowConfig::load(&config_path).unwrap();
+        assert_eq!(config.entry, vec!["src/index.ts"]);
+        assert_eq!(config.rules.unused_exports, Severity::Warn);
+
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

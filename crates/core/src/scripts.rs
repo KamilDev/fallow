@@ -57,6 +57,46 @@ const ENV_WRAPPERS: &[&str] = &["cross-env", "dotenv", "env"];
 /// Node.js runners whose first non-flag argument is a file path, not a binary name.
 const NODE_RUNNERS: &[&str] = &["node", "ts-node", "tsx", "babel-node", "bun"];
 
+/// Filter scripts to only production-relevant ones (start, build, and their pre/post hooks).
+///
+/// In production mode, dev/test/lint scripts are excluded since they only affect
+/// devDependency usage, not the production dependency graph.
+pub fn filter_production_scripts(scripts: &HashMap<String, String>) -> HashMap<String, String> {
+    scripts
+        .iter()
+        .filter(|(name, _)| is_production_script(name))
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect()
+}
+
+/// Check if a script name is production-relevant.
+///
+/// Production scripts: `start`, `build`, `serve`, `preview`, `prepare`, `prepublishOnly`,
+/// and their `pre`/`post` lifecycle hooks, plus namespaced variants like `build:prod`.
+fn is_production_script(name: &str) -> bool {
+    // Check the root name (before any `:` namespace separator)
+    let root_name = name.split(':').next().unwrap_or(name);
+
+    // Direct match (including scripts that happen to start with pre/post like preview, prepare)
+    if matches!(
+        root_name,
+        "start" | "build" | "serve" | "preview" | "prepare" | "prepublishOnly" | "postinstall"
+    ) {
+        return true;
+    }
+
+    // Check lifecycle hooks: pre/post + production script name
+    let base = root_name
+        .strip_prefix("pre")
+        .or_else(|| root_name.strip_prefix("post"));
+
+    if let Some(base) = base {
+        matches!(base, "start" | "build" | "serve" | "install")
+    } else {
+        false
+    }
+}
+
 /// Analyze all scripts from a package.json `scripts` field.
 ///
 /// For each script value, parses shell commands, extracts binary names (mapped to
@@ -840,5 +880,63 @@ mod tests {
         let segments = split_shell_operators("echo \"a || b\" || jest");
         assert_eq!(segments.len(), 2);
         assert!(segments[1].trim() == "jest");
+    }
+
+    // --- is_production_script ---
+
+    #[test]
+    fn production_script_start() {
+        assert!(super::is_production_script("start"));
+        assert!(super::is_production_script("prestart"));
+        assert!(super::is_production_script("poststart"));
+    }
+
+    #[test]
+    fn production_script_build() {
+        assert!(super::is_production_script("build"));
+        assert!(super::is_production_script("prebuild"));
+        assert!(super::is_production_script("postbuild"));
+        assert!(super::is_production_script("build:prod"));
+        assert!(super::is_production_script("build:esm"));
+    }
+
+    #[test]
+    fn production_script_serve_preview() {
+        assert!(super::is_production_script("serve"));
+        assert!(super::is_production_script("preview"));
+        assert!(super::is_production_script("prepare"));
+    }
+
+    #[test]
+    fn non_production_scripts() {
+        assert!(!super::is_production_script("test"));
+        assert!(!super::is_production_script("lint"));
+        assert!(!super::is_production_script("dev"));
+        assert!(!super::is_production_script("storybook"));
+        assert!(!super::is_production_script("typecheck"));
+        assert!(!super::is_production_script("format"));
+        assert!(!super::is_production_script("e2e"));
+    }
+
+    // --- filter_production_scripts ---
+
+    #[test]
+    fn filter_keeps_production_scripts() {
+        let scripts: HashMap<String, String> = [
+            ("build".to_string(), "webpack".to_string()),
+            ("start".to_string(), "node server.js".to_string()),
+            ("test".to_string(), "jest".to_string()),
+            ("lint".to_string(), "eslint src".to_string()),
+            ("dev".to_string(), "next dev".to_string()),
+        ]
+        .into_iter()
+        .collect();
+
+        let filtered = filter_production_scripts(&scripts);
+        assert!(filtered.contains_key("build"));
+        assert!(filtered.contains_key("start"));
+        assert!(!filtered.contains_key("test"));
+        assert!(!filtered.contains_key("lint"));
+        assert!(!filtered.contains_key("dev"));
     }
 }

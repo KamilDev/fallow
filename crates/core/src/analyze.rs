@@ -117,6 +117,15 @@ pub fn find_dead_code_full(
         results.duplicate_exports = find_duplicate_exports(graph, config, &suppressions_by_file);
     }
 
+    // In production mode, detect dependencies that are only used via type-only imports
+    if config.production {
+        let pkg_path = config.root.join("package.json");
+        if let Ok(pkg) = PackageJson::load(&pkg_path) {
+            results.type_only_dependencies =
+                find_type_only_dependencies(graph, &pkg, config, workspaces);
+        }
+    }
+
     results
 }
 
@@ -794,6 +803,65 @@ fn find_unused_members(
     }
 
     (unused_enum_members, unused_class_members)
+}
+
+/// Find production dependencies that are only imported via type-only imports.
+///
+/// In production mode, `import type { Foo } from 'pkg'` is erased at compile time,
+/// meaning the dependency is not needed at runtime. Such dependencies should be
+/// moved to devDependencies.
+fn find_type_only_dependencies(
+    graph: &ModuleGraph,
+    pkg: &PackageJson,
+    config: &ResolvedConfig,
+    workspaces: &[fallow_config::WorkspaceInfo],
+) -> Vec<TypeOnlyDependency> {
+    let root_pkg_path = config.root.join("package.json");
+    let workspace_names: HashSet<&str> = workspaces.iter().map(|ws| ws.name.as_str()).collect();
+
+    let mut type_only_deps = Vec::new();
+
+    // Check root production dependencies
+    for dep in pkg.production_dependency_names() {
+        // Skip internal workspace packages
+        if workspace_names.contains(dep.as_str()) {
+            continue;
+        }
+        // Skip ignored dependencies
+        if config.ignore_dependencies.iter().any(|d| d == &dep) {
+            continue;
+        }
+
+        let has_any_usage = graph.package_usage.contains_key(dep.as_str());
+        let has_type_only_usage = graph.type_only_package_usage.contains_key(dep.as_str());
+
+        if !has_any_usage {
+            // Not used at all — this will be caught by unused_dependencies
+            continue;
+        }
+
+        // Check if ALL usages are type-only: the number of type-only usages must equal
+        // the total number of usages for this package
+        let total_count = graph
+            .package_usage
+            .get(dep.as_str())
+            .map(|v| v.len())
+            .unwrap_or(0);
+        let type_only_count = graph
+            .type_only_package_usage
+            .get(dep.as_str())
+            .map(|v| v.len())
+            .unwrap_or(0);
+
+        if has_type_only_usage && type_only_count == total_count {
+            type_only_deps.push(TypeOnlyDependency {
+                package_name: dep,
+                path: root_pkg_path.clone(),
+            });
+        }
+    }
+
+    type_only_deps
 }
 
 /// Find dependencies used in imports but not listed in package.json.

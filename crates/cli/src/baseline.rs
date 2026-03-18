@@ -1,4 +1,7 @@
 use std::collections::HashSet;
+use std::path::Path;
+
+use fallow_core::duplicates::DuplicationReport;
 
 /// Baseline data for comparison.
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -100,4 +103,103 @@ pub(crate) fn filter_new_issues(
         .unused_dev_dependencies
         .retain(|d| !baseline_dev_deps.contains(d.package_name.as_str()));
     results
+}
+
+/// Baseline data for duplication comparison.
+///
+/// Each clone group is keyed by a canonical string derived from its sorted
+/// (file:start_line-end_line) instance locations. This allows stable comparison
+/// across runs even if group ordering changes.
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) struct DuplicationBaselineData {
+    /// Clone group keys: sorted list of "file:start-end" per group.
+    pub clone_groups: Vec<String>,
+}
+
+impl DuplicationBaselineData {
+    /// Build a duplication baseline from the current report.
+    pub(crate) fn from_report(report: &DuplicationReport, root: &Path) -> Self {
+        Self {
+            clone_groups: report
+                .clone_groups
+                .iter()
+                .map(|g| clone_group_key(g, root))
+                .collect(),
+        }
+    }
+}
+
+/// Generate a stable key for a clone group based on its instance locations.
+fn clone_group_key(group: &fallow_core::duplicates::CloneGroup, root: &Path) -> String {
+    let mut parts: Vec<String> = group
+        .instances
+        .iter()
+        .map(|i| {
+            let relative = i
+                .file
+                .strip_prefix(root)
+                .unwrap_or(&i.file)
+                .to_string_lossy()
+                .replace('\\', "/");
+            format!("{}:{}-{}", relative, i.start_line, i.end_line)
+        })
+        .collect();
+    parts.sort();
+    parts.join("|")
+}
+
+/// Filter a duplication report to only include clone groups not present in the baseline.
+pub(crate) fn filter_new_clone_groups(
+    mut report: DuplicationReport,
+    baseline: &DuplicationBaselineData,
+    root: &Path,
+) -> DuplicationReport {
+    let baseline_keys: HashSet<&str> = baseline.clone_groups.iter().map(|s| s.as_str()).collect();
+
+    report.clone_groups.retain(|g| {
+        let key = clone_group_key(g, root);
+        !baseline_keys.contains(key.as_str())
+    });
+
+    // Re-generate families from the filtered groups
+    report.clone_families =
+        fallow_core::duplicates::families::group_into_families(&report.clone_groups);
+
+    // Re-compute stats for the filtered groups
+    report.stats = recompute_stats(&report);
+
+    report
+}
+
+/// Recompute duplication statistics after baseline filtering.
+fn recompute_stats(report: &DuplicationReport) -> fallow_core::duplicates::DuplicationStats {
+    let mut files_with_clones: HashSet<&Path> = HashSet::new();
+    let mut duplicated_lines = 0usize;
+    let mut duplicated_tokens = 0usize;
+    let mut clone_instances = 0usize;
+
+    for group in &report.clone_groups {
+        for instance in &group.instances {
+            files_with_clones.insert(&instance.file);
+            duplicated_lines += instance.end_line.saturating_sub(instance.start_line) + 1;
+        }
+        duplicated_tokens += group.token_count * group.instances.len();
+        clone_instances += group.instances.len();
+    }
+
+    fallow_core::duplicates::DuplicationStats {
+        total_files: report.stats.total_files,
+        files_with_clones: files_with_clones.len(),
+        total_lines: report.stats.total_lines,
+        duplicated_lines,
+        total_tokens: report.stats.total_tokens,
+        duplicated_tokens,
+        clone_groups: report.clone_groups.len(),
+        clone_instances,
+        duplication_percentage: if report.stats.total_lines > 0 {
+            (duplicated_lines as f64 / report.stats.total_lines as f64) * 100.0
+        } else {
+            0.0
+        },
+    }
 }

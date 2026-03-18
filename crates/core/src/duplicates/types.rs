@@ -33,11 +33,52 @@ pub struct CloneGroup {
     pub line_count: usize,
 }
 
+/// The kind of refactoring suggested for a clone family.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub enum RefactoringKind {
+    /// Extract a shared function/utility.
+    ExtractFunction,
+    /// Extract a shared module.
+    ExtractModule,
+}
+
+/// A refactoring suggestion for a clone family.
+#[derive(Debug, Clone, Serialize)]
+pub struct RefactoringSuggestion {
+    /// What kind of refactoring is suggested.
+    pub kind: RefactoringKind,
+    /// Human-readable description of the suggestion.
+    pub description: String,
+    /// Estimated lines that could be eliminated.
+    pub estimated_savings: usize,
+}
+
+/// A clone family: a set of clone groups that share the same file set.
+///
+/// When multiple clone groups are all duplicated between the same set of files,
+/// they form a family — indicating a deeper structural relationship that should
+/// be refactored together rather than group-by-group.
+#[derive(Debug, Clone, Serialize)]
+pub struct CloneFamily {
+    /// The files involved in this family (sorted for stable output).
+    pub files: Vec<PathBuf>,
+    /// Clone groups belonging to this family.
+    pub groups: Vec<CloneGroup>,
+    /// Total number of duplicated lines across all groups.
+    pub total_duplicated_lines: usize,
+    /// Total number of duplicated tokens across all groups.
+    pub total_duplicated_tokens: usize,
+    /// Refactoring suggestions for this family.
+    pub suggestions: Vec<RefactoringSuggestion>,
+}
+
 /// Overall duplication analysis report.
 #[derive(Debug, Clone, Serialize)]
 pub struct DuplicationReport {
     /// All detected clone groups.
     pub clone_groups: Vec<CloneGroup>,
+    /// Clone families: groups of clone groups sharing the same file set.
+    pub clone_families: Vec<CloneFamily>,
     /// Aggregate statistics.
     pub stats: DuplicationStats,
 }

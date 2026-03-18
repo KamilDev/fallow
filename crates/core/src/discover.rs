@@ -43,6 +43,33 @@ const SOURCE_EXTENSIONS: &[&str] = &[
     "ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs", "vue", "svelte",
 ];
 
+/// Glob patterns for test/dev/story files excluded in production mode.
+const PRODUCTION_EXCLUDE_PATTERNS: &[&str] = &[
+    // Test files
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/*.e2e.*",
+    "**/*.e2e-spec.*",
+    "**/*.bench.*",
+    "**/*.fixture.*",
+    // Story files
+    "**/*.stories.*",
+    "**/*.story.*",
+    // Test directories
+    "**/__tests__/**",
+    "**/__mocks__/**",
+    "**/__snapshots__/**",
+    "**/__fixtures__/**",
+    "**/test/**",
+    "**/tests/**",
+    // Dev/config files at project level
+    "**/*.config.*",
+    "**/.*.js",
+    "**/.*.ts",
+    "**/.*.mjs",
+    "**/.*.cjs",
+];
+
 /// Discover all source files in the project.
 pub fn discover_files(config: &ResolvedConfig) -> Vec<DiscoveredFile> {
     let _span = tracing::info_span!("discover_files").entered();
@@ -65,10 +92,35 @@ pub fn discover_files(config: &ResolvedConfig) -> Vec<DiscoveredFile> {
         .threads(config.threads)
         .build();
 
+    // Build production exclude matcher if needed
+    let production_excludes = if config.production {
+        let mut builder = globset::GlobSetBuilder::new();
+        for pattern in PRODUCTION_EXCLUDE_PATTERNS {
+            if let Ok(glob) = globset::Glob::new(pattern) {
+                builder.add(glob);
+            }
+        }
+        builder.build().ok()
+    } else {
+        None
+    };
+
     let mut files: Vec<DiscoveredFile> = walker
         .filter_map(|entry| entry.ok())
         .filter(|entry| entry.file_type().is_some_and(|ft| ft.is_file()))
         .filter(|entry| !config.ignore_patterns.is_match(entry.path()))
+        .filter(|entry| {
+            // In production mode, exclude test/story/dev files
+            if let Some(ref excludes) = production_excludes {
+                let relative = entry
+                    .path()
+                    .strip_prefix(&config.root)
+                    .unwrap_or(entry.path());
+                !excludes.is_match(relative)
+            } else {
+                true
+            }
+        })
         .enumerate()
         .map(|(idx, entry)| {
             let size_bytes = entry.metadata().map(|m| m.len()).unwrap_or(0);

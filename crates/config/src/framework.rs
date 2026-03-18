@@ -1,11 +1,12 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// Declarative framework detection and entry point configuration.
 ///
-/// Users can define custom framework presets via `fallow.toml` to add
+/// Users can define custom framework presets via the fallow config file to add
 /// project-specific entry points, always-used files, and used export rules.
 /// Built-in framework support is provided by the plugin system in fallow-core.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct FrameworkPreset {
     /// Unique name for this framework.
     pub name: String,
@@ -28,7 +29,7 @@ pub struct FrameworkPreset {
 }
 
 /// How to detect if a framework is in use.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum FrameworkDetection {
     /// Framework detected if this package is in dependencies.
@@ -42,14 +43,14 @@ pub enum FrameworkDetection {
 }
 
 /// Entry point pattern from a framework.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct FrameworkEntryPattern {
     /// Glob pattern for entry point files.
     pub pattern: String,
 }
 
 /// Exports considered used for files matching a pattern.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct FrameworkUsedExport {
     /// Files matching this glob pattern.
     pub file_pattern: String,
@@ -60,7 +61,7 @@ pub struct FrameworkUsedExport {
 /// Resolved framework rule (after loading custom presets).
 pub type FrameworkRule = FrameworkPreset;
 
-/// Load user-defined framework rules from fallow.toml.
+/// Load user-defined framework rules from config.
 ///
 /// Built-in framework support is handled by the plugin system in fallow-core.
 /// This function only processes custom user-defined presets.

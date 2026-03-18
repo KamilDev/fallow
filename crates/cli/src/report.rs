@@ -172,6 +172,26 @@ fn print_human(
         },
     );
 
+    if !results.type_only_dependencies.is_empty() {
+        print_human_section(
+            &results.type_only_dependencies,
+            "Type-only dependencies (consider moving to devDependencies)",
+            Level::Warn,
+            |dep| {
+                let pkg_label = relative_path(&dep.path, root).display().to_string();
+                if pkg_label == "package.json" {
+                    vec![format!("  {}", dep.package_name.bold())]
+                } else {
+                    vec![format!(
+                        "  {} ({})",
+                        dep.package_name.bold(),
+                        pkg_label.dimmed()
+                    )]
+                }
+            },
+        );
+    }
+
     if !quiet {
         let total = results.total_issues();
         if total == 0 {
@@ -815,16 +835,63 @@ fn print_duplication_human(
         println!();
     }
 
+    // Print clone families with refactoring suggestions
+    if !report.clone_families.is_empty() {
+        println!(
+            "{} {}",
+            "\u{25cf}".yellow(),
+            "Clone Families".yellow().bold()
+        );
+        println!();
+
+        for (i, family) in report.clone_families.iter().enumerate() {
+            let file_names: Vec<_> = family
+                .files
+                .iter()
+                .map(|f| relative_path(f, root).display().to_string())
+                .collect();
+            println!(
+                "  {} ({} group{}, {} lines across {})",
+                format!("Family {}", i + 1).bold(),
+                family.groups.len(),
+                if family.groups.len() == 1 { "" } else { "s" },
+                family.total_duplicated_lines,
+                file_names.join(", "),
+            );
+
+            for suggestion in &family.suggestions {
+                let savings = if suggestion.estimated_savings > 0 {
+                    format!(" (~{} lines saved)", suggestion.estimated_savings)
+                } else {
+                    String::new()
+                };
+                println!(
+                    "  {} {}{}",
+                    "\u{2192}".yellow(),
+                    suggestion.description.dimmed(),
+                    savings.dimmed(),
+                );
+            }
+            println!();
+        }
+    }
+
     let stats = &report.stats;
     if !quiet {
         eprintln!(
             "{}",
             format!(
-                "Found {} clone group{} with {} instance{}",
+                "Found {} clone group{} with {} instance{} in {} famil{}",
                 stats.clone_groups,
                 if stats.clone_groups == 1 { "" } else { "s" },
                 stats.clone_instances,
                 if stats.clone_instances == 1 { "" } else { "s" },
+                report.clone_families.len(),
+                if report.clone_families.len() == 1 {
+                    "y"
+                } else {
+                    "ies"
+                },
             )
             .bold()
         );

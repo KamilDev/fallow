@@ -17,6 +17,9 @@ pub struct AnalysisResults {
     pub unresolved_imports: Vec<UnresolvedImport>,
     pub unlisted_dependencies: Vec<UnlistedDependency>,
     pub duplicate_exports: Vec<DuplicateExport>,
+    /// Production dependencies only used via type-only imports (could be devDependencies).
+    /// Only populated in production mode.
+    pub type_only_dependencies: Vec<TypeOnlyDependency>,
 }
 
 impl AnalysisResults {
@@ -32,6 +35,7 @@ impl AnalysisResults {
             + self.unresolved_imports.len()
             + self.unlisted_dependencies.len()
             + self.duplicate_exports.len()
+            + self.type_only_dependencies.len()
     }
 
     /// Whether any issues were found.
@@ -110,6 +114,16 @@ pub struct UnlistedDependency {
 pub struct DuplicateExport {
     pub export_name: String,
     pub locations: Vec<PathBuf>,
+}
+
+/// A production dependency that is only used via type-only imports.
+/// In production builds, type imports are erased, so this dependency
+/// is not needed at runtime and could be moved to devDependencies.
+#[derive(Debug, Serialize)]
+pub struct TypeOnlyDependency {
+    pub package_name: String,
+    /// Path to the package.json where the dependency is listed.
+    pub path: PathBuf,
 }
 
 #[cfg(test)]
