@@ -150,7 +150,7 @@ enum Command {
         mode: DupesMode,
 
         /// Minimum token count for a clone
-        #[arg(long, default_value = "50")]
+        #[arg(long, default_value = "30")]
         min_tokens: usize,
 
         /// Minimum line count for a clone
