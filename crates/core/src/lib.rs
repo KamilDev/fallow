@@ -55,7 +55,13 @@ pub fn analyze(config: &ResolvedConfig) -> Result<AnalysisResults, FallowError> 
     if let Ok(pkg) = PackageJson::load(&pkg_path)
         && let Some(ref pkg_scripts) = pkg.scripts
     {
-        let script_analysis = scripts::analyze_scripts(pkg_scripts, &config.root);
+        // In production mode, only analyze start/build scripts
+        let scripts_to_analyze = if config.production {
+            scripts::filter_production_scripts(pkg_scripts)
+        } else {
+            pkg_scripts.clone()
+        };
+        let script_analysis = scripts::analyze_scripts(&scripts_to_analyze, &config.root);
         plugin_result.script_used_packages = script_analysis.used_packages;
 
         // Add config files from scripts as entry points (resolved later)
@@ -69,7 +75,12 @@ pub fn analyze(config: &ResolvedConfig) -> Result<AnalysisResults, FallowError> 
         if let Ok(ws_pkg) = PackageJson::load(&ws_pkg_path)
             && let Some(ref ws_scripts) = ws_pkg.scripts
         {
-            let ws_analysis = scripts::analyze_scripts(ws_scripts, &ws.root);
+            let scripts_to_analyze = if config.production {
+                scripts::filter_production_scripts(ws_scripts)
+            } else {
+                ws_scripts.clone()
+            };
+            let ws_analysis = scripts::analyze_scripts(&scripts_to_analyze, &ws.root);
             plugin_result
                 .script_used_packages
                 .extend(ws_analysis.used_packages);
@@ -266,6 +277,7 @@ pub(crate) fn default_config(root: &Path) -> ResolvedConfig {
     match user_config {
         Some((config, _path)) => config.resolve(root.to_path_buf(), num_cpus(), false),
         None => fallow_config::FallowConfig {
+            schema: None,
             entry: vec![],
             ignore: vec![],
             detect: fallow_config::DetectConfig::default(),
@@ -276,6 +288,7 @@ pub(crate) fn default_config(root: &Path) -> ResolvedConfig {
             output: fallow_config::OutputFormat::Human,
             duplicates: fallow_config::DuplicatesConfig::default(),
             rules: fallow_config::RulesConfig::default(),
+            production: false,
         }
         .resolve(root.to_path_buf(), num_cpus(), false),
     }

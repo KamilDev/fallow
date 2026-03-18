@@ -1,9 +1,10 @@
 use std::path::{Path, PathBuf};
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// Workspace configuration for monorepo support.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct WorkspaceConfig {
     /// Additional workspace patterns (beyond what's in root package.json).
     #[serde(default)]

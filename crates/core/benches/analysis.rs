@@ -6,6 +6,7 @@ use fallow_config::{DetectConfig, FallowConfig, OutputFormat};
 
 fn create_test_config(root: std::path::PathBuf) -> fallow_config::ResolvedConfig {
     FallowConfig {
+        schema: None,
         entry: vec![],
         ignore: vec![],
         detect: DetectConfig::default(),
@@ -15,6 +16,8 @@ fn create_test_config(root: std::path::PathBuf) -> fallow_config::ResolvedConfig
         ignore_exports: vec![],
         output: OutputFormat::Human,
         duplicates: fallow_config::DuplicatesConfig::default(),
+        rules: fallow_config::RulesConfig::default(),
+        production: false,
     }
     .resolve(root, 4, true)
 }

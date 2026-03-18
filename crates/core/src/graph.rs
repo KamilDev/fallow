@@ -17,6 +17,10 @@ pub struct ModuleGraph {
     edges: Vec<Edge>,
     /// Maps npm package names to the set of FileIds that import them.
     pub package_usage: HashMap<String, Vec<FileId>>,
+    /// Maps npm package names to the set of FileIds that import them with type-only imports.
+    /// A package appearing here but not in `package_usage` (or only in both) indicates
+    /// it's only used for types and could be a devDependency.
+    pub type_only_package_usage: HashMap<String, Vec<FileId>>,
     /// All entry point FileIds.
     pub entry_points: HashSet<FileId>,
     /// Reverse index: for each FileId, which files import it.
@@ -135,6 +139,7 @@ impl ModuleGraph {
         let mut all_edges = Vec::new();
         let mut modules = Vec::with_capacity(module_count);
         let mut package_usage: HashMap<String, Vec<FileId>> = HashMap::new();
+        let mut type_only_package_usage: HashMap<String, Vec<FileId>> = HashMap::new();
         let mut reverse_deps = vec![Vec::new(); total_capacity];
 
         // Build entry point set — use path_to_id map instead of O(n) scan per entry
@@ -182,6 +187,12 @@ impl ModuleGraph {
                         }
                         ResolveResult::NpmPackage(name) => {
                             package_usage.entry(name.clone()).or_default().push(file.id);
+                            if import.info.is_type_only {
+                                type_only_package_usage
+                                    .entry(name.clone())
+                                    .or_default()
+                                    .push(file.id);
+                            }
                         }
                         _ => {}
                     }
@@ -203,6 +214,12 @@ impl ModuleGraph {
                             });
                     } else if let ResolveResult::NpmPackage(name) = &re_export.target {
                         package_usage.entry(name.clone()).or_default().push(file.id);
+                        if re_export.info.is_type_only {
+                            type_only_package_usage
+                                .entry(name.clone())
+                                .or_default()
+                                .push(file.id);
+                        }
                     }
                 }
 
@@ -488,6 +505,7 @@ impl ModuleGraph {
             modules,
             edges: all_edges,
             package_usage,
+            type_only_package_usage,
             entry_points: entry_point_ids,
             reverse_deps,
             namespace_imported,

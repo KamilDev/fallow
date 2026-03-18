@@ -9,7 +9,7 @@ mod baseline;
 mod fix;
 mod report;
 
-use baseline::{BaselineData, filter_new_issues};
+use baseline::{BaselineData, DuplicationBaselineData, filter_new_clone_groups, filter_new_issues};
 
 // ── CLI definition ───────────────────────────────────────────────
 
@@ -27,7 +27,7 @@ struct Cli {
     #[arg(short, long, global = true)]
     root: Option<PathBuf>,
 
-    /// Path to fallow.toml configuration file
+    /// Path to config file (fallow.jsonc, fallow.json, or fallow.toml)
     #[arg(short, long, global = true)]
     config: Option<PathBuf>,
 
@@ -64,6 +64,11 @@ struct Cli {
     /// Save the current results as a baseline file
     #[arg(long, global = true)]
     save_baseline: Option<PathBuf>,
+
+    /// Production mode: exclude test/story/dev files, only start/build scripts,
+    /// report type-only dependencies
+    #[arg(long, global = true)]
+    production: bool,
 }
 
 #[derive(Subcommand)]
@@ -125,8 +130,15 @@ enum Command {
         dry_run: bool,
     },
 
-    /// Initialize a fallow.toml configuration file
-    Init,
+    /// Initialize a fallow.jsonc configuration file
+    Init {
+        /// Generate TOML instead of JSONC
+        #[arg(long)]
+        toml: bool,
+    },
+
+    /// Print the JSON Schema for fallow configuration files
+    ConfigSchema,
 
     /// List discovered entry points and files
     List {
@@ -352,9 +364,12 @@ fn validate_root(root: &std::path::Path) -> Result<PathBuf, String> {
 fn main() -> ExitCode {
     let cli = Cli::parse();
 
-    // Handle schema before tracing setup (no side effects)
+    // Handle schema commands before tracing setup (no side effects)
     if matches!(cli.command, Some(Command::Schema)) {
         return run_schema();
+    }
+    if matches!(cli.command, Some(Command::ConfigSchema)) {
+        return run_config_schema();
     }
 
     // Set up tracing
@@ -446,6 +461,7 @@ fn main() -> ExitCode {
                 cli.baseline.as_deref(),
                 cli.save_baseline.as_deref(),
                 sarif_file.as_deref(),
+                cli.production,
             )
         }
         Command::Watch => run_watch(
@@ -455,6 +471,7 @@ fn main() -> ExitCode {
             cli.no_cache,
             threads,
             cli.quiet,
+            cli.production,
         ),
         Command::Fix { dry_run } => fix::run_fix(
             &root,
@@ -464,8 +481,10 @@ fn main() -> ExitCode {
             threads,
             cli.quiet,
             dry_run,
+            cli.production,
         ),
-        Command::Init => run_init(&root),
+        Command::Init { toml } => run_init(&root, toml),
+        Command::ConfigSchema => run_config_schema(),
         Command::List {
             entry_points,
             files,
@@ -478,6 +497,7 @@ fn main() -> ExitCode {
             entry_points,
             files,
             plugins,
+            cli.production,
         ),
         Command::Dupes {
             mode,
@@ -497,6 +517,9 @@ fn main() -> ExitCode {
             min_lines,
             threshold,
             skip_local,
+            cli.baseline.as_deref(),
+            cli.save_baseline.as_deref(),
+            cli.production,
         ),
         Command::Schema => unreachable!("handled above"),
     }
@@ -518,10 +541,11 @@ fn run_check(
     baseline: Option<&std::path::Path>,
     save_baseline: Option<&std::path::Path>,
     sarif_file: Option<&std::path::Path>,
+    production: bool,
 ) -> ExitCode {
     let start = Instant::now();
 
-    let config = match load_config(root, config_path, output, no_cache, threads) {
+    let config = match load_config(root, config_path, output, no_cache, threads, production) {
         Ok(c) => c,
         Err(code) => return code,
     };
@@ -714,12 +738,20 @@ fn run_watch(
     no_cache: bool,
     threads: usize,
     quiet: bool,
+    production: bool,
 ) -> ExitCode {
     use notify_debouncer_mini::{DebouncedEventKind, new_debouncer};
     use std::sync::mpsc;
     use std::time::Duration;
 
-    let config = match load_config(root, config_path, output.clone(), no_cache, threads) {
+    let config = match load_config(
+        root,
+        config_path,
+        output.clone(),
+        no_cache,
+        threads,
+        production,
+    ) {
         Ok(c) => c,
         Err(code) => return code,
     };
@@ -779,16 +811,22 @@ fn run_watch(
 
                 if has_source_changes {
                     eprintln!("\nFile changed, re-analyzing...");
-                    let config =
-                        match load_config(root, config_path, output.clone(), no_cache, threads) {
-                            Ok(c) => c,
-                            Err(_) => {
-                                eprintln!(
-                                    "Warning: failed to reload config, using previous configuration"
-                                );
-                                continue;
-                            }
-                        };
+                    let config = match load_config(
+                        root,
+                        config_path,
+                        output.clone(),
+                        no_cache,
+                        threads,
+                        production,
+                    ) {
+                        Ok(c) => c,
+                        Err(_) => {
+                            eprintln!(
+                                "Warning: failed to reload config, using previous configuration"
+                            );
+                            continue;
+                        }
+                    };
                     let start = Instant::now();
                     match fallow_core::analyze(&config) {
                         Ok(results) => {
@@ -829,10 +867,20 @@ fn run_dupes(
     min_lines: usize,
     threshold: f64,
     skip_local: bool,
+    baseline_path: Option<&std::path::Path>,
+    save_baseline_path: Option<&std::path::Path>,
+    production: bool,
 ) -> ExitCode {
     let start = Instant::now();
 
-    let config = match load_config(root, config_path, output.clone(), no_cache, threads) {
+    let config = match load_config(
+        root,
+        config_path,
+        output.clone(),
+        no_cache,
+        threads,
+        production,
+    ) {
         Ok(c) => c,
         Err(code) => return code,
     };
@@ -858,7 +906,47 @@ fn run_dupes(
     let files = fallow_core::discover::discover_files(&config);
 
     // Run duplication detection
-    let report = fallow_core::duplicates::find_duplicates(&config.root, &files, &dupes_config);
+    let mut report = fallow_core::duplicates::find_duplicates(&config.root, &files, &dupes_config);
+
+    // Save baseline if requested (before filtering)
+    if let Some(path) = save_baseline_path {
+        let baseline_data = DuplicationBaselineData::from_report(&report, &config.root);
+        match serde_json::to_string_pretty(&baseline_data) {
+            Ok(json) => {
+                if let Err(e) = std::fs::write(path, json) {
+                    eprintln!("Error: failed to write duplication baseline: {e}");
+                    return ExitCode::from(2);
+                }
+                if !quiet {
+                    eprintln!("Saved duplication baseline to {}", path.display());
+                }
+            }
+            Err(e) => {
+                eprintln!("Error: failed to serialize duplication baseline: {e}");
+                return ExitCode::from(2);
+            }
+        }
+    }
+
+    // Filter against baseline if provided
+    if let Some(path) = baseline_path {
+        match std::fs::read_to_string(path) {
+            Ok(json) => match serde_json::from_str::<DuplicationBaselineData>(&json) {
+                Ok(baseline_data) => {
+                    report = filter_new_clone_groups(report, &baseline_data, &config.root);
+                }
+                Err(e) => {
+                    eprintln!("Error: failed to parse duplication baseline: {e}");
+                    return ExitCode::from(2);
+                }
+            },
+            Err(e) => {
+                eprintln!("Error: failed to read duplication baseline: {e}");
+                return ExitCode::from(2);
+            }
+        }
+    }
+
     let elapsed = start.elapsed();
 
     // Print results
@@ -879,14 +967,20 @@ fn run_dupes(
     ExitCode::SUCCESS
 }
 
-fn run_init(root: &std::path::Path) -> ExitCode {
-    let config_path = root.join("fallow.toml");
-    if config_path.exists() {
-        eprintln!("fallow.toml already exists");
-        return ExitCode::from(2);
+fn run_init(root: &std::path::Path, use_toml: bool) -> ExitCode {
+    // Check if any config file already exists
+    let existing_names = ["fallow.jsonc", "fallow.json", "fallow.toml", ".fallow.toml"];
+    for name in &existing_names {
+        let path = root.join(name);
+        if path.exists() {
+            eprintln!("{name} already exists");
+            return ExitCode::from(2);
+        }
     }
 
-    let default_config = r#"# fallow.toml - Dead code analysis configuration
+    if use_toml {
+        let config_path = root.join("fallow.toml");
+        let default_config = r#"# fallow.toml - Dead code analysis configuration
 # See https://github.com/fallow-rs/fallow for documentation
 
 # Additional entry points (beyond auto-detected ones)
@@ -913,15 +1007,69 @@ unused_types = true
 # unused_types = "off"
 # unresolved_imports = "error"
 "#;
+        if let Err(e) = std::fs::write(&config_path, default_config) {
+            eprintln!("Error: Failed to write fallow.toml: {e}");
+            return ExitCode::from(2);
+        }
+        eprintln!("Created fallow.toml");
+    } else {
+        let config_path = root.join("fallow.jsonc");
+        let default_config = r#"{
+  // fallow.jsonc - Dead code analysis configuration
+  // See https://github.com/fallow-rs/fallow for documentation
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
 
-    if let Err(e) = std::fs::write(&config_path, default_config) {
-        eprintln!("Error: Failed to write fallow.toml: {e}");
-        return ExitCode::from(2);
+  // Additional entry points (beyond auto-detected ones)
+  // "entry": ["src/workers/*.ts"],
+
+  // Patterns to ignore
+  // "ignore": ["**/*.generated.ts"],
+
+  // Dependencies to ignore (always considered used)
+  // "ignore_dependencies": ["autoprefixer"],
+
+  "detect": {
+    "unused_files": true,
+    "unused_exports": true,
+    "unused_dependencies": true,
+    "unused_dev_dependencies": true,
+    "unused_types": true
+  }
+
+  // Per-issue-type severity: "error" (fail CI), "warn" (report only), "off" (ignore)
+  // All default to "error" when omitted.
+  // "rules": {
+  //   "unused_files": "error",
+  //   "unused_exports": "warn",
+  //   "unused_types": "off",
+  //   "unresolved_imports": "error"
+  // }
+}
+"#;
+        if let Err(e) = std::fs::write(&config_path, default_config) {
+            eprintln!("Error: Failed to write fallow.jsonc: {e}");
+            return ExitCode::from(2);
+        }
+        eprintln!("Created fallow.jsonc");
     }
-    eprintln!("Created fallow.toml");
     ExitCode::SUCCESS
 }
 
+fn run_config_schema() -> ExitCode {
+    let schema = FallowConfig::json_schema();
+    match serde_json::to_string_pretty(&schema) {
+        Ok(json) => {
+            println!("{json}");
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("Error: failed to serialize schema: {e}");
+            ExitCode::from(2)
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 fn run_list(
     root: &std::path::Path,
     config_path: &Option<PathBuf>,
@@ -930,8 +1078,16 @@ fn run_list(
     entry_points: bool,
     files: bool,
     plugins: bool,
+    production: bool,
 ) -> ExitCode {
-    let config = match load_config(root, config_path, OutputFormat::Human, true, threads) {
+    let config = match load_config(
+        root,
+        config_path,
+        OutputFormat::Human,
+        true,
+        threads,
+        production,
+    ) {
         Ok(c) => c,
         Err(code) => return code,
     };
@@ -1301,6 +1457,7 @@ fn load_config(
     output: OutputFormat,
     no_cache: bool,
     threads: usize,
+    production: bool,
 ) -> Result<fallow_config::ResolvedConfig, ExitCode> {
     let user_config = if let Some(path) = config_path {
         // Explicit --config: propagate errors
@@ -1324,9 +1481,14 @@ fn load_config(
     Ok(match user_config {
         Some(mut config) => {
             config.output = output;
+            // CLI --production flag overrides config
+            if production {
+                config.production = true;
+            }
             config.resolve(root.to_path_buf(), threads, no_cache)
         }
         None => FallowConfig {
+            schema: None,
             entry: vec![],
             ignore: vec![],
             detect: fallow_config::DetectConfig::default(),
@@ -1337,6 +1499,7 @@ fn load_config(
             output,
             duplicates: fallow_config::DuplicatesConfig::default(),
             rules: fallow_config::RulesConfig::default(),
+            production,
         }
         .resolve(root.to_path_buf(), threads, no_cache),
     })

@@ -15,6 +15,7 @@ fn fixture_path(name: &str) -> PathBuf {
 
 fn create_config(root: PathBuf) -> fallow_config::ResolvedConfig {
     FallowConfig {
+        schema: None,
         entry: vec![],
         ignore: vec![],
         detect: DetectConfig::default(),
@@ -25,6 +26,7 @@ fn create_config(root: PathBuf) -> fallow_config::ResolvedConfig {
         output: OutputFormat::Human,
         duplicates: fallow_config::DuplicatesConfig::default(),
         rules: RulesConfig::default(),
+        production: false,
     }
     .resolve(root, 4, true)
 }
@@ -644,6 +646,7 @@ fn detect_config_disables_duplicate_exports() {
 fn ignore_exports_wildcard() {
     let root = fixture_path("ignore-exports");
     let config = FallowConfig {
+        schema: None,
         entry: vec![],
         ignore: vec![],
         detect: DetectConfig::default(),
@@ -657,6 +660,7 @@ fn ignore_exports_wildcard() {
         output: OutputFormat::Human,
         duplicates: fallow_config::DuplicatesConfig::default(),
         rules: RulesConfig::default(),
+        production: false,
     }
     .resolve(root.clone(), 4, true);
 
@@ -682,6 +686,7 @@ fn ignore_exports_wildcard() {
 fn ignore_exports_specific() {
     let root = fixture_path("ignore-exports");
     let config = FallowConfig {
+        schema: None,
         entry: vec![],
         ignore: vec![],
         detect: DetectConfig::default(),
@@ -695,6 +700,7 @@ fn ignore_exports_specific() {
         output: OutputFormat::Human,
         duplicates: fallow_config::DuplicatesConfig::default(),
         rules: RulesConfig::default(),
+        production: false,
     }
     .resolve(root.clone(), 4, true);
 
@@ -769,6 +775,7 @@ fn dynamic_import_makes_module_reachable() {
 fn ignore_dependencies_config() {
     let root = fixture_path("basic-project");
     let config = FallowConfig {
+        schema: None,
         entry: vec![],
         ignore: vec![],
         detect: DetectConfig::default(),
@@ -779,6 +786,7 @@ fn ignore_dependencies_config() {
         output: OutputFormat::Human,
         duplicates: fallow_config::DuplicatesConfig::default(),
         rules: RulesConfig::default(),
+        production: false,
     }
     .resolve(root.clone(), 4, true);
 

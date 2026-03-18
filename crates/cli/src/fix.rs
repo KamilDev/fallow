@@ -275,6 +275,7 @@ fn apply_dependency_fixes(
     had_write_error
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn run_fix(
     root: &Path,
     config_path: &Option<PathBuf>,
@@ -283,9 +284,16 @@ pub(crate) fn run_fix(
     threads: usize,
     quiet: bool,
     dry_run: bool,
+    production: bool,
 ) -> ExitCode {
-    let config = match super::load_config(root, config_path, OutputFormat::Human, no_cache, threads)
-    {
+    let config = match super::load_config(
+        root,
+        config_path,
+        OutputFormat::Human,
+        no_cache,
+        threads,
+        production,
+    ) {
         Ok(c) => c,
         Err(code) => return code,
     };

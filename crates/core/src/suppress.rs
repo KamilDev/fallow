@@ -13,6 +13,7 @@ pub enum IssueKind {
     UnresolvedImport,
     UnlistedDependency,
     DuplicateExport,
+    CodeDuplication,
 }
 
 impl IssueKind {
@@ -29,6 +30,7 @@ impl IssueKind {
             "unresolved-import" => Some(Self::UnresolvedImport),
             "unlisted-dependency" => Some(Self::UnlistedDependency),
             "duplicate-export" => Some(Self::DuplicateExport),
+            "code-duplication" => Some(Self::CodeDuplication),
             _ => None,
         }
     }
@@ -46,6 +48,7 @@ impl IssueKind {
             Self::UnresolvedImport => 8,
             Self::UnlistedDependency => 9,
             Self::DuplicateExport => 10,
+            Self::CodeDuplication => 11,
         }
     }
 
@@ -62,6 +65,7 @@ impl IssueKind {
             8 => Some(Self::UnresolvedImport),
             9 => Some(Self::UnlistedDependency),
             10 => Some(Self::DuplicateExport),
+            11 => Some(Self::CodeDuplication),
             _ => None,
         }
     }
@@ -271,6 +275,7 @@ mod tests {
             IssueKind::UnresolvedImport,
             IssueKind::UnlistedDependency,
             IssueKind::DuplicateExport,
+            IssueKind::CodeDuplication,
         ] {
             assert_eq!(
                 IssueKind::from_discriminant(kind.to_discriminant()),
@@ -278,7 +283,7 @@ mod tests {
             );
         }
         assert_eq!(IssueKind::from_discriminant(0), None);
-        assert_eq!(IssueKind::from_discriminant(11), None);
+        assert_eq!(IssueKind::from_discriminant(12), None);
     }
 
     #[test]

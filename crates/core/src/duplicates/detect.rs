@@ -172,6 +172,7 @@ impl CloneDetector {
 
         DuplicationReport {
             clone_groups,
+            clone_families: vec![], // Populated by the caller after suppression filtering
             stats,
         }
     }
@@ -914,6 +915,7 @@ fn compute_stats(
 fn empty_report(total_files: usize) -> DuplicationReport {
     DuplicationReport {
         clone_groups: vec![],
+        clone_families: vec![],
         stats: DuplicationStats {
             total_files,
             files_with_clones: 0,
