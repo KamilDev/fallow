@@ -1,0 +1,201 @@
+name: Test GitHub Action
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: test-action-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-sarif:
+    name: Test SARIF output
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run action with SARIF format
+        id: fallow
+        uses: ./
+        with:
+          root: tests/fixtures/basic-project
+          format: sarif
+          fail-on-issues: false
+
+      - name: Verify SARIF output exists and is valid
+        env:
+          SARIF_PATH: ${{ steps.fallow.outputs.sarif }}
+          ISSUES: ${{ steps.fallow.outputs.issues }}
+        run: |
+          if [ ! -f "$SARIF_PATH" ]; then
+            echo "::error::SARIF output file not found"
+            exit 1
+          fi
+          echo "SARIF file: $SARIF_PATH"
+
+          # Validate JSON
+          jq empty "$SARIF_PATH"
+
+          # Verify SARIF schema structure
+          SCHEMA=$(jq -r '.["$schema"] // .version' "$SARIF_PATH")
+          if [ -z "$SCHEMA" ]; then
+            echo "::error::SARIF file missing schema or version field"
+            exit 1
+          fi
+          echo "SARIF schema/version: $SCHEMA"
+
+          # Verify issues count
+          if [ -z "$ISSUES" ] || [ "$ISSUES" -eq 0 ]; then
+            echo "::error::Expected issues > 0 for basic-project fixture, got: $ISSUES"
+            exit 1
+          fi
+          echo "Found $ISSUES issues (expected > 0)"
+
+  test-json:
+    name: Test JSON output
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run action with JSON format
+        id: fallow
+        uses: ./
+        with:
+          root: tests/fixtures/basic-project
+          format: json
+          fail-on-issues: false
+
+      - name: Verify JSON results
+        env:
+          RESULTS_PATH: ${{ steps.fallow.outputs.results }}
+          ISSUES: ${{ steps.fallow.outputs.issues }}
+        run: |
+          if [ ! -f "$RESULTS_PATH" ]; then
+            echo "::error::Results output file not found"
+            exit 1
+          fi
+          echo "Results file: $RESULTS_PATH"
+
+          # Validate JSON
+          jq empty "$RESULTS_PATH"
+
+          # Verify expected fields
+          jq -e '.total_issues' "$RESULTS_PATH" > /dev/null
+          jq -e '.unused_files' "$RESULTS_PATH" > /dev/null
+          jq -e '.unused_exports' "$RESULTS_PATH" > /dev/null
+          echo "JSON structure validated"
+
+          # Verify issues output matches JSON
+          JSON_ISSUES=$(jq -r '.total_issues' "$RESULTS_PATH")
+          if [ "$ISSUES" != "$JSON_ISSUES" ]; then
+            echo "::error::Output issues ($ISSUES) does not match JSON total_issues ($JSON_ISSUES)"
+            exit 1
+          fi
+          echo "Issues match: $ISSUES"
+
+  test-zero-issues:
+    name: Test clean project (zero issues)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Create clean project
+        run: |
+          mkdir -p /tmp/clean-project/src
+          cat > /tmp/clean-project/package.json << 'EOF'
+          {
+            "name": "clean-project",
+            "main": "src/index.js"
+          }
+          EOF
+          cat > /tmp/clean-project/src/index.js << 'EOF'
+          const greet = (name) => `Hello, ${name}!`;
+          console.log(greet('world'));
+          EOF
+
+      - name: Run action against clean project
+        id: fallow
+        uses: ./
+        with:
+          root: /tmp/clean-project
+          format: json
+          fail-on-issues: true
+
+      - name: Verify zero issues
+        env:
+          ISSUES: ${{ steps.fallow.outputs.issues }}
+          RESULTS_PATH: ${{ steps.fallow.outputs.results }}
+        run: |
+          if [ "$ISSUES" != "0" ]; then
+            echo "::error::Expected 0 issues for clean project, got: $ISSUES"
+            [ -f "$RESULTS_PATH" ] && cat "$RESULTS_PATH"
+            exit 1
+          fi
+          echo "Clean project reported 0 issues"
+
+  test-comment:
+    name: Test PR comment
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run action with PR comment
+        id: fallow
+        uses: ./
+        with:
+          root: tests/fixtures/basic-project
+          format: json
+          fail-on-issues: false
+          comment: true
+
+      - name: Verify comment was posted
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          COMMENTS=$(gh api \
+            "repos/${GH_REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '[.[] | select(.body | contains("<!-- fallow-results -->"))] | length')
+          if [ "$COMMENTS" -eq 0 ]; then
+            echo "::error::Expected a fallow PR comment but found none"
+            exit 1
+          fi
+          echo "Found $COMMENTS fallow comment(s)"

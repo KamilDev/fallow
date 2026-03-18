@@ -436,7 +436,7 @@ fn sarif_result(
     })
 }
 
-fn build_sarif(results: &AnalysisResults, root: &std::path::Path) -> serde_json::Value {
+pub(crate) fn build_sarif(results: &AnalysisResults, root: &std::path::Path) -> serde_json::Value {
     let mut sarif_results = Vec::new();
 
     for file in &results.unused_files {
@@ -1234,6 +1234,37 @@ mod tests {
         let reparsed: serde_json::Value =
             serde_json::from_str(&json_str).expect("SARIF output should be valid JSON");
         assert_eq!(reparsed, sarif);
+    }
+
+    #[test]
+    fn sarif_file_write_produces_valid_sarif() {
+        let root = PathBuf::from("/project");
+        let results = sample_results(&root);
+        let sarif = build_sarif(&results, &root);
+        let json_str = serde_json::to_string_pretty(&sarif).expect("SARIF should serialize");
+
+        let dir = std::env::temp_dir().join("fallow-test-sarif-file");
+        let _ = std::fs::create_dir_all(&dir);
+        let sarif_path = dir.join("results.sarif");
+        std::fs::write(&sarif_path, &json_str).expect("should write SARIF file");
+
+        let contents = std::fs::read_to_string(&sarif_path).expect("should read SARIF file");
+        let parsed: serde_json::Value =
+            serde_json::from_str(&contents).expect("file should contain valid JSON");
+
+        assert_eq!(parsed["version"], "2.1.0");
+        assert_eq!(
+            parsed["$schema"],
+            "https://json.schemastore.org/sarif-2.1.0.json"
+        );
+        let sarif_results = parsed["runs"][0]["results"]
+            .as_array()
+            .expect("results should be an array");
+        assert!(!sarif_results.is_empty());
+
+        // Clean up
+        let _ = std::fs::remove_file(&sarif_path);
+        let _ = std::fs::remove_dir(&dir);
     }
 
     // ── JSON output ──────────────────────────────────────────────────
