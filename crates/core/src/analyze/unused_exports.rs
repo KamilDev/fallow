@@ -230,9 +230,8 @@ pub(crate) fn find_duplicate_exports(
                     // Keep this module only if it doesn't re-export from another module in the set
                     // AND no other module in the set re-exports from it (unless both are sources)
                     let sources = re_export_sources.get(idx);
-                    let has_source_in_set = sources
-                        .map(|s| s.iter().any(|src| module_indices.contains(src)))
-                        .unwrap_or(false);
+                    let has_source_in_set =
+                        sources.is_some_and(|s| s.iter().any(|src| module_indices.contains(src)));
                     !has_source_in_set
                 })
                 .map(|(_, path)| path)

@@ -59,6 +59,7 @@ const NODE_RUNNERS: &[&str] = &["node", "ts-node", "tsx", "babel-node", "bun"];
 ///
 /// In production mode, dev/test/lint scripts are excluded since they only affect
 /// devDependency usage, not the production dependency graph.
+#[allow(clippy::implicit_hasher)]
 pub fn filter_production_scripts(scripts: &HashMap<String, String>) -> HashMap<String, String> {
     scripts
         .iter()
@@ -99,6 +100,7 @@ fn is_production_script(name: &str) -> bool {
 ///
 /// For each script value, parses shell commands, extracts binary names (mapped to
 /// package names), `--config` file paths, and positional file path arguments.
+#[allow(clippy::implicit_hasher)]
 pub fn analyze_scripts(scripts: &HashMap<String, String>, root: &Path) -> ScriptAnalysis {
     let mut result = ScriptAnalysis::default();
 

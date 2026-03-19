@@ -5,6 +5,7 @@ use fallow_core::duplicates::DuplicationReport;
 
 /// Baseline data for comparison.
 #[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::struct_field_names)]
 pub(crate) struct BaselineData {
     pub unused_files: Vec<String>,
     pub unused_exports: Vec<String>,
@@ -108,11 +109,11 @@ pub(crate) fn filter_new_issues(
 /// Baseline data for duplication comparison.
 ///
 /// Each clone group is keyed by a canonical string derived from its sorted
-/// (file:start_line-end_line) instance locations. This allows stable comparison
+/// (`file:start_line-end_line`) instance locations. This allows stable comparison
 /// across runs even if group ordering changes.
 #[derive(serde::Serialize, serde::Deserialize)]
 pub(crate) struct DuplicationBaselineData {
-    /// Clone group keys: sorted list of "file:start-end" per group.
+    /// Clone group keys: sorted list of `file:start-end` per group.
     pub clone_groups: Vec<String>,
 }
 

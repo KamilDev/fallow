@@ -112,7 +112,7 @@ impl FallowMcp {
 }
 
 /// Resolve the fallow binary path.
-/// Priority: FALLOW_BIN env var > sibling binary next to fallow-mcp > PATH lookup.
+/// Priority: `FALLOW_BIN` env var > sibling binary next to fallow-mcp > PATH lookup.
 fn resolve_binary() -> String {
     if let Ok(bin) = std::env::var("FALLOW_BIN") {
         return bin;

@@ -1,7 +1,7 @@
-//! ESLint plugin.
+//! `ESLint` plugin.
 //!
-//! Detects ESLint projects and marks config files as always used.
-//! Parses ESLint config to extract plugin/config imports as referenced dependencies.
+//! Detects `ESLint` projects and marks config files as always used.
+//! Parses `ESLint` config to extract plugin/config imports as referenced dependencies.
 //! Also covers Prettier and lint-staged config files.
 
 use std::path::Path;
@@ -90,7 +90,7 @@ impl Plugin for EslintPlugin {
             parse_source = source.to_string();
             parse_path_buf = config_path.to_path_buf();
             parse_path = &parse_path_buf;
-        };
+        }
 
         // Extract import sources as referenced dependencies (eslint plugins, configs)
         let imports = config_parser::extract_imports(&parse_source, parse_path);
@@ -104,9 +104,9 @@ impl Plugin for EslintPlugin {
         let plugins =
             config_parser::extract_config_shallow_strings(&parse_source, parse_path, "plugins");
         for plugin in &plugins {
-            if let Some(dep) = resolve_eslint_plugin_name(plugin) {
-                result.referenced_dependencies.push(dep);
-            }
+            result
+                .referenced_dependencies
+                .push(resolve_eslint_plugin_name(plugin));
         }
 
         // Legacy .eslintrc: extract extends
@@ -133,37 +133,37 @@ impl Plugin for EslintPlugin {
         let plugin_keys =
             config_parser::extract_config_object_keys(&parse_source, parse_path, &["plugins"]);
         for key in &plugin_keys {
-            if let Some(dep) = resolve_eslint_plugin_name(key) {
-                result.referenced_dependencies.push(dep);
-            }
+            result
+                .referenced_dependencies
+                .push(resolve_eslint_plugin_name(key));
         }
 
         result
     }
 }
 
-/// Resolve ESLint plugin short name to full package name.
+/// Resolve `ESLint` plugin short name to full package name.
 ///
 /// - `"react"` → `"eslint-plugin-react"`
 /// - `"@typescript-eslint"` → `"@typescript-eslint/eslint-plugin"`
 /// - `"eslint-plugin-react"` → `"eslint-plugin-react"` (already full)
-fn resolve_eslint_plugin_name(name: &str) -> Option<String> {
+fn resolve_eslint_plugin_name(name: &str) -> String {
     if name.starts_with("eslint-plugin-") || name.contains("/eslint-plugin") {
-        Some(name.to_string())
+        name.to_string()
     } else if let Some(scope) = name.strip_prefix('@') {
         if scope.contains('/') {
             // Already scoped with subpath, push as-is
-            Some(name.to_string())
+            name.to_string()
         } else {
             // "@typescript-eslint" → "@typescript-eslint/eslint-plugin"
-            Some(format!("{name}/eslint-plugin"))
+            format!("{name}/eslint-plugin")
         }
     } else {
-        Some(format!("eslint-plugin-{name}"))
+        format!("eslint-plugin-{name}")
     }
 }
 
-/// Resolve ESLint extends name to a package dependency.
+/// Resolve `ESLint` extends name to a package dependency.
 ///
 /// - `"airbnb"` → `"eslint-config-airbnb"`
 /// - `"plugin:react/recommended"` → `"eslint-plugin-react"`
@@ -175,7 +175,7 @@ fn resolve_eslint_extends_name(name: &str) -> Option<String> {
     } else if let Some(rest) = name.strip_prefix("plugin:") {
         // "plugin:react/recommended" → extract plugin name
         let plugin_name = rest.split('/').next()?;
-        resolve_eslint_plugin_name(plugin_name)
+        Some(resolve_eslint_plugin_name(plugin_name))
     } else if name.starts_with("eslint-config-") || name.contains("/eslint-config") {
         Some(name.to_string())
     } else if name.starts_with('@') {
@@ -194,17 +194,14 @@ mod tests {
 
     #[test]
     fn plugin_short_name() {
-        assert_eq!(
-            resolve_eslint_plugin_name("react"),
-            Some("eslint-plugin-react".to_string())
-        );
+        assert_eq!(resolve_eslint_plugin_name("react"), "eslint-plugin-react");
     }
 
     #[test]
     fn plugin_scoped_short_name() {
         assert_eq!(
             resolve_eslint_plugin_name("@typescript-eslint"),
-            Some("@typescript-eslint/eslint-plugin".to_string())
+            "@typescript-eslint/eslint-plugin"
         );
     }
 
@@ -212,7 +209,7 @@ mod tests {
     fn plugin_already_full_name() {
         assert_eq!(
             resolve_eslint_plugin_name("eslint-plugin-react"),
-            Some("eslint-plugin-react".to_string())
+            "eslint-plugin-react"
         );
     }
 
@@ -220,7 +217,7 @@ mod tests {
     fn plugin_scoped_with_subpath() {
         assert_eq!(
             resolve_eslint_plugin_name("@scope/some-plugin"),
-            Some("@scope/some-plugin".to_string())
+            "@scope/some-plugin"
         );
     }
 

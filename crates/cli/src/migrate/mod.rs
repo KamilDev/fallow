@@ -1,8 +1,9 @@
 mod jscpd;
 mod knip;
 
+use std::fmt::Write as _;
 use std::io::Read as _;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::ExitCode;
 
 use jscpd::migrate_jscpd;
@@ -38,7 +39,7 @@ pub(crate) fn run_migrate(
     root: &Path,
     use_toml: bool,
     dry_run: bool,
-    from: Option<PathBuf>,
+    from: Option<&Path>,
 ) -> ExitCode {
     // Check if a fallow config already exists
     let existing_names = ["fallow.jsonc", "fallow.json", "fallow.toml", ".fallow.toml"];
@@ -54,7 +55,7 @@ pub(crate) fn run_migrate(
         }
     }
 
-    let result = if let Some(ref from_path) = from {
+    let result = if let Some(from_path) = from {
         migrate_from_file(from_path)
     } else {
         migrate_auto_detect(root)
@@ -114,6 +115,7 @@ pub(crate) fn run_migrate(
 }
 
 /// Auto-detect and migrate from knip and/or jscpd configs in the given root.
+#[allow(clippy::case_sensitive_file_extension_comparisons)] // JS/TS extensions are always lowercase
 fn migrate_auto_detect(root: &Path) -> Result<MigrationResult, String> {
     let mut config = serde_json::Map::new();
     let mut warnings = Vec::new();
@@ -190,6 +192,7 @@ fn migrate_auto_detect(root: &Path) -> Result<MigrationResult, String> {
 }
 
 /// Migrate from a specific config file.
+#[allow(clippy::case_sensitive_file_extension_comparisons)] // JS/TS extensions are always lowercase
 fn migrate_from_file(path: &Path) -> Result<MigrationResult, String> {
     if !path.exists() {
         return Err(format!("config file not found: {}", path.display()));
@@ -315,7 +318,7 @@ fn generate_jsonc(result: &MigrationResult) -> String {
 
     let obj = result.config.as_object().unwrap();
     let source_comment = result.sources.join(", ");
-    output.push_str(&format!("  // Migrated from {source_comment}\n"));
+    let _ = writeln!(output, "  // Migrated from {source_comment}");
 
     let mut entries: Vec<(&String, &serde_json::Value)> = obj.iter().collect();
     // Sort keys for consistent output
@@ -340,9 +343,9 @@ fn generate_jsonc(result: &MigrationResult) -> String {
         // Indent the serialized value by 2 spaces (but the first line is on the key line)
         let indented = indent_json_value(&serialized, 2);
         if is_last {
-            output.push_str(&format!("  \"{key}\": {indented}\n"));
+            let _ = writeln!(output, "  \"{key}\": {indented}");
         } else {
-            output.push_str(&format!("  \"{key}\": {indented},\n"));
+            let _ = writeln!(output, "  \"{key}\": {indented},");
         }
     }
 
@@ -371,7 +374,7 @@ fn indent_json_value(json: &str, spaces: usize) -> String {
 fn generate_toml(result: &MigrationResult) -> String {
     let mut output = String::new();
     let source_comment = result.sources.join(", ");
-    output.push_str(&format!("# Migrated from {source_comment}\n\n"));
+    let _ = writeln!(output, "# Migrated from {source_comment}\n");
 
     let obj = result.config.as_object().unwrap();
 
@@ -385,7 +388,7 @@ fn generate_toml(result: &MigrationResult) -> String {
                 .iter()
                 .filter_map(|v| v.as_str().map(|s| format!("\"{s}\"")))
                 .collect();
-            output.push_str(&format!("{key} = [{}]\n", items.join(", ")));
+            let _ = writeln!(output, "{key} = [{}]", items.join(", "));
         }
     }
 
@@ -397,7 +400,7 @@ fn generate_toml(result: &MigrationResult) -> String {
         output.push_str("\n[rules]\n");
         for (key, value) in rules_obj {
             if let Some(s) = value.as_str() {
-                output.push_str(&format!("{key} = \"{s}\"\n"));
+                let _ = writeln!(output, "{key} = \"{s}\"");
             }
         }
     }
@@ -411,20 +414,20 @@ fn generate_toml(result: &MigrationResult) -> String {
         for (key, value) in dupes_obj {
             match value {
                 serde_json::Value::Number(n) => {
-                    output.push_str(&format!("{key} = {n}\n"));
+                    let _ = writeln!(output, "{key} = {n}");
                 }
                 serde_json::Value::Bool(b) => {
-                    output.push_str(&format!("{key} = {b}\n"));
+                    let _ = writeln!(output, "{key} = {b}");
                 }
                 serde_json::Value::String(s) => {
-                    output.push_str(&format!("{key} = \"{s}\"\n"));
+                    let _ = writeln!(output, "{key} = \"{s}\"");
                 }
                 serde_json::Value::Array(arr) => {
                     let items: Vec<String> = arr
                         .iter()
                         .filter_map(|v| v.as_str().map(|s| format!("\"{s}\"")))
                         .collect();
-                    output.push_str(&format!("{key} = [{}]\n", items.join(", ")));
+                    let _ = writeln!(output, "{key} = [{}]", items.join(", "));
                 }
                 _ => {}
             }

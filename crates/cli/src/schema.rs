@@ -158,8 +158,7 @@ pub(crate) fn build_cli_schema(cmd: &clap::Command) -> serde_json::Value {
 fn build_arg_schema(arg: &clap::Arg) -> serde_json::Value {
     let name = arg
         .get_long()
-        .map(|l| format!("--{l}"))
-        .unwrap_or_else(|| arg.get_id().to_string());
+        .map_or_else(|| arg.get_id().to_string(), |l| format!("--{l}"));
 
     let arg_type = match arg.get_action() {
         clap::ArgAction::SetTrue | clap::ArgAction::SetFalse => "bool",

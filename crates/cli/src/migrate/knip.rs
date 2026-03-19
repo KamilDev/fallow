@@ -162,17 +162,14 @@ pub(super) fn migrate_knip(
     config: &mut serde_json::Map<String, serde_json::Value>,
     warnings: &mut Vec<MigrationWarning>,
 ) {
-    let obj = match knip.as_object() {
-        Some(o) => o,
-        None => {
-            warnings.push(MigrationWarning {
-                source: "knip",
-                field: "(root)".to_string(),
-                message: "expected an object, got something else".to_string(),
-                suggestion: None,
-            });
-            return;
-        }
+    let Some(obj) = knip.as_object() else {
+        warnings.push(MigrationWarning {
+            source: "knip",
+            field: "(root)".to_string(),
+            message: "expected an object, got something else".to_string(),
+            suggestion: None,
+        });
+        return;
     };
 
     // entry -> entry

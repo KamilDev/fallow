@@ -57,16 +57,16 @@ pub fn extract_sfc_scripts(source: &str) -> Vec<SfcScript> {
     SCRIPT_BLOCK_RE
         .captures_iter(source)
         .filter(|cap| {
-            let start = cap.get(0).map(|m| m.start()).unwrap_or(0);
+            let start = cap.get(0).map_or(0, |m| m.start());
             !comment_ranges
                 .iter()
                 .any(|&(cs, ce)| start >= cs && start < ce)
         })
         .map(|cap| {
-            let attrs = cap.name("attrs").map(|m| m.as_str()).unwrap_or("");
+            let attrs = cap.name("attrs").map_or("", |m| m.as_str());
             let body_match = cap.name("body");
-            let byte_offset = body_match.map(|m| m.start()).unwrap_or(0);
-            let body = body_match.map(|m| m.as_str()).unwrap_or("").to_string();
+            let byte_offset = body_match.map_or(0, |m| m.start());
+            let body = body_match.map_or("", |m| m.as_str()).to_string();
             let lang = LANG_ATTR_RE
                 .captures(attrs)
                 .and_then(|c| c.get(1))

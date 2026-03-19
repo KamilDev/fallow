@@ -74,7 +74,7 @@ fn push_sarif_results<T>(
     }
 }
 
-pub(crate) fn build_sarif(
+pub fn build_sarif(
     results: &AnalysisResults,
     root: &Path,
     rules: &RulesConfig,

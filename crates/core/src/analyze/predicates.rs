@@ -7,7 +7,7 @@ pub(super) fn is_declaration_file(path: &std::path::Path) -> bool {
 /// Check if a file is a configuration file consumed by tooling, not via imports.
 ///
 /// These files should never be reported as unused because they are loaded by
-/// their respective tools (e.g., Babel reads `babel.config.js`, ESLint reads
+/// their respective tools (e.g., Babel reads `babel.config.js`, `ESLint` reads
 /// `eslint.config.ts`, etc.) rather than being imported by application code.
 pub(super) fn is_config_file(path: &std::path::Path) -> bool {
     let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
@@ -196,7 +196,7 @@ pub(super) fn is_implicit_dependency(name: &str) -> bool {
 /// Check if a package name looks like a TypeScript path alias rather than an npm package.
 ///
 /// Common patterns: `@/components`, `@app/utils`, `~/lib`, `#internal/module`,
-/// `@Components/Button` (PascalCase tsconfig paths).
+/// `@Components/Button` (`PascalCase` tsconfig paths).
 /// These are typically defined in tsconfig.json `paths` or package.json `imports`.
 pub(super) fn is_path_alias(name: &str) -> bool {
     // `#` prefix is Node.js imports maps (package.json "imports" field)

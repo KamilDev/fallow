@@ -4,6 +4,7 @@ use fallow_config::OutputFormat;
 
 use crate::load_config;
 
+#[allow(clippy::struct_excessive_bools)]
 pub(crate) struct ListOptions<'a> {
     pub(crate) root: &'a std::path::Path,
     pub(crate) config_path: &'a Option<std::path::PathBuf>,

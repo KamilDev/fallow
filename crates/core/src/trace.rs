@@ -143,11 +143,10 @@ pub fn trace_export(
         .references
         .iter()
         .map(|r| {
-            let from_path = graph
-                .modules
-                .get(r.from_file.0 as usize)
-                .map(|m| m.path.strip_prefix(root).unwrap_or(&m.path).to_path_buf())
-                .unwrap_or_else(|| PathBuf::from(format!("<unknown:{}>", r.from_file.0)));
+            let from_path = graph.modules.get(r.from_file.0 as usize).map_or_else(
+                || PathBuf::from(format!("<unknown:{}>", r.from_file.0)),
+                |m| m.path.strip_prefix(root).unwrap_or(&m.path).to_path_buf(),
+            );
             ExportReference {
                 from_file: from_path,
                 kind: format_reference_kind(&r.kind),
@@ -177,7 +176,7 @@ pub fn trace_export(
                     ReExportChain {
                         barrel_file: m.path.strip_prefix(root).unwrap_or(&m.path).to_path_buf(),
                         exported_as: re.exported_name.clone(),
-                        reference_count: barrel_export.map(|e| e.references.len()).unwrap_or(0),
+                        reference_count: barrel_export.map_or(0, |e| e.references.len()),
                     }
                 })
         })
@@ -243,11 +242,10 @@ pub fn trace_file(graph: &ModuleGraph, root: &Path, file_path: &str) -> Option<F
                 .references
                 .iter()
                 .map(|r| {
-                    let from_path = graph
-                        .modules
-                        .get(r.from_file.0 as usize)
-                        .map(|m| m.path.strip_prefix(root).unwrap_or(&m.path).to_path_buf())
-                        .unwrap_or_else(|| PathBuf::from(format!("<unknown:{}>", r.from_file.0)));
+                    let from_path = graph.modules.get(r.from_file.0 as usize).map_or_else(
+                        || PathBuf::from(format!("<unknown:{}>", r.from_file.0)),
+                        |m| m.path.strip_prefix(root).unwrap_or(&m.path).to_path_buf(),
+                    );
                     ExportReference {
                         from_file: from_path,
                         kind: format_reference_kind(&r.kind),
@@ -289,11 +287,10 @@ pub fn trace_file(graph: &ModuleGraph, root: &Path, file_path: &str) -> Option<F
         .re_exports
         .iter()
         .map(|re| {
-            let source_path = graph
-                .modules
-                .get(re.source_file.0 as usize)
-                .map(|m| m.path.strip_prefix(root).unwrap_or(&m.path).to_path_buf())
-                .unwrap_or_else(|| PathBuf::from(format!("<unknown:{}>", re.source_file.0)));
+            let source_path = graph.modules.get(re.source_file.0 as usize).map_or_else(
+                || PathBuf::from(format!("<unknown:{}>", re.source_file.0)),
+                |m| m.path.strip_prefix(root).unwrap_or(&m.path).to_path_buf(),
+            );
             TracedReExport {
                 source_file: source_path,
                 imported_name: re.imported_name.clone(),

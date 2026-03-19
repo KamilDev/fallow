@@ -245,6 +245,7 @@ const fn default_min_lines() -> usize {
 /// Controls which analyses to run.
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
+#[allow(clippy::struct_excessive_bools)]
 pub struct DetectConfig {
     /// Detect unused files (not reachable from entry points).
     #[serde(default = "default_true")]
@@ -359,7 +360,6 @@ enum ConfigFormat {
 impl ConfigFormat {
     fn from_path(path: &Path) -> Self {
         match path.extension().and_then(|e| e.to_str()) {
-            Some("toml") => Self::Toml,
             Some("jsonc") => Self::Jsonc,
             Some("json") => Self::Json,
             _ => Self::Toml,
@@ -441,6 +441,7 @@ impl FallowConfig {
     }
 
     /// Resolve into a fully resolved config with compiled globs.
+    #[allow(clippy::print_stderr)]
     pub fn resolve(self, root: PathBuf, threads: usize, no_cache: bool) -> ResolvedConfig {
         let mut ignore_builder = GlobSetBuilder::new();
         for pattern in &self.ignore {

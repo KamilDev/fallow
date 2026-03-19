@@ -89,7 +89,7 @@ pub fn find_config_object_pub<'a>(program: &'a Program) -> Option<&'a ObjectExpr
 
 /// Extract keys of an object property at a nested path.
 ///
-/// Useful for PostCSS config: `{ plugins: { autoprefixer: {}, tailwindcss: {} } }`
+/// Useful for `PostCSS` config: `{ plugins: { autoprefixer: {}, tailwindcss: {} } }`
 /// → returns `["autoprefixer", "tailwindcss"]`.
 pub fn extract_config_object_keys(source: &str, path: &Path, prop_path: &[&str]) -> Vec<String> {
     extract_from_source(source, path, |program| {
@@ -205,7 +205,7 @@ fn find_config_object<'a>(program: &'a Program) -> Option<&'a ObjectExpression<'
     None
 }
 
-/// Extract an ObjectExpression from an expression, handling wrapper patterns.
+/// Extract an `ObjectExpression` from an expression, handling wrapper patterns.
 fn extract_object_from_expression<'a>(
     expr: &'a Expression<'a>,
 ) -> Option<&'a ObjectExpression<'a>> {
@@ -413,7 +413,7 @@ fn collect_all_string_values(expr: &Expression, values: &mut Vec<String>) {
     }
 }
 
-/// Convert a PropertyKey to a String.
+/// Convert a `PropertyKey` to a `String`.
 fn property_key_to_string(key: &PropertyKey) -> Option<String> {
     match key {
         PropertyKey::StaticIdentifier(id) => Some(id.name.to_string()),
@@ -542,7 +542,7 @@ fn is_require_call(call: &CallExpression) -> bool {
     matches!(&call.callee, Expression::Identifier(id) if id.name == "require")
 }
 
-/// Get the first string argument of a require() call.
+/// Get the first string argument of a `require()` call.
 fn get_require_source(call: &CallExpression) -> Option<String> {
     call.arguments.first().and_then(|arg| {
         if let Argument::StringLiteral(s) = arg {

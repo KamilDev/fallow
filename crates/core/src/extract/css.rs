@@ -22,12 +22,12 @@ static SCSS_USE_RE: LazyLock<regex::Regex> = LazyLock::new(|| {
 /// Regex to extract @apply class references.
 /// Matches: @apply class1 class2 class3;
 static CSS_APPLY_RE: LazyLock<regex::Regex> =
-    LazyLock::new(|| regex::Regex::new(r#"@apply\s+[^;}\n]+"#).expect("valid regex"));
+    LazyLock::new(|| regex::Regex::new(r"@apply\s+[^;}\n]+").expect("valid regex"));
 
 /// Regex to extract @tailwind directives.
 /// Matches: @tailwind base; @tailwind components; @tailwind utilities;
 static CSS_TAILWIND_RE: LazyLock<regex::Regex> =
-    LazyLock::new(|| regex::Regex::new(r#"@tailwind\s+\w+"#).expect("valid regex"));
+    LazyLock::new(|| regex::Regex::new(r"@tailwind\s+\w+").expect("valid regex"));
 
 /// Regex to match CSS block comments (`/* ... */`) for stripping before extraction.
 static CSS_COMMENT_RE: LazyLock<regex::Regex> =

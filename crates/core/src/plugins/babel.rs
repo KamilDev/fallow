@@ -76,7 +76,7 @@ impl Plugin for BabelPlugin {
             parse_source = source.to_string();
             parse_path_buf = config_path.to_path_buf();
             parse_path = &parse_path_buf;
-        };
+        }
 
         let imports = config_parser::extract_imports(&parse_source, parse_path);
         for imp in &imports {

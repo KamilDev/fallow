@@ -21,10 +21,10 @@ pub fn extract_astro_frontmatter(source: &str) -> Option<SfcScript> {
     ASTRO_FRONTMATTER_RE.captures(source).map(|cap| {
         let body_match = cap.name("body");
         SfcScript {
-            body: body_match.map(|m| m.as_str()).unwrap_or("").to_string(),
+            body: body_match.map_or("", |m| m.as_str()).to_string(),
             is_typescript: true, // Astro frontmatter is always TS-compatible
             is_jsx: false,
-            byte_offset: body_match.map(|m| m.start()).unwrap_or(0),
+            byte_offset: body_match.map_or(0, |m| m.start()),
             src: None,
         }
     })

@@ -1,6 +1,6 @@
-//! NestJS backend framework plugin.
+//! `NestJS` backend framework plugin.
 //!
-//! Detects NestJS projects and marks module, controller, service, guard,
+//! Detects `NestJS` projects and marks module, controller, service, guard,
 //! interceptor, pipe, filter, middleware, gateway, and resolver files as entry points.
 
 use super::Plugin;

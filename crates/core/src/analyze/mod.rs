@@ -31,8 +31,7 @@ fn byte_offset_to_line_col(source: &str, byte_offset: u32) -> (u32, u32) {
     let line = prefix.bytes().filter(|&b| b == b'\n').count() as u32 + 1;
     let col = prefix
         .rfind('\n')
-        .map(|pos| byte_offset - pos - 1)
-        .unwrap_or(byte_offset) as u32;
+        .map_or(byte_offset, |pos| byte_offset - pos - 1) as u32;
     (line, col)
 }
 

@@ -87,11 +87,10 @@ fn generate_suggestions(
         let location_hint = if is_cross_directory {
             "a shared directory".to_string()
         } else {
-            directories
-                .iter()
-                .next()
-                .map(|d| format!("{}", d.display()))
-                .unwrap_or_else(|| "the same directory".to_string())
+            directories.iter().next().map_or_else(
+                || "the same directory".to_string(),
+                |d| format!("{}", d.display()),
+            )
         };
 
         // (instance_count - 1) copies of each group's lines can be eliminated

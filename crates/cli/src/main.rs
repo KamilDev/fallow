@@ -1,3 +1,6 @@
+// CLI binary legitimately prints to stdout/stderr
+#![allow(clippy::print_stdout, clippy::print_stderr)]
+
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -28,6 +31,7 @@ use list::ListOptions;
     about = "Find unused files, exports, and dependencies in JavaScript/TypeScript projects",
     version
 )]
+#[allow(clippy::struct_excessive_bools)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Command>,
@@ -142,7 +146,7 @@ enum Command {
         #[arg(long)]
         include_dupes: bool,
 
-        /// Trace why an export is used/unused (format: FILE:EXPORT_NAME)
+        /// Trace why an export is used/unused (format: `FILE:EXPORT_NAME`)
         #[arg(long, value_name = "FILE:EXPORT")]
         trace: Option<String>,
 
@@ -223,7 +227,7 @@ enum Command {
         #[arg(long)]
         cross_language: bool,
 
-        /// Trace all clones at a specific location (format: FILE:LINE)
+        /// Trace all clones at a specific location (format: `FILE:LINE`)
         #[arg(long, value_name = "FILE:LINE")]
         trace: Option<String>,
     },
@@ -288,7 +292,7 @@ fn emit_error(message: &str, exit_code: u8, output: &OutputFormat) -> ExitCode {
 
 // ── Environment variable helpers ─────────────────────────────────
 
-/// Read FALLOW_FORMAT env var and parse it into a Format value.
+/// Read `FALLOW_FORMAT` env var and parse it into a Format value.
 fn format_from_env() -> Option<Format> {
     let val = std::env::var("FALLOW_FORMAT").ok()?;
     match val.to_lowercase().as_str() {
@@ -300,7 +304,7 @@ fn format_from_env() -> Option<Format> {
     }
 }
 
-/// Read FALLOW_QUIET env var: "1" or "true" (case-insensitive) means quiet.
+/// Read `FALLOW_QUIET` env var: "1" or "true" (case-insensitive) means quiet.
 fn quiet_from_env() -> bool {
     std::env::var("FALLOW_QUIET")
         .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
@@ -309,6 +313,7 @@ fn quiet_from_env() -> bool {
 
 // ── Config loading ───────────────────────────────────────────────
 
+#[allow(clippy::ref_option)] // &Option matches clap's field type
 fn load_config(
     root: &std::path::Path,
     config_path: &Option<PathBuf>,
@@ -330,7 +335,7 @@ fn load_config(
         match FallowConfig::find_and_load(root) {
             Ok(found) => found.map(|(c, _)| c),
             Err(e) => {
-                return Err(emit_error(&e.to_string(), 2, &output));
+                return Err(emit_error(&e, 2, &output));
             }
         }
     };
@@ -589,7 +594,7 @@ fn main() -> ExitCode {
             toml,
             dry_run,
             from,
-        } => migrate::run_migrate(&root, toml, dry_run, from),
+        } => migrate::run_migrate(&root, toml, dry_run, from.as_deref()),
     }
 }
 

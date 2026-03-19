@@ -295,13 +295,10 @@ pub(crate) fn build_extract_duplicate_actions(
                 .min(total_lines.saturating_sub(1));
 
             // Derive indentation from the original first line
-            let indent = file_lines
-                .get(inst_start_line as usize)
-                .map(|line| {
-                    let trimmed = line.trim_start();
-                    &line[..line.len() - trimmed.len()]
-                })
-                .unwrap_or("");
+            let indent = file_lines.get(inst_start_line as usize).map_or("", |line| {
+                let trimmed = line.trim_start();
+                &line[..line.len() - trimmed.len()]
+            });
 
             let call_text = format!("{indent}{func_name}();\n");
 

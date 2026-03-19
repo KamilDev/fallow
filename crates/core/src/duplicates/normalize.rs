@@ -1,7 +1,7 @@
 use xxhash_rust::xxh3::xxh3_64;
 
 use super::tokenize::{SourceToken, TokenKind};
-use fallow_config::{DetectionMode, ResolvedNormalization};
+use fallow_config::{DetectionMode, NormalizationConfig, ResolvedNormalization};
 
 /// A token with a precomputed hash for use in the detection engine.
 #[derive(Debug, Clone)]
@@ -17,7 +17,7 @@ pub struct HashedToken {
 /// Returns a vector of `HashedToken` values ready for the Rabin-Karp sliding window.
 /// Tokens that should be skipped (based on mode) are excluded from the output.
 pub fn normalize_and_hash(tokens: &[SourceToken], mode: DetectionMode) -> Vec<HashedToken> {
-    let resolved = ResolvedNormalization::resolve(mode, &Default::default());
+    let resolved = ResolvedNormalization::resolve(mode, &NormalizationConfig::default());
     normalize_and_hash_resolved(tokens, &resolved)
 }
 
@@ -31,7 +31,7 @@ pub fn normalize_and_hash_resolved(
     let mut result = Vec::with_capacity(tokens.len());
 
     for (i, token) in tokens.iter().enumerate() {
-        let hash = hash_token_resolved(&token.kind, normalization);
+        let hash = hash_token_resolved(&token.kind, *normalization);
         result.push(HashedToken {
             hash,
             original_index: i,
@@ -42,7 +42,7 @@ pub fn normalize_and_hash_resolved(
 }
 
 /// Hash a single token using resolved normalization flags.
-fn hash_token_resolved(kind: &TokenKind, norm: &ResolvedNormalization) -> u64 {
+fn hash_token_resolved(kind: &TokenKind, norm: ResolvedNormalization) -> u64 {
     match kind {
         TokenKind::Keyword(kw) => hash_bytes(&[0, *kw as u8]),
         TokenKind::Identifier(name) => {
@@ -72,7 +72,7 @@ fn hash_token_resolved(kind: &TokenKind, norm: &ResolvedNormalization) -> u64 {
                 hash_bytes(&buf)
             }
         }
-        TokenKind::BooleanLiteral(val) => hash_bytes(&[4, *val as u8]),
+        TokenKind::BooleanLiteral(val) => hash_bytes(&[4, u8::from(*val)]),
         TokenKind::NullLiteral => hash_bytes(&[5]),
         TokenKind::TemplateLiteral => hash_bytes(&[6]),
         TokenKind::RegExpLiteral => hash_bytes(&[7]),

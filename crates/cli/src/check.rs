@@ -9,6 +9,7 @@ use crate::{emit_error, load_config};
 
 // ── Issue type filters ──────────────────────────────────────────
 
+#[allow(clippy::struct_excessive_bools)]
 pub(crate) struct IssueFilters {
     pub(crate) unused_files: bool,
     pub(crate) unused_exports: bool,
@@ -224,7 +225,7 @@ fn get_changed_files(
     git_ref: &str,
 ) -> Option<std::collections::HashSet<std::path::PathBuf>> {
     let output = match std::process::Command::new("git")
-        .args(["diff", "--name-only", &format!("{}...HEAD", git_ref)])
+        .args(["diff", "--name-only", &format!("{git_ref}...HEAD")])
         .current_dir(root)
         .output()
     {
@@ -263,6 +264,7 @@ fn get_changed_files(
 
 // ── Check command ────────────────────────────────────────────────
 
+#[allow(clippy::struct_excessive_bools)]
 pub(crate) struct CheckOptions<'a> {
     pub(crate) root: &'a std::path::Path,
     pub(crate) config_path: &'a Option<std::path::PathBuf>,
@@ -345,15 +347,12 @@ pub(crate) fn run_check(opts: &CheckOptions<'_>) -> ExitCode {
     // Handle trace output (trace is a diagnostic mode — early return after output)
     if let Some(ref graph) = trace_graph {
         if let Some(ref trace_spec) = opts.trace_opts.trace_export {
-            let (file_path, export_name) = match trace_spec.rsplit_once(':') {
-                Some((f, e)) => (f, e),
-                None => {
-                    return emit_error(
-                        "--trace requires FILE:EXPORT_NAME format (e.g., src/utils.ts:foo)",
-                        2,
-                        &opts.output,
-                    );
-                }
+            let Some((file_path, export_name)) = trace_spec.rsplit_once(':') else {
+                return emit_error(
+                    "--trace requires FILE:EXPORT_NAME format (e.g., src/utils.ts:foo)",
+                    2,
+                    &opts.output,
+                );
             };
             match fallow_core::trace::trace_export(graph, &config.root, file_path, export_name) {
                 Some(trace) => {

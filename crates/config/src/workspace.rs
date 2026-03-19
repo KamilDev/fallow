@@ -69,7 +69,7 @@ pub fn discover_workspaces(root: &Path) -> Vec<WorkspaceInfo> {
         // - `packages/` → glob for `packages/*` (trailing slash means "contents of")
         // - `apps`       → glob for `apps` (exact directory)
         let glob_pattern = if pattern.ends_with('/') {
-            format!("{}*", pattern)
+            format!("{pattern}*")
         } else if !pattern.contains('*') && !pattern.contains('?') && !pattern.contains('{') {
             // Bare directory name — treat as exact match
             (*pattern).clone()
@@ -149,7 +149,8 @@ pub fn discover_workspaces(root: &Path) -> Vec<WorkspaceInfo> {
 /// Expand a workspace glob pattern to matching directories.
 ///
 /// Uses the `glob` crate for full glob support including `**` (deep matching).
-/// `canonical_root` is pre-computed to avoid repeated canonicalize() syscalls.
+/// `canonical_root` is pre-computed to avoid repeated `canonicalize()` syscalls.
+#[allow(clippy::print_stderr)]
 fn expand_workspace_glob(root: &Path, pattern: &str, canonical_root: &Path) -> Vec<PathBuf> {
     let full_pattern = root.join(pattern).to_string_lossy().to_string();
     match glob::glob(&full_pattern) {
