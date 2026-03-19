@@ -692,24 +692,24 @@ fn main() -> ExitCode {
                 trace_dependency,
                 performance: cli.performance,
             };
-            run_check(
-                &root,
-                &cli.config,
+            run_check(&CheckOptions {
+                root: &root,
+                config_path: &cli.config,
                 output,
-                cli.no_cache,
+                no_cache: cli.no_cache,
                 threads,
                 quiet,
                 fail_on_issues,
-                &filters,
-                cli.changed_since.as_deref(),
-                cli.baseline.as_deref(),
-                cli.save_baseline.as_deref(),
-                sarif_file.as_deref(),
-                cli.production,
-                cli.workspace.as_deref(),
+                filters: &filters,
+                changed_since: cli.changed_since.as_deref(),
+                baseline: cli.baseline.as_deref(),
+                save_baseline: cli.save_baseline.as_deref(),
+                sarif_file: sarif_file.as_deref(),
+                production: cli.production,
+                workspace: cli.workspace.as_deref(),
                 include_dupes,
-                &trace_opts,
-            )
+                trace_opts: &trace_opts,
+            })
         }
         Command::Watch => run_watch(
             &root,
@@ -720,33 +720,33 @@ fn main() -> ExitCode {
             quiet,
             cli.production,
         ),
-        Command::Fix { dry_run, yes } => fix::run_fix(
-            &root,
-            &cli.config,
+        Command::Fix { dry_run, yes } => fix::run_fix(&fix::FixOptions {
+            root: &root,
+            config_path: &cli.config,
             output,
-            cli.no_cache,
+            no_cache: cli.no_cache,
             threads,
             quiet,
             dry_run,
             yes,
-            cli.production,
-        ),
+            production: cli.production,
+        }),
         Command::Init { toml } => run_init(&root, toml),
         Command::ConfigSchema => run_config_schema(),
         Command::List {
             entry_points,
             files,
             plugins,
-        } => run_list(
-            &root,
-            &cli.config,
+        } => run_list(&ListOptions {
+            root: &root,
+            config_path: &cli.config,
             output,
             threads,
             entry_points,
             files,
             plugins,
-            cli.production,
-        ),
+            production: cli.production,
+        }),
         Command::Dupes {
             mode,
             min_tokens,
@@ -755,11 +755,11 @@ fn main() -> ExitCode {
             skip_local,
             cross_language,
             trace,
-        } => run_dupes(
-            &root,
-            &cli.config,
+        } => run_dupes(&DupesOptions {
+            root: &root,
+            config_path: &cli.config,
             output,
-            cli.no_cache,
+            no_cache: cli.no_cache,
             threads,
             quiet,
             mode,
@@ -768,11 +768,11 @@ fn main() -> ExitCode {
             threshold,
             skip_local,
             cross_language,
-            cli.baseline.as_deref(),
-            cli.save_baseline.as_deref(),
-            cli.production,
-            trace.as_deref(),
-        ),
+            baseline_path: cli.baseline.as_deref(),
+            save_baseline_path: cli.save_baseline.as_deref(),
+            production: cli.production,
+            trace: trace.as_deref(),
+        }),
         Command::Schema => unreachable!("handled above"),
         Command::Migrate {
             toml,
@@ -784,42 +784,43 @@ fn main() -> ExitCode {
 
 // ── Commands ─────────────────────────────────────────────────────
 
-#[allow(clippy::too_many_arguments)]
-fn run_check(
-    root: &std::path::Path,
-    config_path: &Option<PathBuf>,
+struct CheckOptions<'a> {
+    root: &'a std::path::Path,
+    config_path: &'a Option<PathBuf>,
     output: OutputFormat,
     no_cache: bool,
     threads: usize,
     quiet: bool,
     fail_on_issues: bool,
-    filters: &IssueFilters,
-    changed_since: Option<&str>,
-    baseline: Option<&std::path::Path>,
-    save_baseline: Option<&std::path::Path>,
-    sarif_file: Option<&std::path::Path>,
+    filters: &'a IssueFilters,
+    changed_since: Option<&'a str>,
+    baseline: Option<&'a std::path::Path>,
+    save_baseline: Option<&'a std::path::Path>,
+    sarif_file: Option<&'a std::path::Path>,
     production: bool,
-    workspace: Option<&str>,
+    workspace: Option<&'a str>,
     include_dupes: bool,
-    trace_opts: &TraceOptions,
-) -> ExitCode {
+    trace_opts: &'a TraceOptions,
+}
+
+fn run_check(opts: &CheckOptions<'_>) -> ExitCode {
     let start = Instant::now();
 
     let config = match load_config(
-        root,
-        config_path,
-        output.clone(),
-        no_cache,
-        threads,
-        production,
+        opts.root,
+        opts.config_path,
+        opts.output.clone(),
+        opts.no_cache,
+        opts.threads,
+        opts.production,
     ) {
         Ok(c) => c,
         Err(code) => return code,
     };
 
     // Validate --workspace early (before analysis) to fail fast
-    let ws_root = if let Some(ws_name) = workspace {
-        match resolve_workspace_filter(root, ws_name, &output) {
+    let ws_root = if let Some(ws_name) = opts.workspace {
+        match resolve_workspace_filter(opts.root, ws_name, &opts.output) {
             Ok(root) => Some(root),
             Err(code) => return code,
         }
@@ -828,23 +829,28 @@ fn run_check(
     };
 
     // Get changed files if --changed-since is set (already validated)
-    let changed_files: Option<std::collections::HashSet<std::path::PathBuf>> =
-        changed_since.and_then(|git_ref| get_changed_files(root, git_ref));
+    let changed_files: Option<std::collections::HashSet<std::path::PathBuf>> = opts
+        .changed_since
+        .and_then(|git_ref| get_changed_files(opts.root, git_ref));
 
     // Use analyze_with_trace when any trace option is active (retains graph + timings)
-    let use_trace = trace_opts.any_active();
+    let use_trace = opts.trace_opts.any_active();
     let (mut results, trace_graph, trace_timings) = if use_trace {
         match fallow_core::analyze_with_trace(&config) {
-            Ok(output) => (output.results, output.graph, output.timings),
+            Ok(trace_output) => (
+                trace_output.results,
+                trace_output.graph,
+                trace_output.timings,
+            ),
             Err(e) => {
-                return emit_error(&format!("Analysis error: {e}"), 2, &output);
+                return emit_error(&format!("Analysis error: {e}"), 2, &opts.output);
             }
         }
     } else {
         match fallow_core::analyze(&config) {
             Ok(r) => (r, None, None),
             Err(e) => {
-                return emit_error(&format!("Analysis error: {e}"), 2, &output);
+                return emit_error(&format!("Analysis error: {e}"), 2, &opts.output);
             }
         }
     };
@@ -852,21 +858,21 @@ fn run_check(
 
     // Print performance timings first — they should always appear, even combined with --trace*
     if let Some(ref timings) = trace_timings
-        && trace_opts.performance
+        && opts.trace_opts.performance
     {
         report::print_performance(timings, &config.output);
     }
 
     // Handle trace output (trace is a diagnostic mode — early return after output)
     if let Some(ref graph) = trace_graph {
-        if let Some(ref trace_spec) = trace_opts.trace_export {
+        if let Some(ref trace_spec) = opts.trace_opts.trace_export {
             let (file_path, export_name) = match trace_spec.rsplit_once(':') {
                 Some((f, e)) => (f, e),
                 None => {
                     return emit_error(
                         "--trace requires FILE:EXPORT_NAME format (e.g., src/utils.ts:foo)",
                         2,
-                        &output,
+                        &opts.output,
                     );
                 }
             };
@@ -879,13 +885,13 @@ fn run_check(
                     return emit_error(
                         &format!("export '{export_name}' not found in '{file_path}'"),
                         2,
-                        &output,
+                        &opts.output,
                     );
                 }
             }
         }
 
-        if let Some(ref file_path) = trace_opts.trace_file {
+        if let Some(ref file_path) = opts.trace_opts.trace_file {
             match fallow_core::trace::trace_file(graph, &config.root, file_path) {
                 Some(trace) => {
                     report::print_file_trace(&trace, &config.output);
@@ -895,13 +901,13 @@ fn run_check(
                     return emit_error(
                         &format!("file '{file_path}' not found in module graph"),
                         2,
-                        &output,
+                        &opts.output,
                     );
                 }
             }
         }
 
-        if let Some(ref pkg_name) = trace_opts.trace_dependency {
+        if let Some(ref pkg_name) = opts.trace_opts.trace_dependency {
             let trace = fallow_core::trace::trace_dependency(graph, &config.root, pkg_name);
             report::print_dependency_trace(&trace, &config.output);
             return ExitCode::SUCCESS;
@@ -935,40 +941,40 @@ fn run_check(
     // Snapshot results for cross-reference AFTER rules/workspace/changed-files filtering
     // but BEFORE CLI issue-type filters (--unused-files etc.), so combined findings
     // respect the user's severity config but aren't limited by per-invocation filters.
-    let unfiltered_results = if include_dupes && config.duplicates.enabled {
+    let unfiltered_results = if opts.include_dupes && config.duplicates.enabled {
         Some(results.clone())
     } else {
         None
     };
 
     // Apply issue type filters (CLI --unused-files etc.)
-    filters.apply(&mut results);
+    opts.filters.apply(&mut results);
 
     // Save baseline if requested
-    if let Some(baseline_path) = save_baseline {
+    if let Some(baseline_path) = opts.save_baseline {
         let baseline_data = BaselineData::from_results(&results);
         if let Ok(json) = serde_json::to_string_pretty(&baseline_data) {
             if let Err(e) = std::fs::write(baseline_path, json) {
                 eprintln!("Failed to save baseline: {e}");
-            } else if !quiet {
+            } else if !opts.quiet {
                 eprintln!("Baseline saved to {}", baseline_path.display());
             }
         }
     }
 
     // Compare against baseline if provided
-    if let Some(baseline_path) = baseline
+    if let Some(baseline_path) = opts.baseline
         && let Ok(content) = std::fs::read_to_string(baseline_path)
         && let Ok(baseline_data) = serde_json::from_str::<BaselineData>(&content)
     {
         results = filter_new_issues(results, &baseline_data);
-        if !quiet {
+        if !opts.quiet {
             eprintln!("Comparing against baseline: {}", baseline_path.display());
         }
     }
 
     // Write SARIF to file if requested (independent of --format)
-    if let Some(sarif_path) = sarif_file {
+    if let Some(sarif_path) = opts.sarif_file {
         let sarif = report::build_sarif(&results, &config.root, &config.rules);
         match serde_json::to_string_pretty(&sarif) {
             Ok(json) => {
@@ -987,7 +993,7 @@ fn run_check(
                         "Warning: failed to write SARIF file '{}': {e}",
                         sarif_path.display()
                     );
-                } else if !quiet {
+                } else if !opts.quiet {
                     eprintln!("SARIF output written to {}", sarif_path.display());
                 }
             }
@@ -998,7 +1004,7 @@ fn run_check(
     }
 
     // When --fail-on-issues is set, promote all Warn to Error for this run
-    let effective_rules = if fail_on_issues {
+    let effective_rules = if opts.fail_on_issues {
         let mut r = config.rules.clone();
         if r.unused_files == Severity::Warn {
             r.unused_files = Severity::Error;
@@ -1035,7 +1041,7 @@ fn run_check(
         config.rules.clone()
     };
 
-    let report_code = report::print_results(&results, &config, elapsed, quiet);
+    let report_code = report::print_results(&results, &config, elapsed, opts.quiet);
     if report_code != ExitCode::SUCCESS {
         return report_code;
     }
@@ -1050,7 +1056,12 @@ fn run_check(
         let cross_ref = fallow_core::cross_reference::cross_reference(&dupe_report, unfiltered);
 
         if cross_ref.has_findings() {
-            report::print_cross_reference_findings(&cross_ref, &config.root, quiet, &config.output);
+            report::print_cross_reference_findings(
+                &cross_ref,
+                &config.root,
+                opts.quiet,
+                &config.output,
+            );
         }
     }
 
@@ -1143,7 +1154,7 @@ fn run_watch(
     let elapsed = start.elapsed();
     let report_code = report::print_results(&results, &config, elapsed, quiet);
     if report_code != ExitCode::SUCCESS {
-        return report_code;
+        eprintln!("Warning: report output failed");
     }
 
     // Set up file watcher
@@ -1207,7 +1218,7 @@ fn run_watch(
                             let report_code =
                                 report::print_results(&results, &config, elapsed, quiet);
                             if report_code != ExitCode::SUCCESS {
-                                return report_code;
+                                eprintln!("Warning: report output failed");
                             }
                         }
                         Err(e) => {
@@ -1227,10 +1238,9 @@ fn run_watch(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
-fn run_dupes(
-    root: &std::path::Path,
-    config_path: &Option<PathBuf>,
+struct DupesOptions<'a> {
+    root: &'a std::path::Path,
+    config_path: &'a Option<PathBuf>,
     output: OutputFormat,
     no_cache: bool,
     threads: usize,
@@ -1241,20 +1251,22 @@ fn run_dupes(
     threshold: f64,
     skip_local: bool,
     cross_language: bool,
-    baseline_path: Option<&std::path::Path>,
-    save_baseline_path: Option<&std::path::Path>,
+    baseline_path: Option<&'a std::path::Path>,
+    save_baseline_path: Option<&'a std::path::Path>,
     production: bool,
-    trace: Option<&str>,
-) -> ExitCode {
+    trace: Option<&'a str>,
+}
+
+fn run_dupes(opts: &DupesOptions<'_>) -> ExitCode {
     let start = Instant::now();
 
     let config = match load_config(
-        root,
-        config_path,
-        output.clone(),
-        no_cache,
-        threads,
-        production,
+        opts.root,
+        opts.config_path,
+        opts.output.clone(),
+        opts.no_cache,
+        opts.threads,
+        opts.production,
     ) {
         Ok(c) => c,
         Err(code) => return code,
@@ -1264,18 +1276,18 @@ fn run_dupes(
     let toml_dupes = &config.duplicates;
     let dupes_config = fallow_config::DuplicatesConfig {
         enabled: true,
-        mode: match mode {
+        mode: match opts.mode {
             DupesMode::Strict => fallow_config::DetectionMode::Strict,
             DupesMode::Mild => fallow_config::DetectionMode::Mild,
             DupesMode::Weak => fallow_config::DetectionMode::Weak,
             DupesMode::Semantic => fallow_config::DetectionMode::Semantic,
         },
-        min_tokens,
-        min_lines,
-        threshold,
+        min_tokens: opts.min_tokens,
+        min_lines: opts.min_lines,
+        threshold: opts.threshold,
         ignore: toml_dupes.ignore.clone(),
-        skip_local,
-        cross_language: cross_language || toml_dupes.cross_language,
+        skip_local: opts.skip_local,
+        cross_language: opts.cross_language || toml_dupes.cross_language,
         normalization: toml_dupes.normalization.clone(),
     };
 
@@ -1286,33 +1298,37 @@ fn run_dupes(
     let mut report = fallow_core::duplicates::find_duplicates(&config.root, &files, &dupes_config);
 
     // Handle trace (diagnostic mode — early return)
-    if let Some(trace_spec) = trace {
+    if let Some(trace_spec) = opts.trace {
         let (file_path, line_str) = match trace_spec.rsplit_once(':') {
             Some((f, l)) => (f, l),
             None => {
                 return emit_error(
                     "--trace requires FILE:LINE format (e.g., src/utils.ts:42)",
                     2,
-                    &output,
+                    &opts.output,
                 );
             }
         };
         let line: usize = match line_str.parse() {
             Ok(l) if l > 0 => l,
             _ => {
-                return emit_error("--trace LINE must be a positive integer", 2, &output);
+                return emit_error("--trace LINE must be a positive integer", 2, &opts.output);
             }
         };
         let trace_result = fallow_core::trace::trace_clone(&report, &config.root, file_path, line);
         if trace_result.matched_instance.is_none() {
-            return emit_error(&format!("no clone found at {file_path}:{line}"), 2, &output);
+            return emit_error(
+                &format!("no clone found at {file_path}:{line}"),
+                2,
+                &opts.output,
+            );
         }
-        report::print_clone_trace(&trace_result, &config.root, &output);
+        report::print_clone_trace(&trace_result, &config.root, &opts.output);
         return ExitCode::SUCCESS;
     }
 
     // Save baseline if requested (before filtering)
-    if let Some(path) = save_baseline_path {
+    if let Some(path) = opts.save_baseline_path {
         let baseline_data = DuplicationBaselineData::from_report(&report, &config.root);
         match serde_json::to_string_pretty(&baseline_data) {
             Ok(json) => {
@@ -1320,10 +1336,10 @@ fn run_dupes(
                     return emit_error(
                         &format!("failed to write duplication baseline: {e}"),
                         2,
-                        &output,
+                        &opts.output,
                     );
                 }
-                if !quiet {
+                if !opts.quiet {
                     eprintln!("Saved duplication baseline to {}", path.display());
                 }
             }
@@ -1331,14 +1347,14 @@ fn run_dupes(
                 return emit_error(
                     &format!("failed to serialize duplication baseline: {e}"),
                     2,
-                    &output,
+                    &opts.output,
                 );
             }
         }
     }
 
     // Filter against baseline if provided
-    if let Some(path) = baseline_path {
+    if let Some(path) = opts.baseline_path {
         match std::fs::read_to_string(path) {
             Ok(json) => match serde_json::from_str::<DuplicationBaselineData>(&json) {
                 Ok(baseline_data) => {
@@ -1348,7 +1364,7 @@ fn run_dupes(
                     return emit_error(
                         &format!("failed to parse duplication baseline: {e}"),
                         2,
-                        &output,
+                        &opts.output,
                     );
                 }
             },
@@ -1356,7 +1372,7 @@ fn run_dupes(
                 return emit_error(
                     &format!("failed to read duplication baseline: {e}"),
                     2,
-                    &output,
+                    &opts.output,
                 );
             }
         }
@@ -1365,16 +1381,17 @@ fn run_dupes(
     let elapsed = start.elapsed();
 
     // Print results
-    let result = report::print_duplication_report(&report, &config, elapsed, quiet, &output);
+    let result =
+        report::print_duplication_report(&report, &config, elapsed, opts.quiet, &opts.output);
     if result != ExitCode::SUCCESS {
         return result;
     }
 
     // Check threshold
-    if threshold > 0.0 && report.stats.duplication_percentage > threshold {
+    if opts.threshold > 0.0 && report.stats.duplication_percentage > opts.threshold {
         eprintln!(
             "Duplication ({:.1}%) exceeds threshold ({:.1}%)",
-            report.stats.duplication_percentage, threshold
+            report.stats.duplication_percentage, opts.threshold
         );
         return ExitCode::from(1);
     }
@@ -1484,46 +1501,47 @@ fn run_config_schema() -> ExitCode {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
-fn run_list(
-    root: &std::path::Path,
-    config_path: &Option<PathBuf>,
+struct ListOptions<'a> {
+    root: &'a std::path::Path,
+    config_path: &'a Option<PathBuf>,
     output: OutputFormat,
     threads: usize,
     entry_points: bool,
     files: bool,
     plugins: bool,
     production: bool,
-) -> ExitCode {
+}
+
+fn run_list(opts: &ListOptions<'_>) -> ExitCode {
     let config = match load_config(
-        root,
-        config_path,
+        opts.root,
+        opts.config_path,
         OutputFormat::Human,
         true,
-        threads,
-        production,
+        opts.threads,
+        opts.production,
     ) {
         Ok(c) => c,
         Err(code) => return code,
     };
 
-    let show_all = !entry_points && !files && !plugins;
+    let show_all = !opts.entry_points && !opts.files && !opts.plugins;
 
     // Run plugin detection to find active plugins (including workspace packages)
-    let plugin_result = if plugins || show_all {
+    let plugin_result = if opts.plugins || show_all {
         let disc = fallow_core::discover::discover_files(&config);
         let file_paths: Vec<std::path::PathBuf> = disc.iter().map(|f| f.path.clone()).collect();
         let registry = fallow_core::plugins::PluginRegistry::new(config.external_plugins.clone());
 
-        let pkg_path = root.join("package.json");
+        let pkg_path = opts.root.join("package.json");
         let mut result = if let Ok(pkg) = fallow_config::PackageJson::load(&pkg_path) {
-            registry.run(&pkg, root, &file_paths)
+            registry.run(&pkg, opts.root, &file_paths)
         } else {
             fallow_core::plugins::AggregatedPluginResult::default()
         };
 
         // Also run plugins for workspace packages
-        let workspaces = fallow_config::discover_workspaces(root);
+        let workspaces = fallow_config::discover_workspaces(opts.root);
         for ws in &workspaces {
             let ws_pkg_path = ws.root.join("package.json");
             if let Ok(ws_pkg) = fallow_config::PackageJson::load(&ws_pkg_path) {
@@ -1540,11 +1558,42 @@ fn run_list(
         None
     };
 
-    match output {
+    // Discover files once if needed by either files or entry_points
+    let need_files = opts.files || show_all || opts.entry_points;
+    let discovered = if need_files {
+        Some(fallow_core::discover::discover_files(&config))
+    } else {
+        None
+    };
+
+    // Compute entry points once (shared by both JSON and human output branches)
+    let all_entry_points = if (opts.entry_points || show_all)
+        && let Some(ref disc) = discovered
+    {
+        let mut entries = fallow_core::discover::discover_entry_points(&config, disc);
+        // Add workspace entry points
+        let workspaces = fallow_config::discover_workspaces(opts.root);
+        for ws in &workspaces {
+            let ws_entries =
+                fallow_core::discover::discover_workspace_entry_points(&ws.root, &config, disc);
+            entries.extend(ws_entries);
+        }
+        // Add plugin-discovered entry points
+        if let Some(ref pr) = plugin_result {
+            let plugin_entries =
+                fallow_core::discover::discover_plugin_entry_points(pr, &config, disc);
+            entries.extend(plugin_entries);
+        }
+        Some(entries)
+    } else {
+        None
+    };
+
+    match opts.output {
         OutputFormat::Json => {
             let mut result = serde_json::Map::new();
 
-            if (plugins || show_all)
+            if (opts.plugins || show_all)
                 && let Some(ref pr) = plugin_result
             {
                 let pl: Vec<serde_json::Value> = pr
@@ -1555,21 +1604,13 @@ fn run_list(
                 result.insert("plugins".to_string(), serde_json::json!(pl));
             }
 
-            // Discover files once if needed by either files or entry_points
-            let need_files = files || show_all || entry_points;
-            let discovered = if need_files {
-                Some(fallow_core::discover::discover_files(&config))
-            } else {
-                None
-            };
-
-            if (files || show_all)
+            if (opts.files || show_all)
                 && let Some(ref disc) = discovered
             {
                 let paths: Vec<serde_json::Value> = disc
                     .iter()
                     .map(|f| {
-                        let relative = f.path.strip_prefix(root).unwrap_or(&f.path);
+                        let relative = f.path.strip_prefix(opts.root).unwrap_or(&f.path);
                         serde_json::json!(relative.display().to_string())
                     })
                     .collect();
@@ -1577,28 +1618,11 @@ fn run_list(
                 result.insert("files".to_string(), serde_json::json!(paths));
             }
 
-            if (entry_points || show_all)
-                && let Some(ref disc) = discovered
-            {
-                let mut entries = fallow_core::discover::discover_entry_points(&config, disc);
-                // Add workspace entry points
-                let workspaces = fallow_config::discover_workspaces(root);
-                for ws in &workspaces {
-                    let ws_entries = fallow_core::discover::discover_workspace_entry_points(
-                        &ws.root, &config, disc,
-                    );
-                    entries.extend(ws_entries);
-                }
-                // Add plugin-discovered entry points
-                if let Some(ref pr) = plugin_result {
-                    let plugin_entries =
-                        fallow_core::discover::discover_plugin_entry_points(pr, &config, disc);
-                    entries.extend(plugin_entries);
-                }
+            if let Some(ref entries) = all_entry_points {
                 let eps: Vec<serde_json::Value> = entries
                     .iter()
                     .map(|ep| {
-                        let relative = ep.path.strip_prefix(root).unwrap_or(&ep.path);
+                        let relative = ep.path.strip_prefix(opts.root).unwrap_or(&ep.path);
                         serde_json::json!({
                             "path": relative.display().to_string(),
                             "source": format!("{:?}", ep.source),
@@ -1621,7 +1645,7 @@ fn run_list(
             }
         }
         _ => {
-            if (plugins || show_all)
+            if (opts.plugins || show_all)
                 && let Some(ref pr) = plugin_result
             {
                 eprintln!("Active plugins:");
@@ -1630,15 +1654,7 @@ fn run_list(
                 }
             }
 
-            // Discover files once for both files and entry_points
-            let need_discover = files || entry_points || show_all;
-            let discovered = if need_discover {
-                Some(fallow_core::discover::discover_files(&config))
-            } else {
-                None
-            };
-
-            if (files || show_all)
+            if (opts.files || show_all)
                 && let Some(ref disc) = discovered
             {
                 eprintln!("Discovered {} files", disc.len());
@@ -1647,26 +1663,9 @@ fn run_list(
                 }
             }
 
-            if (entry_points || show_all)
-                && let Some(ref disc) = discovered
-            {
-                let mut entries = fallow_core::discover::discover_entry_points(&config, disc);
-                // Add workspace entry points
-                let workspaces = fallow_config::discover_workspaces(root);
-                for ws in &workspaces {
-                    let ws_entries = fallow_core::discover::discover_workspace_entry_points(
-                        &ws.root, &config, disc,
-                    );
-                    entries.extend(ws_entries);
-                }
-                // Add plugin-discovered entry points
-                if let Some(ref pr) = plugin_result {
-                    let plugin_entries =
-                        fallow_core::discover::discover_plugin_entry_points(pr, &config, disc);
-                    entries.extend(plugin_entries);
-                }
+            if let Some(ref entries) = all_entry_points {
                 eprintln!("Found {} entry points", entries.len());
-                for ep in &entries {
+                for ep in entries {
                     println!("{} ({:?})", ep.path.display(), ep.source);
                 }
             }

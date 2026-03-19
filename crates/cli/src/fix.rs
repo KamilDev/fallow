@@ -275,33 +275,34 @@ fn apply_dependency_fixes(
     had_write_error
 }
 
-#[allow(clippy::too_many_arguments)]
-pub(crate) fn run_fix(
-    root: &Path,
-    config_path: &Option<PathBuf>,
-    output: OutputFormat,
-    no_cache: bool,
-    threads: usize,
-    quiet: bool,
-    dry_run: bool,
-    yes: bool,
-    production: bool,
-) -> ExitCode {
+pub(crate) struct FixOptions<'a> {
+    pub root: &'a Path,
+    pub config_path: &'a Option<PathBuf>,
+    pub output: OutputFormat,
+    pub no_cache: bool,
+    pub threads: usize,
+    pub quiet: bool,
+    pub dry_run: bool,
+    pub yes: bool,
+    pub production: bool,
+}
+
+pub(crate) fn run_fix(opts: &FixOptions<'_>) -> ExitCode {
     // In non-TTY environments (CI, AI agents), require --yes or --dry-run
     // to prevent accidental destructive operations.
-    if !dry_run && !yes && !std::io::stdin().is_terminal() {
+    if !opts.dry_run && !opts.yes && !std::io::stdin().is_terminal() {
         let msg = "fix command requires --yes (or --force) in non-interactive environments. \
                    Use --dry-run to preview changes first, then pass --yes to confirm.";
-        return super::emit_error(msg, 2, &output);
+        return super::emit_error(msg, 2, &opts.output);
     }
 
     let config = match super::load_config(
-        root,
-        config_path,
-        output.clone(),
-        no_cache,
-        threads,
-        production,
+        opts.root,
+        opts.config_path,
+        opts.output.clone(),
+        opts.no_cache,
+        opts.threads,
+        opts.production,
     ) {
         Ok(c) => c,
         Err(code) => return code,
@@ -310,14 +311,14 @@ pub(crate) fn run_fix(
     let results = match fallow_core::analyze(&config) {
         Ok(r) => r,
         Err(e) => {
-            return super::emit_error(&format!("Analysis error: {e}"), 2, &output);
+            return super::emit_error(&format!("Analysis error: {e}"), 2, &opts.output);
         }
     };
 
     if results.total_issues() == 0 {
-        if matches!(output, OutputFormat::Json) {
+        if matches!(opts.output, OutputFormat::Json) {
             match serde_json::to_string_pretty(&serde_json::json!({
-                "dry_run": dry_run,
+                "dry_run": opts.dry_run,
                 "fixes": [],
                 "total_fixed": 0
             })) {
@@ -327,7 +328,7 @@ pub(crate) fn run_fix(
                     return ExitCode::from(2);
                 }
             }
-        } else if !quiet {
+        } else if !opts.quiet {
             eprintln!("No issues to fix.");
         }
         return ExitCode::SUCCESS;
@@ -345,20 +346,25 @@ pub(crate) fn run_fix(
             .push(export);
     }
 
-    let mut had_write_error =
-        apply_export_fixes(root, &exports_by_file, &output, dry_run, &mut fixes);
+    let mut had_write_error = apply_export_fixes(
+        opts.root,
+        &exports_by_file,
+        &opts.output,
+        opts.dry_run,
+        &mut fixes,
+    );
 
-    if apply_dependency_fixes(root, &results, &output, dry_run, &mut fixes) {
+    if apply_dependency_fixes(opts.root, &results, &opts.output, opts.dry_run, &mut fixes) {
         had_write_error = true;
     }
 
-    if matches!(output, OutputFormat::Json) {
+    if matches!(opts.output, OutputFormat::Json) {
         let applied_count = fixes
             .iter()
             .filter(|f| f.get("applied").and_then(|v| v.as_bool()).unwrap_or(false))
             .count();
         match serde_json::to_string_pretty(&serde_json::json!({
-            "dry_run": dry_run,
+            "dry_run": opts.dry_run,
             "fixes": fixes,
             "total_fixed": applied_count
         })) {
@@ -368,9 +374,9 @@ pub(crate) fn run_fix(
                 return ExitCode::from(2);
             }
         }
-    } else if !quiet {
+    } else if !opts.quiet {
         let fixed_count = fixes.len();
-        if dry_run {
+        if opts.dry_run {
             eprintln!("Dry run complete. No files were modified.");
         } else {
             eprintln!("Fixed {} issue(s).", fixed_count);
