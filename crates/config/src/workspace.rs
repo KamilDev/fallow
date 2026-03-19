@@ -114,7 +114,18 @@ pub fn discover_workspaces(root: &Path) -> Vec<WorkspaceInfo> {
         }
     }
 
-    // 4. Mark workspaces that are depended on by other workspaces
+    // 4. Deduplicate workspaces by canonical path.
+    // Overlapping patterns (e.g., `examples/*` and `examples/minimal/*`) can match the
+    // same directory, causing duplicate workspace entries and double-reported issues.
+    {
+        let mut seen = std::collections::HashSet::new();
+        workspaces.retain(|ws| {
+            let canonical = ws.root.canonicalize().unwrap_or_else(|_| ws.root.clone());
+            seen.insert(canonical)
+        });
+    }
+
+    // 5. Mark workspaces that are depended on by other workspaces
     let all_dep_names: Vec<String> = workspaces
         .iter()
         .flat_map(|ws| {
