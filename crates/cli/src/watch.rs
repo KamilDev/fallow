@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::time::Instant;
 
@@ -8,8 +8,9 @@ use notify_debouncer_mini::{DebouncedEventKind, new_debouncer};
 use crate::load_config;
 use crate::report;
 
+#[allow(clippy::ref_option, clippy::needless_pass_by_value)] // matches load_config signature
 pub(crate) fn run_watch(
-    root: &PathBuf,
+    root: &Path,
     config_path: &Option<PathBuf>,
     output: OutputFormat,
     no_cache: bool,
@@ -87,21 +88,16 @@ pub(crate) fn run_watch(
 
                 if has_source_changes {
                     eprintln!("\nFile changed, re-analyzing...");
-                    let config = match load_config(
+                    let Ok(config) = load_config(
                         root,
                         config_path,
                         output.clone(),
                         no_cache,
                         threads,
                         production,
-                    ) {
-                        Ok(c) => c,
-                        Err(_) => {
-                            eprintln!(
-                                "Warning: failed to reload config, using previous configuration"
-                            );
-                            continue;
-                        }
+                    ) else {
+                        eprintln!("Warning: failed to reload config, using previous configuration");
+                        continue;
                     };
                     let start = Instant::now();
                     match fallow_core::analyze(&config) {

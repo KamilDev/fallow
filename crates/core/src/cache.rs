@@ -34,7 +34,7 @@ pub struct CachedModule {
     pub re_exports: Vec<CachedReExport>,
     /// Dynamic import specifiers.
     pub dynamic_imports: Vec<CachedDynamicImport>,
-    /// Require() specifiers.
+    /// `require()` specifiers.
     pub require_calls: Vec<CachedRequireCall>,
     /// Static member accesses (e.g., `Status.Active`).
     pub member_accesses: Vec<MemberAccess>,
@@ -53,7 +53,7 @@ pub struct CachedModule {
 pub struct CachedSuppression {
     /// 1-based line this suppression applies to. 0 = file-wide.
     pub line: u32,
-    /// 0 = suppress all, 1-10 = IssueKind discriminant.
+    /// 0 = suppress all, 1-10 = `IssueKind` discriminant.
     pub kind: u8,
 }
 
@@ -68,8 +68,8 @@ pub struct CachedExport {
     pub members: Vec<CachedMember>,
 }
 
-/// Import kind discriminant for `CachedImport`.
-/// 0 = Named, 1 = Default, 2 = Namespace, 3 = SideEffect.
+/// Import kind discriminant for `CachedImport`:
+/// 0 = Named, 1 = Default, 2 = Namespace, 3 = `SideEffect`.
 const IMPORT_KIND_NAMED: u8 = 0;
 const IMPORT_KIND_DEFAULT: u8 = 1;
 const IMPORT_KIND_NAMESPACE: u8 = 2;
@@ -224,7 +224,7 @@ impl Default for CacheStore {
     }
 }
 
-/// Reconstruct a ModuleInfo from a CachedModule.
+/// Reconstruct a [`ModuleInfo`](crate::extract::ModuleInfo) from a [`CachedModule`].
 pub fn cached_to_module(
     cached: &CachedModule,
     file_id: crate::discover::FileId,
@@ -357,7 +357,7 @@ pub fn cached_to_module(
     }
 }
 
-/// Convert a ModuleInfo to a CachedModule for storage.
+/// Convert a [`ModuleInfo`](crate::extract::ModuleInfo) to a [`CachedModule`] for storage.
 pub fn module_to_cached(module: &crate::extract::ModuleInfo) -> CachedModule {
     CachedModule {
         content_hash: module.content_hash,

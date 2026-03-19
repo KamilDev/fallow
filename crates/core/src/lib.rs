@@ -41,6 +41,7 @@ pub fn analyze_with_trace(config: &ResolvedConfig) -> Result<AnalysisOutput, Fal
     analyze_full(config, true)
 }
 
+#[allow(clippy::unnecessary_wraps)] // Result kept for future error handling
 fn analyze_full(config: &ResolvedConfig, retain: bool) -> Result<AnalysisOutput, FallowError> {
     let _span = tracing::info_span!("fallow_analyze").entered();
     let pipeline_start = Instant::now();
@@ -208,7 +209,7 @@ fn analyze_full(config: &ResolvedConfig, retain: bool) -> Result<AnalysisOutput,
     let total_ms = pipeline_start.elapsed().as_secs_f64() * 1000.0;
 
     let cache_summary = if cache_hits > 0 {
-        format!(" ({} cached, {} parsed)", cache_hits, cache_misses)
+        format!(" ({cache_hits} cached, {cache_misses} parsed)")
     } else {
         String::new()
     };

@@ -72,7 +72,37 @@ notify-debouncer-mini = "0.7"
 
 # Testing
 criterion = { version = "0.8", features = ["html_reports"] }
+insta = { version = "1", features = ["yaml"] }
 tempfile = "3"
+
+[workspace.lints.clippy]
+# Pedantic
+pedantic = { level = "warn", priority = -1 }
+# Restrictions
+dbg_macro = "warn"
+todo = "warn"
+print_stdout = "warn"
+print_stderr = "warn"
+# Allow common pedantic false positives
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_precision_loss = "allow"
+cast_possible_wrap = "allow"
+too_many_lines = "allow"
+items_after_statements = "allow"
+single_match_else = "allow"
+if_not_else = "allow"
+redundant_closure_for_method_calls = "allow"
+similar_names = "allow"
+wildcard_imports = "allow"
+unnested_or_patterns = "allow"
+
+[workspace.lints.rust]
+unsafe_code = "warn"
 
 [profile.release]
 lto = true

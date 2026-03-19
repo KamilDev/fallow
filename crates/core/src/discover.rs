@@ -451,9 +451,8 @@ fn discover_nested_package_entries(
         if !search_dir.is_dir() {
             continue;
         }
-        let read_dir = match std::fs::read_dir(&search_dir) {
-            Ok(rd) => rd,
-            Err(_) => continue,
+        let Ok(read_dir) = std::fs::read_dir(&search_dir) else {
+            continue;
         };
         for entry in read_dir.flatten() {
             let pkg_path = entry.path().join("package.json");

@@ -129,9 +129,8 @@ impl LanguageServer for FallowLspServer {
         };
 
         let uri = &params.text_document.uri;
-        let file_path = match uri.to_file_path() {
-            Ok(p) => p,
-            Err(_) => return Ok(None),
+        let Ok(file_path) = uri.to_file_path() else {
+            return Ok(None);
         };
 
         let mut actions = Vec::new();
@@ -191,9 +190,8 @@ impl LanguageServer for FallowLspServer {
             return Ok(None);
         };
 
-        let file_path = match params.text_document.uri.to_file_path() {
-            Ok(p) => p,
-            Err(_) => return Ok(None),
+        let Ok(file_path) = params.text_document.uri.to_file_path() else {
+            return Ok(None);
         };
 
         let lenses = code_lens::build_code_lenses(results, &file_path, &params.text_document.uri);
@@ -211,9 +209,8 @@ impl FallowLspServer {
         let root = self.root.read().await.clone();
         let Some(root) = root else { return };
 
-        let _guard = match self.analysis_guard.try_lock() {
-            Ok(guard) => guard,
-            Err(_) => return, // analysis already running
+        let Ok(_guard) = self.analysis_guard.try_lock() else {
+            return; // analysis already running
         };
 
         self.client
@@ -318,7 +315,9 @@ async fn main() {
         duplication: Arc::new(RwLock::new(None)),
         previous_diagnostic_uris: Arc::new(RwLock::new(HashSet::new())),
         last_analysis: Arc::new(Mutex::new(
-            Instant::now() - std::time::Duration::from_secs(10),
+            Instant::now()
+                .checked_sub(std::time::Duration::from_secs(10))
+                .unwrap_or_else(Instant::now),
         )),
         analysis_guard: Arc::new(tokio::sync::Mutex::new(())),
         documents: Arc::new(RwLock::new(HashMap::new())),

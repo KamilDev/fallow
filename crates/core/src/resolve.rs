@@ -10,8 +10,8 @@ use crate::extract::{ImportInfo, ModuleInfo, ReExportInfo};
 
 /// Thread-safe cache for bare specifier resolutions using lock-free concurrent reads.
 /// Bare specifiers (like `react`, `lodash/merge`) resolve to the same target
-/// regardless of which file imports them (modulo nested node_modules, which is rare).
-/// Uses DashMap (sharded read-write locks) instead of Mutex<HashMap> to eliminate
+/// regardless of which file imports them (modulo nested `node_modules`, which is rare).
+/// Uses `DashMap` (sharded read-write locks) instead of `Mutex<HashMap>` to eliminate
 /// contention under rayon's work-stealing on large projects.
 struct BareSpecifierCache {
     cache: DashMap<String, ResolveResult>,
@@ -38,7 +38,7 @@ impl BareSpecifierCache {
 pub enum ResolveResult {
     /// Resolved to a file within the project.
     InternalModule(FileId),
-    /// Resolved to a file outside the project (node_modules, .json, etc.).
+    /// Resolved to a file outside the project (`node_modules`, `.json`, etc.).
     ExternalFile(PathBuf),
     /// Bare specifier — an npm package.
     NpmPackage(String),
@@ -129,15 +129,12 @@ pub fn resolve_all_imports(
     modules
         .par_iter()
         .filter_map(|module| {
-            let file_path = match file_paths.get(module.file_id.0 as usize) {
-                Some(p) => p,
-                None => {
-                    tracing::warn!(
-                        file_id = module.file_id.0,
-                        "Skipping module with unknown file_id during resolution"
-                    );
-                    return None;
-                }
+            let Some(file_path) = file_paths.get(module.file_id.0 as usize) else {
+                tracing::warn!(
+                    file_id = module.file_id.0,
+                    "Skipping module with unknown file_id during resolution"
+                );
+                return None;
             };
 
             let resolved_imports: Vec<ResolvedImport> = module
@@ -348,7 +345,7 @@ pub fn resolve_all_imports(
 /// Path aliases (e.g., `@/components`, `~/lib`, `#internal`, `~~/utils`) are resolved
 /// via tsconfig.json `paths` or package.json `imports`. They should not be cached
 /// (resolution depends on the importing file's tsconfig context) and should return
-/// Unresolvable (not NpmPackage) when resolution fails.
+/// `Unresolvable` (not `NpmPackage`) when resolution fails.
 pub fn is_path_alias(specifier: &str) -> bool {
     // `#` prefix is Node.js imports maps (package.json "imports" field)
     if specifier.starts_with('#') {
@@ -425,7 +422,7 @@ fn build_extensions(active_plugins: &[String]) -> Vec<String> {
     }
 }
 
-/// Build the resolver condition_names list, optionally prepending React Native
+/// Build the resolver `condition_names` list, optionally prepending React Native
 /// conditions when the RN/Expo plugin is active.
 fn build_condition_names(active_plugins: &[String]) -> Vec<String> {
     let mut names = vec![
@@ -442,7 +439,7 @@ fn build_condition_names(active_plugins: &[String]) -> Vec<String> {
     names
 }
 
-/// Create an oxc_resolver instance with standard configuration.
+/// Create an `oxc_resolver` instance with standard configuration.
 ///
 /// When React Native or Expo plugins are active, platform-specific extensions
 /// (e.g., `.web.tsx`, `.ios.ts`) are prepended to the extension list so that
@@ -628,34 +625,30 @@ fn try_path_alias_fallback(
         // Resolve from a synthetic file at the project root so relative paths work.
         // Use a dummy file path in the root directory.
         let root_file = root.join("__resolve_root__");
-        match resolver.resolve_file(&root_file, &substituted) {
-            Ok(resolved) => {
-                let resolved_path = resolved.path();
-                // Try raw path lookup first
-                if let Some(&file_id) = raw_path_to_id.get(resolved_path) {
+        if let Ok(resolved) = resolver.resolve_file(&root_file, &substituted) {
+            let resolved_path = resolved.path();
+            // Try raw path lookup first
+            if let Some(&file_id) = raw_path_to_id.get(resolved_path) {
+                return Some(ResolveResult::InternalModule(file_id));
+            }
+            // Fall back to canonical path lookup
+            if let Ok(canonical) = resolved_path.canonicalize() {
+                if let Some(&file_id) = path_to_id.get(canonical.as_path()) {
                     return Some(ResolveResult::InternalModule(file_id));
                 }
-                // Fall back to canonical path lookup
-                if let Ok(canonical) = resolved_path.canonicalize() {
-                    if let Some(&file_id) = path_to_id.get(canonical.as_path()) {
-                        return Some(ResolveResult::InternalModule(file_id));
-                    }
-                    if let Some(file_id) = try_source_fallback(&canonical, path_to_id) {
-                        return Some(ResolveResult::InternalModule(file_id));
-                    }
-                    if let Some(file_id) =
-                        try_pnpm_workspace_fallback(&canonical, path_to_id, workspace_roots)
-                    {
-                        return Some(ResolveResult::InternalModule(file_id));
-                    }
-                    if let Some(pkg_name) = extract_package_name_from_node_modules_path(&canonical)
-                    {
-                        return Some(ResolveResult::NpmPackage(pkg_name));
-                    }
-                    return Some(ResolveResult::ExternalFile(canonical));
+                if let Some(file_id) = try_source_fallback(&canonical, path_to_id) {
+                    return Some(ResolveResult::InternalModule(file_id));
                 }
+                if let Some(file_id) =
+                    try_pnpm_workspace_fallback(&canonical, path_to_id, workspace_roots)
+                {
+                    return Some(ResolveResult::InternalModule(file_id));
+                }
+                if let Some(pkg_name) = extract_package_name_from_node_modules_path(&canonical) {
+                    return Some(ResolveResult::NpmPackage(pkg_name));
+                }
+                return Some(ResolveResult::ExternalFile(canonical));
             }
-            Err(_) => continue,
         }
     }
     None

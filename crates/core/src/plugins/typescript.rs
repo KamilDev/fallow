@@ -55,7 +55,7 @@ impl Plugin for TypeScriptPlugin {
             parse_source = source.to_string();
             parse_path_buf = config_path.to_path_buf();
             parse_path = &parse_path_buf;
-        };
+        }
 
         // extends → referenced dependency or base config file
         if let Some(extends) =

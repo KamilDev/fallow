@@ -165,7 +165,7 @@ pub fn find_duplicates_in_project(root: &Path, config: &DuplicatesConfig) -> Dup
     find_duplicates(root, &files, config)
 }
 
-/// Build a GlobSet from ignore patterns.
+/// Build a `GlobSet` from ignore patterns.
 fn build_ignore_set(patterns: &[String]) -> Option<GlobSet> {
     if patterns.is_empty() {
         return None;

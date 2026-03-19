@@ -11,19 +11,19 @@ use crate::resolve::{ResolveResult, ResolvedModule};
 /// The core module dependency graph.
 #[derive(Debug)]
 pub struct ModuleGraph {
-    /// All modules indexed by FileId.
+    /// All modules indexed by `FileId`.
     pub modules: Vec<ModuleNode>,
     /// Flat edge storage for cache-friendly iteration.
     edges: Vec<Edge>,
-    /// Maps npm package names to the set of FileIds that import them.
+    /// Maps npm package names to the set of `FileId`s that import them.
     pub package_usage: HashMap<String, Vec<FileId>>,
-    /// Maps npm package names to the set of FileIds that import them with type-only imports.
+    /// Maps npm package names to the set of `FileId`s that import them with type-only imports.
     /// A package appearing here but not in `package_usage` (or only in both) indicates
     /// it's only used for types and could be a devDependency.
     pub type_only_package_usage: HashMap<String, Vec<FileId>>,
-    /// All entry point FileIds.
+    /// All entry point `FileId`s.
     pub entry_points: HashSet<FileId>,
-    /// Reverse index: for each FileId, which files import it.
+    /// Reverse index: for each `FileId`, which files import it.
     pub reverse_deps: Vec<Vec<FileId>>,
     /// Precomputed: which modules have namespace imports (import * as ns).
     namespace_imported: FixedBitSet,
@@ -128,8 +128,7 @@ impl ModuleGraph {
             .iter()
             .map(|f| f.id.0 as usize)
             .max()
-            .map(|m| m + 1)
-            .unwrap_or(0);
+            .map_or(0, |m| m + 1);
         let total_capacity = max_file_id.max(module_count);
 
         // Build path -> FileId index
@@ -370,8 +369,7 @@ impl ModuleGraph {
 
             let has_cjs_exports = module_by_id
                 .get(&file.id)
-                .map(|m| m.has_cjs_exports)
-                .unwrap_or(false);
+                .is_some_and(|m| m.has_cjs_exports);
 
             // Build re-export edges
             let re_export_edges: Vec<ReExportEdge> = module_by_id
@@ -483,14 +481,11 @@ impl ModuleGraph {
                     // Check if the namespace variable is re-exported (export { ns } or export default ns)
                     // from a NON-entry-point file. If the importing file IS an entry point,
                     // the re-export is for external consumption and doesn't prove internal usage.
-                    let is_re_exported_from_non_entry = source_mod
-                        .map(|m| {
-                            m.exports
-                                .iter()
-                                .any(|e| e.local_name.as_deref() == Some(local_name.as_str()))
-                        })
-                        .unwrap_or(false)
-                        && !entry_point_ids.contains(&source_id);
+                    let is_re_exported_from_non_entry = source_mod.is_some_and(|m| {
+                        m.exports
+                            .iter()
+                            .any(|e| e.local_name.as_deref() == Some(local_name.as_str()))
+                    }) && !entry_point_ids.contains(&source_id);
 
                     // For entry point files with no member accesses, the namespace
                     // is purely re-exported for external use — don't mark all exports
@@ -550,8 +545,7 @@ impl ModuleGraph {
                     let local_name = &sym_local_name;
                     let source_mod = module_by_id.get(&source_id);
                     let is_whole_object = source_mod
-                        .map(|m| m.whole_object_uses.iter().any(|n| n == local_name))
-                        .unwrap_or(false);
+                        .is_some_and(|m| m.whole_object_uses.iter().any(|n| n == local_name));
                     let accessed_members: Vec<String> = source_mod
                         .map(|m| {
                             m.member_accesses
@@ -831,7 +825,7 @@ impl ModuleGraph {
         self.namespace_imported.contains(idx)
     }
 
-    /// Get the target FileIds of all outgoing edges for a module.
+    /// Get the target `FileId`s of all outgoing edges for a module.
     pub fn edges_for(&self, file_id: FileId) -> Vec<FileId> {
         let idx = file_id.0 as usize;
         if idx >= self.modules.len() {

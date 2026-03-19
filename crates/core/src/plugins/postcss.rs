@@ -1,7 +1,7 @@
-//! PostCSS plugin.
+//! `PostCSS` plugin.
 //!
-//! Detects PostCSS projects and marks config files as always used.
-//! Parses config to extract plugin dependencies from object keys, require() calls,
+//! Detects `PostCSS` projects and marks config files as always used.
+//! Parses config to extract plugin dependencies from object keys, `require()` calls,
 //! and string array forms.
 
 use std::path::Path;

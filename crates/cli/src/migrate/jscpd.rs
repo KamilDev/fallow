@@ -69,17 +69,14 @@ pub(super) fn migrate_jscpd(
     config: &mut serde_json::Map<String, serde_json::Value>,
     warnings: &mut Vec<MigrationWarning>,
 ) {
-    let obj = match jscpd.as_object() {
-        Some(o) => o,
-        None => {
-            warnings.push(MigrationWarning {
-                source: "jscpd",
-                field: "(root)".to_string(),
-                message: "expected an object, got something else".to_string(),
-                suggestion: None,
-            });
-            return;
-        }
+    let Some(obj) = jscpd.as_object() else {
+        warnings.push(MigrationWarning {
+            source: "jscpd",
+            field: "(root)".to_string(),
+            message: "expected an object, got something else".to_string(),
+            suggestion: None,
+        });
+        return;
     };
 
     let mut dupes = serde_json::Map::new();

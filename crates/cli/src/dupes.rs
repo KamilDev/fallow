@@ -15,6 +15,7 @@ pub(crate) enum DupesMode {
     Semantic,
 }
 
+#[allow(clippy::struct_excessive_bools)]
 pub(crate) struct DupesOptions<'a> {
     pub(crate) root: &'a std::path::Path,
     pub(crate) config_path: &'a Option<std::path::PathBuf>,
@@ -76,15 +77,12 @@ pub(crate) fn run_dupes(opts: &DupesOptions<'_>) -> ExitCode {
 
     // Handle trace (diagnostic mode — early return)
     if let Some(trace_spec) = opts.trace {
-        let (file_path, line_str) = match trace_spec.rsplit_once(':') {
-            Some((f, l)) => (f, l),
-            None => {
-                return emit_error(
-                    "--trace requires FILE:LINE format (e.g., src/utils.ts:42)",
-                    2,
-                    &opts.output,
-                );
-            }
+        let Some((file_path, line_str)) = trace_spec.rsplit_once(':') else {
+            return emit_error(
+                "--trace requires FILE:LINE format (e.g., src/utils.ts:42)",
+                2,
+                &opts.output,
+            );
         };
         let line: usize = match line_str.parse() {
             Ok(l) if l > 0 => l,

@@ -13,7 +13,7 @@ use super::sfc::{is_sfc_file, parse_sfc_to_module};
 use super::visitor::ModuleInfoExtractor;
 use crate::discover::FileId;
 
-/// Parse source text into a ModuleInfo.
+/// Parse source text into a [`ModuleInfo`](super::ModuleInfo).
 pub(crate) fn parse_source_to_module(
     file_id: FileId,
     path: &Path,

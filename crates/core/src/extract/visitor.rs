@@ -78,9 +78,9 @@ pub(crate) struct ModuleInfoExtractor {
     pub(super) member_accesses: Vec<MemberAccess>,
     pub(super) whole_object_uses: Vec<String>,
     pub(super) has_cjs_exports: bool,
-    /// Spans of require() calls already handled via destructured require detection.
+    /// Spans of `require()` calls already handled via destructured require detection.
     handled_require_spans: Vec<Span>,
-    /// Spans of import() expressions already handled via variable declarator detection.
+    /// Spans of `import()` expressions already handled via variable declarator detection.
     handled_import_spans: Vec<Span>,
 }
 
@@ -364,8 +364,7 @@ impl<'a> Visit<'a> for ModuleInfoExtractor {
         let exported_name = decl
             .exported
             .as_ref()
-            .map(|e| e.name().to_string())
-            .unwrap_or_else(|| "*".to_string());
+            .map_or_else(|| "*".to_string(), |e| e.name().to_string());
 
         self.re_exports.push(ReExportInfo {
             source: decl.source.value.to_string(),

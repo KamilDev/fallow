@@ -28,6 +28,7 @@ fn normalize_uri(path_str: &str) -> String {
 }
 
 /// Severity level for human-readable output.
+#[derive(Clone, Copy)]
 enum Level {
     Warn,
     Info,
@@ -147,7 +148,9 @@ pub fn print_performance(timings: &PipelineTimings, format: &OutputFormat) {
     }
 }
 
-pub(crate) use sarif::build_sarif;
+pub use compact::build_compact_lines;
+pub use json::build_json;
+pub use sarif::build_sarif;
 
 #[cfg(test)]
 mod tests {

@@ -177,8 +177,8 @@ impl CloneDetector {
         }
     }
 
-    /// Convert raw groups into `CloneGroup` structs, applying min_lines and
-    /// skip_local filters, deduplication, and subset removal.
+    /// Convert raw groups into `CloneGroup` structs, applying `min_lines` and
+    /// `skip_local` filters, deduplication, and subset removal.
     fn build_groups(&self, mut raw_groups: Vec<RawGroup>, files: &[FileData]) -> Vec<CloneGroup> {
         if raw_groups.is_empty() {
             return Vec::new();
@@ -414,7 +414,7 @@ impl CloneDetector {
 
 /// A raw clone group before conversion to `CloneGroup`.
 struct RawGroup {
-    /// List of (file_id, token_offset) instances.
+    /// List of (`file_id`, `token_offset`) instances.
     instances: Vec<(usize, usize)>,
     /// Clone length in tokens.
     length: usize,
@@ -476,7 +476,7 @@ fn concatenate_with_sentinels(ranked_files: &[Vec<u32>]) -> (Vec<i64>, Vec<usize
         file_offsets.push(text.len());
 
         for &r in ranks {
-            text.push(r as i64);
+            text.push(i64::from(r));
             file_of.push(file_id);
         }
 
@@ -537,7 +537,7 @@ fn build_suffix_array(text: &[i64]) -> Vec<usize> {
         }
         // Prefix sum.
         let mut sum = 0;
-        for c in counts.iter_mut() {
+        for c in &mut counts {
             let v = *c;
             *c = sum;
             sum += v;
@@ -556,14 +556,14 @@ fn build_suffix_array(text: &[i64]) -> Vec<usize> {
         // No +1 offset needed here: rank[i] is always >= 0 because the
         // initial ranks are shifted by min_val, and subsequent iterations
         // assign ranks starting from 0.
-        counts.iter_mut().for_each(|c| *c = 0);
+        counts.fill(0);
         counts.resize(bucket_count + 1, 0);
         for &i in &sa_tmp {
             let r1 = rank[i] as usize;
             counts[r1] += 1;
         }
         sum = 0;
-        for c in counts.iter_mut() {
+        for c in &mut counts {
             let v = *c;
             *c = sum;
             sum += v;
@@ -584,7 +584,7 @@ fn build_suffix_array(text: &[i64]) -> Vec<usize> {
                 let rc2 = if curr + k < n { rank[curr + k] } else { -1 };
                 rp2 == rc2
             };
-            tmp[curr] = tmp[prev] + if same { 0 } else { 1 };
+            tmp[curr] = tmp[prev] + i64::from(!same);
         }
 
         // Early exit when all ranks are unique.

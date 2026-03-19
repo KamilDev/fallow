@@ -13,7 +13,7 @@ pub(super) fn print_compact(results: &AnalysisResults, root: &Path) {
 
 /// Build compact output lines for analysis results.
 /// Each issue is represented as a single `prefix:details` line.
-fn build_compact_lines(results: &AnalysisResults, root: &Path) -> Vec<String> {
+pub fn build_compact_lines(results: &AnalysisResults, root: &Path) -> Vec<String> {
     let rel = |p: &Path| relative_path(p, root).display().to_string();
 
     let compact_export = |export: &UnusedExport, kind: &str, re_kind: &str| -> String {

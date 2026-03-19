@@ -24,7 +24,7 @@ pub(super) fn print_json(results: &AnalysisResults, elapsed: Duration) -> ExitCo
 }
 
 /// Build the JSON output value for analysis results.
-fn build_json(
+pub fn build_json(
     results: &AnalysisResults,
     elapsed: Duration,
 ) -> Result<serde_json::Value, serde_json::Error> {

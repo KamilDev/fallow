@@ -1,6 +1,6 @@
-//! SvelteKit framework plugin.
+//! `SvelteKit` framework plugin.
 //!
-//! Detects SvelteKit projects and marks route files, hooks, and convention files
+//! Detects `SvelteKit` projects and marks route files, hooks, and convention files
 //! as entry points. Parses svelte.config.js to extract adapter dependencies.
 
 use std::path::Path;

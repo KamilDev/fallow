@@ -97,6 +97,7 @@ pub struct MemberAccess {
     pub member: String,
 }
 
+#[allow(clippy::trivially_copy_pass_by_ref)] // serde serialize_with requires &T
 fn serialize_span<S: serde::Serializer>(span: &Span, serializer: S) -> Result<S::Ok, S::Error> {
     use serde::ser::SerializeMap;
     let mut map = serializer.serialize_map(Some(2))?;
@@ -168,7 +169,7 @@ pub struct DynamicImportInfo {
 pub struct RequireCallInfo {
     pub source: String,
     pub span: Span,
-    /// Names destructured from the require() result.
+    /// Names destructured from the `require()` result.
     /// Non-empty means `const { a, b } = require(...)` → Named imports.
     /// Empty means simple `require(...)` or `const x = require(...)` → Namespace.
     pub destructured_names: Vec<String>,

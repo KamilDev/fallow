@@ -102,9 +102,8 @@ pub(crate) fn find_unused_dependencies(
 
     for ws in workspaces {
         let ws_pkg_path = ws.root.join("package.json");
-        let ws_pkg = match PackageJson::load(&ws_pkg_path) {
-            Ok(p) => p,
-            Err(_) => continue,
+        let Ok(ws_pkg) = PackageJson::load(&ws_pkg_path) else {
+            continue;
         };
 
         // Helper: check if a dependency is used by any file within this workspace.
@@ -230,16 +229,11 @@ pub(crate) fn find_type_only_dependencies(
 
         // Check if ALL usages are type-only: the number of type-only usages must equal
         // the total number of usages for this package
-        let total_count = graph
-            .package_usage
-            .get(dep.as_str())
-            .map(|v| v.len())
-            .unwrap_or(0);
+        let total_count = graph.package_usage.get(dep.as_str()).map_or(0, Vec::len);
         let type_only_count = graph
             .type_only_package_usage
             .get(dep.as_str())
-            .map(|v| v.len())
-            .unwrap_or(0);
+            .map_or(0, Vec::len);
 
         if has_type_only_usage && type_only_count == total_count {
             type_only_deps.push(TypeOnlyDependency {

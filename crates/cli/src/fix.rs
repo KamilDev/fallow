@@ -37,9 +37,8 @@ fn apply_export_fixes(
             tracing::warn!(path = %path.display(), "Skipping fix for path outside project root");
             continue;
         }
-        let content = match std::fs::read_to_string(path) {
-            Ok(c) => c,
-            Err(_) => continue,
+        let Ok(content) = std::fs::read_to_string(path) else {
+            continue;
         };
         // Detect line ending style
         let line_ending = if content.contains("\r\n") {
@@ -267,6 +266,7 @@ fn apply_dependency_fixes(
     had_write_error
 }
 
+#[allow(clippy::struct_excessive_bools)]
 pub(crate) struct FixOptions<'a> {
     pub root: &'a Path,
     pub config_path: &'a Option<PathBuf>,
@@ -371,7 +371,7 @@ pub(crate) fn run_fix(opts: &FixOptions<'_>) -> ExitCode {
         if opts.dry_run {
             eprintln!("Dry run complete. No files were modified.");
         } else {
-            eprintln!("Fixed {} issue(s).", fixed_count);
+            eprintln!("Fixed {fixed_count} issue(s).");
         }
     }
 

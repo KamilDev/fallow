@@ -136,6 +136,7 @@ fn is_plugin_file(path: &Path) -> bool {
 }
 
 /// Parse a plugin definition from file content based on format.
+#[allow(clippy::print_stderr)]
 fn parse_plugin(content: &str, format: &PluginFormat, path: &Path) -> Option<ExternalPluginDef> {
     match format {
         PluginFormat::Toml => match toml::from_str::<ExternalPluginDef>(content) {
@@ -191,6 +192,7 @@ fn parse_plugin(content: &str, format: &PluginFormat, path: &Path) -> Option<Ext
 /// 1. Paths from the `plugins` config field (files or directories)
 /// 2. `.fallow/plugins/` directory (auto-discover `*.toml`, `*.json`, `*.jsonc` files)
 /// 3. Project root `fallow-plugin-*` files (`.toml`, `.json`, `.jsonc`)
+#[allow(clippy::print_stderr)]
 pub fn discover_external_plugins(
     root: &Path,
     config_plugin_paths: &[String],
@@ -205,10 +207,7 @@ pub fn discover_external_plugins(
     for path_str in config_plugin_paths {
         let path = root.join(path_str);
         if !is_within_root(&path, &canonical_root) {
-            eprintln!(
-                "Warning: plugin path '{}' resolves outside project root, skipping",
-                path_str
-            );
+            eprintln!("Warning: plugin path '{path_str}' resolves outside project root, skipping");
             continue;
         }
         if path.is_dir() {
@@ -270,6 +269,7 @@ fn load_plugins_from_dir(
     }
 }
 
+#[allow(clippy::print_stderr)]
 fn load_plugin_file(
     path: &Path,
     canonical_root: &Path,

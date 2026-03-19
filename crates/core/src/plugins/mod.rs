@@ -49,9 +49,9 @@ pub trait Plugin: Send + Sync {
 
     /// Check if this plugin should be active for the given project.
     /// Default implementation checks `enablers()` against package.json dependencies.
-    fn is_enabled(&self, pkg: &PackageJson, _root: &Path) -> bool {
+    fn is_enabled(&self, pkg: &PackageJson, root: &Path) -> bool {
         let deps = pkg.all_dependency_names();
-        self.is_enabled_with_deps(&deps, _root)
+        self.is_enabled_with_deps(&deps, root)
     }
 
     /// Fast variant of `is_enabled` that accepts a pre-computed deps list.
@@ -138,8 +138,8 @@ pub trait Plugin: Send + Sync {
 /// Macro to eliminate boilerplate in plugin implementations.
 ///
 /// Generates a struct and a `Plugin` trait impl with the standard static methods
-/// (name, enablers, entry_patterns, config_patterns, always_used, tooling_dependencies,
-/// used_exports).
+/// (`name`, `enablers`, `entry_patterns`, `config_patterns`, `always_used`, `tooling_dependencies`,
+/// `used_exports`).
 ///
 /// For plugins that need custom `resolve_config()` or `is_enabled()`, keep those as
 /// manual `impl Plugin for ...` blocks instead of using this macro.
