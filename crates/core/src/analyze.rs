@@ -742,6 +742,14 @@ fn find_unused_members(
                     continue;
                 }
 
+                // Skip decorated class members — decorators like @Column(), @ApiProperty(),
+                // @Inject() etc. indicate runtime usage by frameworks (NestJS, TypeORM,
+                // class-validator, class-transformer). These members are accessed
+                // reflectively and should never be flagged as unused.
+                if member.has_decorator {
+                    continue;
+                }
+
                 // Skip React class component lifecycle methods — they are called by the
                 // React runtime, not user code, so they should never be flagged as unused.
                 // Also skip Angular lifecycle hooks (OnInit, OnDestroy, etc.).

@@ -509,9 +509,11 @@ fn resolve_specifier(
         return cached;
     }
 
-    let dir = from_file.parent().unwrap_or(from_file);
-
-    let result = match resolver.resolve(dir, specifier) {
+    // Use resolve_file instead of resolve so that TsconfigDiscovery::Auto works.
+    // oxc_resolver's resolve() ignores Auto tsconfig discovery — only resolve_file()
+    // walks up from the importing file to find the nearest tsconfig.json and apply
+    // its path aliases (e.g., @/ → src/).
+    let result = match resolver.resolve_file(from_file, specifier) {
         Ok(resolved) => {
             let resolved_path = resolved.path();
             // Try raw path lookup first (avoids canonicalize syscall in most cases)
