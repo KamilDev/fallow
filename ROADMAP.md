@@ -1,6 +1,6 @@
 # Fallow Roadmap
 
-> Last updated: 2026-03-19
+> Last updated: 2026-03-20
 
 JavaScript/TypeScript codebases accumulate dead code and duplication faster than any other ecosystem — broad dependency trees, rapid framework churn, and copy-paste-driven development create entropy at scale. AI-assisted development accelerates this: agents generate code but rarely suggest deletions, and code clones have grown significantly since AI assistants became prevalent.
 
@@ -15,6 +15,8 @@ Code analysis should be fast enough to be invisible — part of the feedback loo
 **Duplication detection** uses a suffix array with LCP for clone detection — no quadratic pairwise comparison. 4 detection modes (strict, mild, weak, semantic), clone family grouping with refactoring suggestions, baseline tracking for CI adoption, and cross-language TS↔JS matching.
 
 **Integrations**: LSP server with diagnostics, code actions, and Code Lens; VS Code extension with tree views and auto-download; MCP server for AI agent integration; GitHub Action with SARIF upload; external plugin system (`fallow-plugin-*.{toml,json,jsonc}`); migration from knip/jscpd configs.
+
+**Bundler coverage**: Vite, Webpack, Rspack, Rollup, Rolldown, Tsup, Tsdown — all major JS/TS bundlers are supported with entry point and dependency extraction.
 
 **Non-JS files**: Vue/Svelte SFC, Astro frontmatter, MDX imports, CSS/SCSS modules.
 
@@ -39,6 +41,17 @@ See the [README](README.md) for full feature details, benchmarks, and configurat
 
 ---
 
+## Competitive Context
+
+Fallow exists in a small but active space. Here's how it fits:
+
+- **Knip** adopted the Oxc parser in v6.0, making it 2-4x faster than Knip v5. Fallow remains 3-10x faster than Knip 6.0 due to native Rust compilation and rayon-based parallelism — the parser is only one part of the pipeline, and JavaScript overhead in module resolution, graph construction, and analysis still dominates Knip's runtime.
+- **Biome** has module graph infrastructure and a `noUnusedImports` lint rule, but `noUnusedExports` (cross-file analysis) is not on their published roadmap. If they ship it, Biome becomes the main competitive pressure. Their advantage is bundled formatting/linting; Fallow's advantage is deeper detection (10 issue types, duplication, framework plugins).
+- **rev-dep** (Go-based) performs unused export detection but lacks a plugin system. Its author has stated that framework-specific config parsing is "not feasible in Go" — this is Fallow's core differentiation.
+- **AI coding tools** (Cursor, Copilot, Claude Code) are complementary demand drivers, not replacements. They generate code but don't track cross-file usage graphs. AI-assisted development increases dead code accumulation, making analysis tools more important, not less.
+
+---
+
 ## Towards 1.0
 
 **1.0 is a quality milestone, not a feature milestone.** The config format has been stable since v0.2 — 1.0 adds a formal backwards compatibility guarantee.
@@ -51,6 +64,8 @@ See the [README](README.md) for full feature details, benchmarks, and configurat
 
 ### Remaining work
 
+The two remaining items are documentation tasks, not engineering work:
+
 - **tsconfig project references** — cross-workspace resolution currently handles `exports` field subpath resolution and pnpm store detection, but TypeScript project references are not yet followed.
 - **Enhanced IDE experience** — hover information showing where an export is used or where other instances of a duplicate block exist.
 
@@ -60,12 +75,13 @@ See the [README](README.md) for full feature details, benchmarks, and configurat
 
 These are ideas, not commitments. They ship as 1.x releases based on user demand.
 
+- **More auto-fix targets** — delete unused files (`--allow-remove-files`), remove unused enum/class members, post-fix formatting integration. Auto-fix is the highest-leverage feature for adoption — users want one-command cleanup.
+- **JSDoc/TSDoc tag support** — `@public` (never report as unused), `@internal` (only report if unused within project). Common request from library authors.
 - **Fine-grained incremental analysis** — patch the graph in place, track export-level dependencies. Cache-aware parsing already covers the main bottleneck; this would additionally skip file I/O for unchanged files.
-- **Historical trend tracking** — store baselines over time, generate trend reports: "dead code grew 15% this quarter, duplication dropped 3%."
-- **Intelligent grouping** — group related dead code (e.g., an unused feature spanning 5 files). For duplication: suggest bulk refactors for clone families.
-- **More auto-fix targets** — remove unused enum/class members, delete unused files (`--allow-remove-files`), post-fix formatting integration.
-- **JSDoc/TSDoc tag support** — `@public` (never report as unused), `@internal` (only report if unused within project).
-- **Additional reporters** — Markdown (PR comments), Code Climate, Codeowners integration.
+- **Markdown reporter** — formatted output for PR comments. Enables `fallow check --format markdown | gh pr comment` workflows without custom scripting.
+- **`fallow check --ci` convenience flag** — combines `--format sarif --fail-on-issues` with sensible CI defaults (quiet mode, no progress bars, exit codes). Reduces GitHub Actions boilerplate.
+- **Security framing for unused dependencies** — unused dependencies are attack surface. Flag unused deps with known CVEs, or integrate with `npm audit` data. Reframe dead dependency detection as a security practice, not just hygiene.
+- **Historical trend tracking** — store baselines over time, generate trend reports: "dead code grew 15% this quarter, duplication dropped 3%." Depends on a dashboard or reporting surface existing first.
 
 ---
 
@@ -73,7 +89,8 @@ These are ideas, not commitments. They ship as 1.x releases based on user demand
 
 These are not gated on any release — they happen continuously:
 
-- ~~**Documentation site** — move from GitHub wiki to a proper docs site~~ → [docs.fallow.tools](https://docs.fallow.tools)
+- **Documentation site** — [docs.fallow.tools](https://docs.fallow.tools) is live but needs depth: getting started guides, framework-specific walkthroughs, CI integration recipes, and plugin authoring tutorials. The docs site is the primary adoption lever.
+- **"Fallow vs Knip" comparison content** — honest, detailed comparison page covering detection capabilities, performance, plugin coverage, and migration path. Users searching for "knip alternative" or evaluating tools need this.
 - **Compatibility matrix** — for each of the top 20 frameworks, document exactly what fallow detects vs. knip
 - **Contributing guide** — plugin authoring tutorial, "your first PR" guide
 - **Blog posts** — technical deep-dives on the suffix array algorithm, Oxc integration, benchmark methodology
