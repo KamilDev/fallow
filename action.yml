@@ -135,6 +135,7 @@ runs:
             table_row("Unresolved imports"; "unresolved_imports"),
             table_row("Unlisted dependencies"; "unlisted_dependencies"),
             table_row("Duplicate exports"; "duplicate_exports"),
+            table_row("Circular dependencies"; "circular_dependencies"),
             table_row("Type-only dependencies"; "type_only_dependencies")
           ] | join("\n")) +
           "\n\n<details>\n<summary>View details</summary>\n\n" +
@@ -158,6 +159,8 @@ runs:
             "- `\(.package_name)`\(if (.imported_from | length) > 0 then " (used in \(.imported_from[:3] | join(", ")))" else "" end)") +
           detail_section("Duplicate exports"; "duplicate_exports";
             "- `\(.export_name)` in \(.locations[:5] | join(", "))\(if (.locations | length) > 5 then " *(+\((.locations | length) - 5) more)*" else "" end)") +
+          detail_section("Circular dependencies"; "circular_dependencies";
+            "- \(.files | join(" → ")) (\(.length) files)") +
           detail_section("Type-only dependencies"; "type_only_dependencies";
             "- `\(.package_name)` (move to devDependencies)") +
           "\n\n</details>"

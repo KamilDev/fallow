@@ -297,6 +297,6 @@ See the [fallow-skills repository](https://github.com/fallow-rs/fallow-skills) f
 
 - Fallow uses syntactic analysis only (no TypeScript compiler). It partially resolves dynamic imports with static prefixes (template literals, string concatenation, import.meta.glob, require.context) but fully dynamic paths like `import(variable)` are not resolved.
 - Re-export chains through barrel files are resolved. An export re-exported from `index.ts` is not falsely flagged if consumed downstream.
-- Workspace support (npm/yarn/pnpm) is automatic when `workspaces` is defined in the root `package.json` or `pnpm-workspace.yaml` exists.
+- Workspace support (npm/yarn/pnpm) is automatic when `workspaces` is defined in the root `package.json` or `pnpm-workspace.yaml` exists. TypeScript project references (`tsconfig.json` `references`) are also discovered as workspaces.
 - Inline suppression comments are parsed during extraction and cached alongside module data. They are applied during analysis, before results reach the reporting layer.
 - Analysis is deterministic: same input always produces the same output.
