@@ -55,7 +55,7 @@ const TOOLING_DEPENDENCIES: &[&str] = &[
     "svelte-preprocess",
 ];
 
-/// Virtual module prefixes provided by SvelteKit at build time.
+/// Virtual module prefixes provided by `SvelteKit` at build time.
 /// `$app/` provides runtime modules (environment, forms, navigation, paths, server, state).
 /// `$env/` provides environment variable access (static/dynamic, public/private).
 /// `$lib/` is an alias for the `src/lib` directory.
