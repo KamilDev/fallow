@@ -791,6 +791,17 @@ mod tests {
     use super::*;
     use crate::PackageJson;
 
+    /// Create a unique temp directory for this test to avoid parallel test races.
+    fn test_dir(name: &str) -> PathBuf {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!("fallow-{name}-{id}"));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
     #[test]
     fn output_format_default_is_human() {
         let format = OutputFormat::default();
@@ -1143,8 +1154,7 @@ unknown_field = true
 
     #[test]
     fn load_json_config_file() {
-        let dir = std::env::temp_dir().join("fallow-test-json-config");
-        let _ = std::fs::create_dir_all(&dir);
+        let dir = test_dir("json-config");
         let config_path = dir.join(".fallowrc.json");
         std::fs::write(
             &config_path,
@@ -1161,8 +1171,7 @@ unknown_field = true
 
     #[test]
     fn load_jsonc_config_file() {
-        let dir = std::env::temp_dir().join("fallow-test-jsonc-config");
-        let _ = std::fs::create_dir_all(&dir);
+        let dir = test_dir("jsonc-config");
         let config_path = dir.join(".fallowrc.json");
         std::fs::write(
             &config_path,
@@ -1228,9 +1237,7 @@ unknown_field = true
 
     #[test]
     fn extends_single_base() {
-        let dir = std::env::temp_dir().join("fallow-test-extends-single");
-        let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(&dir).unwrap();
+        let dir = test_dir("extends-single");
 
         std::fs::write(
             dir.join("base.json"),
@@ -1254,9 +1261,7 @@ unknown_field = true
 
     #[test]
     fn extends_overlay_overrides_base() {
-        let dir = std::env::temp_dir().join("fallow-test-extends-overlay");
-        let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(&dir).unwrap();
+        let dir = test_dir("extends-overlay");
 
         std::fs::write(
             dir.join("base.json"),
@@ -1280,9 +1285,7 @@ unknown_field = true
 
     #[test]
     fn extends_chained() {
-        let dir = std::env::temp_dir().join("fallow-test-extends-chained");
-        let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(&dir).unwrap();
+        let dir = test_dir("extends-chained");
 
         std::fs::write(
             dir.join("grandparent.json"),
@@ -1311,9 +1314,7 @@ unknown_field = true
 
     #[test]
     fn extends_circular_detected() {
-        let dir = std::env::temp_dir().join("fallow-test-extends-circular");
-        let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(&dir).unwrap();
+        let dir = test_dir("extends-circular");
 
         std::fs::write(dir.join("a.json"), r#"{"extends": ["b.json"]}"#).unwrap();
         std::fs::write(dir.join("b.json"), r#"{"extends": ["a.json"]}"#).unwrap();
@@ -1331,9 +1332,7 @@ unknown_field = true
 
     #[test]
     fn extends_missing_file_errors() {
-        let dir = std::env::temp_dir().join("fallow-test-extends-missing");
-        let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(&dir).unwrap();
+        let dir = test_dir("extends-missing");
 
         std::fs::write(
             dir.join(".fallowrc.json"),
@@ -1354,9 +1353,7 @@ unknown_field = true
 
     #[test]
     fn extends_string_sugar() {
-        let dir = std::env::temp_dir().join("fallow-test-extends-string");
-        let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(&dir).unwrap();
+        let dir = test_dir("extends-string");
 
         std::fs::write(dir.join("base.json"), r#"{"ignorePatterns": ["gen/**"]}"#).unwrap();
         // String form instead of array
@@ -1370,9 +1367,7 @@ unknown_field = true
 
     #[test]
     fn extends_deep_merge_preserves_arrays() {
-        let dir = std::env::temp_dir().join("fallow-test-extends-array");
-        let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(&dir).unwrap();
+        let dir = test_dir("extends-array");
 
         std::fs::write(dir.join("base.json"), r#"{"entry": ["src/a.ts"]}"#).unwrap();
         std::fs::write(
