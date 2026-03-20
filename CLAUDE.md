@@ -2,7 +2,7 @@
 
 ## What is this?
 
-Fallow finds unused files, exports, dependencies, types, enum members, class members, unresolved imports, unlisted deps, and duplicate exports in JS/TS projects. It's a Rust alternative to [knip](https://github.com/webpro-nl/knip) that is 3-36x faster than knip v5 (2-14x faster than knip v6) depending on project size by leveraging the Oxc parser ecosystem.
+Fallow finds unused files, exports, dependencies, types, enum members, class members, unresolved imports, unlisted deps, duplicate exports, and circular dependencies in JS/TS projects. It also detects code duplication. It's a Rust alternative to [knip](https://github.com/webpro-nl/knip) that is 3-36x faster than knip v5 (2-14x faster than knip v6) depending on project size by leveraging the Oxc parser ecosystem.
 
 ## Project structure
 
@@ -66,7 +66,7 @@ Key modules in fallow-core (re-exports fallow-extract, fallow-graph for backward
   - `unused_deps.rs` — Unused dependencies, unlisted dependencies, unresolved imports, type-only dependency detection
   - `unused_members.rs` — Unused enum/class member detection
 - `scripts.rs` — Shell command parser for package.json scripts: extracts binary names (mapped to package names for dependency usage detection), `--config` args (entry points), and file path args; handles env wrappers, package manager runners, node runners. Shell operators (`&&`, `||`, `;`, `|`, `&`) are split correctly.
-- `suppress.rs` — Inline suppression comment parsing (`fallow-ignore-next-line`, `fallow-ignore-file`); 11 issue kinds including `code-duplication`
+- `suppress.rs` — Inline suppression comment parsing (`fallow-ignore-next-line`, `fallow-ignore-file`); 12 issue kinds including `code-duplication` and `circular-dependency`
 - `duplicates/families.rs` — Clone family grouping (groups by shared file set) and refactoring suggestion generation (extract function/module)
 - `duplicates/normalize.rs` — Configurable token normalization with `ResolvedNormalization`: mode defaults (strict/mild/weak/semantic) merged with user-specified overrides (`ignore_identifiers`, `ignore_string_values`, `ignore_numeric_values`)
 - `duplicates/tokenize.rs` — AST-based tokenizer with optional type annotation stripping (`strip_types` flag) for cross-language clone detection between `.ts` and `.js` files
@@ -113,6 +113,7 @@ cargo bench --bench analysis                           # All Criterion benchmark
 cargo bench --bench analysis -- large_scale_benches/   # 1000+ and 5000+ file benchmarks only
 cd benchmarks && npm run generate && npm run bench     # Comparative benchmarks vs knip
 cd benchmarks && npm run generate:dupes && npm run bench:dupes  # vs jscpd
+cd benchmarks && npm run generate:circular && npm run bench:circular  # vs madge/dpdm
 ```
 
 ## Detection capabilities
@@ -144,6 +145,7 @@ cd benchmarks && npm run generate:dupes && npm run bench:dupes  # vs jscpd
 25. React Native platform extensions: `.web.ts`, `.ios.ts`, `.android.ts`, `.native.ts` variants are resolved alongside standard extensions so platform-specific files are not falsely reported as unused.
 26. Decorated class member skip: class members with decorators (NestJS `@Get()`, Angular `@Input()`, TypeORM `@Column()`, etc.) are not reported as unused, since decorator-driven frameworks consume them via reflection.
 27. Circular dependency detection: Tarjan's SCC algorithm detects import cycles in the module graph. Configurable via `circular-dependencies` rule.
+28. TypeScript project references: workspace discovery from `tsconfig.json` `references` field. Referenced directories are discovered as workspaces (additive with npm/pnpm workspaces), supporting TypeScript composite projects. `oxc_resolver`'s `TsconfigDiscovery::Auto` resolves path aliases through referenced project tsconfigs.
 
 ## Framework support (84 plugins)
 
@@ -161,10 +163,11 @@ cd benchmarks && npm run generate:dupes && npm run bench:dupes  # vs jscpd
 **Media & assets**: SVGO, SVGR
 **Code generation & docs**: GraphQL Codegen, TypeDoc, openapi-ts, Plop
 **Coverage**: c8, nyc
-**Other**: MSW, nodemon, PM2, dependency-cruiser, Bun
+**Runtime**: Bun
+**Other**: MSW, nodemon, PM2, dependency-cruiser
 
 - **Plugins** (`crates/core/src/plugins/`) — Single source of truth for all built-in framework support. Each plugin implements the `Plugin` trait with enablers (package.json detection), static patterns (entry points, always-used files, used exports, tooling dependencies), and optional `resolve_config()` for AST-based config parsing via Oxc.
-- **Rich config parsing** — All top 10 framework plugins have deep `resolve_config()` implementations:
+- **Rich config parsing** — All top 11 framework plugins have deep `resolve_config()` implementations:
   - **ESLint**: Legacy plugin/extends/parser short-name resolution, flat config plugin keys, JSON config
   - **Vite**: rollupOptions.input, lib.entry, optimizeDeps include/exclude, ssr.external/noExternal
   - **Jest**: preset, setupFiles, globalSetup/Teardown, testMatch, transform, reporters, testEnvironment, watchPlugins, resolver, snapshotSerializers, testRunner, runner, JSON config
@@ -222,7 +225,7 @@ See `AGENTS.md` for AI agent integration guide.
 
 **Features:**
 - LSP client with auto-detection and auto-download of the `fallow-lsp` binary
-- Real-time diagnostics for all 11 dead code issue types via the LSP
+- Real-time diagnostics for all 12 dead code issue types via the LSP
 - Quick-fix code actions (remove unused export, delete unused file)
 - Refactor code action: "Extract duplicate into function" for code duplication (extracts clone instances into shared functions, replaces all instances in the file)
 - Duplication diagnostics with related locations (links to all other instances of the same clone group)
@@ -317,7 +320,7 @@ unresolved-imports = "error"
 - **Flat edge storage**: Contiguous `Vec<Edge>` with range indices for cache-friendly traversal.
 - **Lock-free parallel resolution**: Bare specifier cache uses `DashMap` (sharded concurrent map) for contention-free reads under rayon work-stealing.
 - **Re-export chain resolution**: Iterative propagation through barrel files with cycle detection.
-- **Cross-workspace resolution**: Unified module graph across npm/yarn/pnpm workspaces (pnpm-workspace.yaml). Cross-package imports resolve through node_modules symlinks via `canonicalize()`. Package.json `exports` field subpath imports resolve via oxc_resolver with output→source fallback (dist/build/out/esm/cjs → src). Pnpm content-addressable store paths (`.pnpm` virtual store) are detected and mapped back to workspace source files, handling injected dependencies where `canonicalize()` resolves through the `.pnpm` directory. `--workspace <name>` scopes output to one package while keeping the full graph. `ProjectState` struct owns the file registry with stable FileIds (path-sorted) for future incremental analysis.
+- **Cross-workspace resolution**: Unified module graph across npm/yarn/pnpm workspaces (pnpm-workspace.yaml) and TypeScript project references (tsconfig.json `references`). Cross-package imports resolve through node_modules symlinks via `canonicalize()`. Package.json `exports` field subpath imports resolve via oxc_resolver with output→source fallback (dist/build/out/esm/cjs → src). Pnpm content-addressable store paths (`.pnpm` virtual store) are detected and mapped back to workspace source files, handling injected dependencies where `canonicalize()` resolves through the `.pnpm` directory. TypeScript project references are discovered from root `tsconfig.json` `references` field (additive with npm/pnpm workspaces, deduplicated by canonical path); referenced directories without `package.json` use directory name as workspace name. `--workspace <name>` scopes output to one package while keeping the full graph. `ProjectState` struct owns the file registry with stable FileIds (path-sorted) for future incremental analysis.
 
 ## Git conventions
 

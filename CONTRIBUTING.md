@@ -36,15 +36,16 @@ cargo fmt --all -- --check
 cargo run -- check              # Dead code analysis
 cargo run -- dupes              # Duplication detection
 cargo run -- fix --dry-run      # Auto-fix preview
-cargo run -- list --frameworks  # Show detected plugins
+cargo run -- list --plugins     # Show detected plugins
 ```
 
 ### Benchmarks
 
 ```bash
-cargo bench --bench analysis                           # Criterion benchmarks
-cd benchmarks && npm run generate && npm run bench     # Comparative vs knip
+cargo bench --bench analysis                                    # Criterion benchmarks
+cd benchmarks && npm run generate && npm run bench              # Comparative vs knip
 cd benchmarks && npm run generate:dupes && npm run bench:dupes  # vs jscpd
+cd benchmarks && npm run generate:circular && npm run bench:circular  # vs madge/dpdm
 ```
 
 ## Project structure

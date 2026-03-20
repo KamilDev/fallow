@@ -7,7 +7,7 @@ This document describes how fallow's performance benchmarks are structured, how 
 Fallow uses two benchmark layers:
 
 1. **Criterion (Rust)** — Microbenchmarks for regression detection in CI. Measures individual pipeline stages and full end-to-end analysis at various project sizes (10, 100, 1000, 5000 files).
-2. **Comparative (Node.js)** — Wall-clock comparisons against knip (dead code) and jscpd (duplication) on synthetic and real-world projects.
+2. **Comparative (Node.js)** — Wall-clock comparisons against knip (dead code), jscpd (duplication), and madge/dpdm (circular dependencies) on synthetic and real-world projects.
 
 ## Project Sizes
 
@@ -30,6 +30,10 @@ Full pipeline: file discovery → parallel Oxc parsing → import resolution →
 ### Dupes (code duplication)
 
 Full pipeline: file discovery → tokenization → normalization → suffix array construction → LCP computation → clone extraction → family grouping.
+
+### Circular (circular dependency detection)
+
+Full pipeline: file discovery → parallel Oxc parsing → import resolution → module graph construction → Tarjan's SCC algorithm.
 
 ### Cache Modes
 
@@ -83,6 +87,7 @@ cd benchmarks
 # Generate synthetic fixtures (required once)
 npm run generate           # check fixtures (tiny → xlarge)
 npm run generate:dupes     # dupes fixtures (tiny → xlarge)
+npm run generate:circular  # circular dep fixtures (tiny → xlarge)
 
 # Download real-world projects (required once)
 npm run download-fixtures  # preact, fastify, zod
@@ -92,6 +97,7 @@ npm run bench              # fallow vs knip v5 + v6 (all fixtures)
 npm run bench:synthetic    # synthetic only
 npm run bench:real-world   # real-world only
 npm run bench:dupes        # fallow dupes vs jscpd (all fixtures)
+npm run bench:circular     # fallow vs madge + dpdm (all fixtures)
 
 # Customize runs
 npm run bench -- --runs=10 --warmup=3
@@ -146,6 +152,12 @@ Environment: Apple M5 (10 cores), 32 GB RAM, macOS 25.2.0, Node v22.21.1, rustc 
 | zod | 174 | 49ms | 1.01s | 20.6x | 53 MB | 198 MB |
 | fastify | 286 | 82ms | 2.09s | 25.5x | 101 MB | 321 MB |
 | preact | 244 | 46ms | 1.53s | 33.3x | 57 MB | 252 MB |
+
+### Circular dependencies: fallow check --circular-deps vs madge/dpdm
+
+No reference results yet — run `npm run generate:circular && npm run bench:circular` to collect.
+
+Note: knip does **not** detect circular dependencies. madge and dpdm are the primary competitors for this feature.
 
 ### Summary ranges
 

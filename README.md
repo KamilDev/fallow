@@ -202,7 +202,7 @@ This reads your knip.json/knip.jsonc/.knip.json/.knip.jsonc and/or .jscpd.json (
 
 ```yaml
 # GitHub Action — posts job summary, uploads SARIF to Code Scanning
-- uses: fallow-rs/fallow@v0
+- uses: fallow-rs/fallow@v1
   with:
     format: sarif
 
@@ -252,7 +252,7 @@ export const keepThisToo = 2;
 | `// fallow-ignore-file` | Suppress all issues in the file |
 | `// fallow-ignore-file unused-export` | Suppress a specific issue type for the file |
 
-Issue type tokens: `unused-file`, `unused-export`, `unused-type`, `unused-dependency`, `unused-dev-dependency`, `unused-enum-member`, `unused-class-member`, `unresolved-import`, `unlisted-dependency`, `duplicate-export`, `circular-dependency`.
+Issue type tokens: `unused-file`, `unused-export`, `unused-type`, `unused-dependency`, `unused-dev-dependency`, `unused-enum-member`, `unused-class-member`, `unresolved-import`, `unlisted-dependency`, `duplicate-export`, `circular-dependency`, `code-duplication`.
 
 ## Limitations
 

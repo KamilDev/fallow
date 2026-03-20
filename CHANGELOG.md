@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- TypeScript project references: workspace discovery from `tsconfig.json` `references` field (additive with npm/pnpm workspaces, deduplicated by canonical path)
+- Elementary cycle enumeration for circular dependencies (individual cycles within SCCs, max 20 per SCC, deterministic output)
 - CSS Modules support (`.module.css`/`.module.scss`) with class name export tracking
 - `fallow migrate` command to convert knip and jscpd configs
 - CSS/SCSS file discovery with `@import`, `@use`, `@forward`, and `@apply` extraction
@@ -17,10 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code Lens with export reference counts and click-to-navigate in LSP
 - Duplication diagnostics and "Extract duplicate into function" code action in LSP
 - VS Code extension CI, LSP binary builds, and marketplace publishing
+- Nuxt `resolve_config()` for deep config parsing (modules, css, plugins, extends, postcss, path aliases)
+- Circular dependency benchmarks vs madge and dpdm
+- Inline suppression for circular dependencies (`fallow-ignore-file circular-dependency`)
 
 ### Fixed
+- UTF-8 boundary handling in duplication detection (multi-byte character safety)
 - Exports map resolution robustness for cross-workspace imports
 - Nested output subdirectory mapping (e.g., `dist/esm/utils.mjs` → `src/utils.ts`)
+- Trace path matching for monorepo compatibility (canonicalized vs user-provided paths)
 
 ## [0.3.0] - 2026-03-18
 
