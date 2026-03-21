@@ -1,7 +1,7 @@
 {
   "name": "fallow-vscode",
   "displayName": "Fallow",
-  "description": "Dead code and duplication analyzer for JavaScript/TypeScript",
+  "description": "Find unused code, circular dependencies, and code duplication in JavaScript/TypeScript",
   "version": "0.3.0",
   "publisher": "fallow-rs",
   "license": "MIT",

@@ -28,7 +28,7 @@ use list::ListOptions;
 #[derive(Parser)]
 #[command(
     name = "fallow",
-    about = "Find unused files, exports, and dependencies in JavaScript/TypeScript projects",
+    about = "Find unused code, circular dependencies, and code duplication in JavaScript/TypeScript projects",
     version
 )]
 struct Cli {
@@ -95,7 +95,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Run dead code analysis (default)
+    /// Analyze project for unused code, circular dependencies, and more (default)
     Check {
         /// CI mode: equivalent to --format sarif --fail-on-issues --quiet
         #[arg(long)]
