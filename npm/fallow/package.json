@@ -1,7 +1,7 @@
 {
   "name": "fallow",
   "version": "1.1.0",
-  "description": "Find unused files, exports, and dependencies in JavaScript/TypeScript projects",
+  "description": "Find unused code, circular dependencies, and code duplication in JavaScript/TypeScript projects",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -12,14 +12,14 @@
     "url": "https://github.com/fallow-rs/fallow/issues"
   },
   "keywords": [
-    "dead-code",
-    "unused",
-    "exports",
-    "dependencies",
+    "unused-code",
+    "circular-dependencies",
+    "code-duplication",
     "lint",
     "analyzer",
     "typescript",
-    "javascript"
+    "javascript",
+    "static-analysis"
   ],
   "engines": {
     "node": ">=16"
