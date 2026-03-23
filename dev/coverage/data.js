@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774260777652,
+  "lastUpdate": 1774261048897,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -57,6 +57,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "Code Coverage",
             "value": 83.4,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "eb707bfebfe7aba7168b56eca51af00e4ee64ecb",
+          "message": "fix: add missing type_only_dependencies field in snapshot test",
+          "timestamp": "2026-03-23T11:15:50+01:00",
+          "tree_id": "3a196e9777ef417ef043e1da34a35fde455dd63b",
+          "url": "https://github.com/fallow-rs/fallow/commit/eb707bfebfe7aba7168b56eca51af00e4ee64ecb"
+        },
+        "date": 1774261048282,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 83.5,
             "unit": "%"
           }
         ]
