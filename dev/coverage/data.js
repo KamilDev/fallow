@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774259819270,
+  "lastUpdate": 1774260777652,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -23,6 +23,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/bd1e9597c24d5083496cde7e016efa4246bcf52a"
         },
         "date": 1774259818379,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 83.4,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "9a3969a2a764bb454c484e8a0a9d93490c6d69b3",
+          "message": "refactor: migrate vscode extension bundler from esbuild to rolldown\n\nRolldown is built on Oxc, aligning the entire toolchain (parser + bundler)\non the same ecosystem. Output is comparable: 360KB minified, 57ms build.",
+          "timestamp": "2026-03-23T11:11:20+01:00",
+          "tree_id": "3f0a1c7f45b05bf2f940187b04e209e5633e8e10",
+          "url": "https://github.com/fallow-rs/fallow/commit/9a3969a2a764bb454c484e8a0a9d93490c6d69b3"
+        },
+        "date": 1774260777325,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
