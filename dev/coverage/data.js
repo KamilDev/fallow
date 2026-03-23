@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774280535395,
+  "lastUpdate": 1774292285648,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -226,6 +226,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/c323a2e6d01c2aef0fb7aa9a69e27ceb1eae896b"
         },
         "date": 1774280535021,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 83.6,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "c54237920bcc158308fd04a4f2e6b4144b22892f",
+          "message": "docs: replace static screenshot with animated GIF in README",
+          "timestamp": "2026-03-23T19:54:57+01:00",
+          "tree_id": "a428621e41104b436106221d2beecb772488978a",
+          "url": "https://github.com/fallow-rs/fallow/commit/c54237920bcc158308fd04a4f2e6b4144b22892f"
+        },
+        "date": 1774292285103,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
