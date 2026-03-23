@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774293937082,
+  "lastUpdate": 1774295479130,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -371,6 +371,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/16d1132e33db35f5a6d4a61a3632bbb0a27afa30"
         },
         "date": 1774293936711,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 83.6,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "84926039eb3df83afefa1dbc9b66b447e0375445",
+          "message": "refactor: remove emojis from GitHub Action job summary",
+          "timestamp": "2026-03-23T20:49:34+01:00",
+          "tree_id": "ed5dd341e7bdffbd34265b643be75fb7cfaa7105",
+          "url": "https://github.com/fallow-rs/fallow/commit/84926039eb3df83afefa1dbc9b66b447e0375445"
+        },
+        "date": 1774295478261,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
