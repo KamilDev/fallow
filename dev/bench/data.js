@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774258026738,
+  "lastUpdate": 1774259415424,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Benchmarks": [
@@ -1535,6 +1535,102 @@ window.BENCHMARK_DATA = {
             "name": "dupe_detect_2x5000_identical",
             "value": 2850329,
             "range": "± 10663",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "bca6412b007042e650249de0915e4396a10b50a3",
+          "message": "refactor: split 5 largest functions into focused helpers\n\nExtract helpers from main() (258→50 lines), discover_workspaces() (216→12),\nrun_check() (215→130), build_markdown() (195→150), and\nvisit_variable_declaration() (155→40) to improve readability and\nmaintainability.",
+          "timestamp": "2026-03-23T10:45:52+01:00",
+          "tree_id": "355fd6771f769c139bfa535f81c21f0ed1f2ba4b",
+          "url": "https://github.com/fallow-rs/fallow/commit/bca6412b007042e650249de0915e4396a10b50a3"
+        },
+        "date": 1774259415058,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_single_file",
+            "value": 40795,
+            "range": "± 336",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_10_files",
+            "value": 1217288,
+            "range": "± 11736",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_100_files",
+            "value": 2829390,
+            "range": "± 115474",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_1000_files",
+            "value": 17983930,
+            "range": "± 120978",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "resolve_re_export_chains",
+            "value": 110482,
+            "range": "± 1687",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache_round_trip",
+            "value": 1967,
+            "range": "± 7",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x500_identical",
+            "value": 225685,
+            "range": "± 14712",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x2000_identical",
+            "value": 1013221,
+            "range": "± 11195",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_10x500_identical",
+            "value": 1790488,
+            "range": "± 19914",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_50x200_diverse",
+            "value": 552393,
+            "range": "± 9521",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_100x200_mixed",
+            "value": 4455116,
+            "range": "± 52943",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x5000_identical",
+            "value": 2830567,
+            "range": "± 18186",
             "unit": "ns/iter"
           }
         ]
