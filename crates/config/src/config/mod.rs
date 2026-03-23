@@ -1,5 +1,6 @@
 mod duplicates_config;
 mod format;
+mod health;
 mod parsing;
 mod resolution;
 mod rules;
@@ -8,6 +9,7 @@ pub use duplicates_config::{
     DetectionMode, DuplicatesConfig, NormalizationConfig, ResolvedNormalization,
 };
 pub use format::OutputFormat;
+pub use health::HealthConfig;
 pub use resolution::{ConfigOverride, IgnoreExportRule, ResolvedConfig, ResolvedOverride};
 pub use rules::{PartialRulesConfig, RulesConfig, Severity};
 
@@ -60,6 +62,10 @@ pub struct FallowConfig {
     /// Duplication detection settings.
     #[serde(default)]
     pub duplicates: DuplicatesConfig,
+
+    /// Complexity health metrics settings.
+    #[serde(default)]
+    pub health: HealthConfig,
 
     /// Per-issue-type severity rules.
     #[serde(default)]

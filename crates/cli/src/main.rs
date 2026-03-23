@@ -11,6 +11,8 @@ mod baseline;
 mod check;
 mod dupes;
 mod fix;
+mod health;
+mod health_types;
 mod init;
 mod list;
 mod migrate;
@@ -21,6 +23,7 @@ mod watch;
 
 use check::{CheckOptions, IssueFilters, TraceOptions};
 use dupes::{DupesMode, DupesOptions};
+use health::{HealthOptions, SortBy};
 use list::ListOptions;
 
 // ── CLI definition ───────────────────────────────────────────────
@@ -243,6 +246,25 @@ enum Command {
         trace: Option<String>,
     },
 
+    /// Analyze function complexity (cyclomatic + cognitive)
+    Health {
+        /// Maximum cyclomatic complexity threshold (overrides config)
+        #[arg(long)]
+        max_cyclomatic: Option<u16>,
+
+        /// Maximum cognitive complexity threshold (overrides config)
+        #[arg(long)]
+        max_cognitive: Option<u16>,
+
+        /// Show only the N most complex functions
+        #[arg(long)]
+        top: Option<usize>,
+
+        /// Sort by: cyclomatic, cognitive, or lines
+        #[arg(long, default_value = "cyclomatic")]
+        sort: SortBy,
+    },
+
     /// Dump the CLI interface as machine-readable JSON for agent introspection
     Schema,
 
@@ -373,6 +395,7 @@ fn load_config(
             ignore_dependencies: vec![],
             ignore_exports: vec![],
             duplicates: fallow_config::DuplicatesConfig::default(),
+            health: fallow_config::HealthConfig::default(),
             rules: fallow_config::RulesConfig::default(),
             production,
             plugins: vec![],
@@ -684,6 +707,25 @@ fn main() -> ExitCode {
             save_baseline_path: cli.save_baseline.as_deref(),
             production: cli.production,
             trace: trace.as_deref(),
+            changed_since: cli.changed_since.as_deref(),
+        }),
+        Command::Health {
+            max_cyclomatic,
+            max_cognitive,
+            top,
+            sort,
+        } => health::run_health(&HealthOptions {
+            root: &root,
+            config_path: &cli.config,
+            output,
+            no_cache: cli.no_cache,
+            threads,
+            quiet,
+            max_cyclomatic,
+            max_cognitive,
+            top,
+            sort,
+            production: cli.production,
             changed_since: cli.changed_since.as_deref(),
         }),
         Command::Schema => unreachable!("handled above"),

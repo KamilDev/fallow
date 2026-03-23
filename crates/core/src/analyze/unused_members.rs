@@ -255,6 +255,7 @@ mod tests {
             ignore_dependencies: vec![],
             ignore_exports: vec![],
             duplicates: fallow_config::DuplicatesConfig::default(),
+            health: fallow_config::HealthConfig::default(),
             rules: fallow_config::RulesConfig::default(),
             production: false,
             plugins: vec![],

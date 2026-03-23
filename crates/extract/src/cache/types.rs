@@ -7,7 +7,7 @@ use bincode::{Decode, Encode};
 use crate::MemberKind;
 
 /// Cache version — bump when the cache format changes.
-pub(super) const CACHE_VERSION: u32 = 14;
+pub(super) const CACHE_VERSION: u32 = 15;
 
 /// Maximum cache file size to deserialize (256 MB).
 pub(super) const MAX_CACHE_SIZE: usize = 256 * 1024 * 1024;
@@ -53,6 +53,8 @@ pub struct CachedModule {
     pub suppressions: Vec<CachedSuppression>,
     /// Pre-computed line-start byte offsets for O(log N) byte-to-line/col conversion.
     pub line_offsets: Vec<u32>,
+    /// Per-function complexity metrics.
+    pub complexity: Vec<fallow_types::extract::FunctionComplexity>,
 }
 
 /// Cached suppression directive.

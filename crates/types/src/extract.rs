@@ -42,6 +42,9 @@ pub struct ModuleInfo {
     /// Entry `i` is the byte offset of the start of line `i` (0-indexed).
     /// Example: for "abc\ndef\n", `line_offsets` = \[0, 4\].
     pub line_offsets: Vec<u32>,
+    /// Per-function complexity metrics computed during AST traversal.
+    /// Used by the `fallow health` subcommand to report high-complexity functions.
+    pub complexity: Vec<FunctionComplexity>,
 }
 
 /// Compute a table of line-start byte offsets from source text.
@@ -71,6 +74,23 @@ pub fn byte_offset_to_line_col(line_offsets: &[u32], byte_offset: u32) -> (u32, 
     let line = line_idx as u32 + 1; // 1-based
     let col = byte_offset - line_offsets[line_idx];
     (line, col)
+}
+
+/// Complexity metrics for a single function/method/arrow.
+#[derive(Debug, Clone, serde::Serialize, bincode::Encode, bincode::Decode)]
+pub struct FunctionComplexity {
+    /// Function name (or `"<anonymous>"` for unnamed functions/arrows).
+    pub name: String,
+    /// 1-based line number where the function starts.
+    pub line: u32,
+    /// 0-based byte column where the function starts.
+    pub col: u32,
+    /// McCabe cyclomatic complexity (1 + decision points).
+    pub cyclomatic: u16,
+    /// SonarSource cognitive complexity (structural + nesting penalty).
+    pub cognitive: u16,
+    /// Number of lines in the function body.
+    pub line_count: u32,
 }
 
 /// A dynamic import with a pattern that can be partially resolved (e.g., template literals).
@@ -225,7 +245,7 @@ const _: () = assert!(std::mem::size_of::<ImportedName>() == 24);
 const _: () = assert!(std::mem::size_of::<MemberAccess>() == 48);
 // `ModuleInfo` is the per-file extraction result — stored in a Vec during parallel parsing.
 #[cfg(target_pointer_width = "64")]
-const _: () = assert!(std::mem::size_of::<ModuleInfo>() == 280);
+const _: () = assert!(std::mem::size_of::<ModuleInfo>() == 304);
 
 /// A re-export declaration.
 #[derive(Debug, Clone)]

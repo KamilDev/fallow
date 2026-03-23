@@ -171,7 +171,7 @@ export class DeadCodeTreeProvider
       "duplicate-exports",
       this.result.duplicate_exports.flatMap((d) =>
         d.locations.map(
-          (loc) => new IssueItem(d.export_name, loc, 1, 0)
+          (loc) => new IssueItem(d.export_name, loc.path, loc.line, loc.col)
         )
       )
     );

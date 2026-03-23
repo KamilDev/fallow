@@ -128,6 +128,7 @@ pub fn cached_to_module(
         suppressions,
         unused_import_bindings: cached.unused_import_bindings.clone(),
         line_offsets: cached.line_offsets.clone(),
+        complexity: cached.complexity.clone(),
     }
 }
 
@@ -248,5 +249,6 @@ pub fn module_to_cached(
             })
             .collect(),
         line_offsets: module.line_offsets.clone(),
+        complexity: module.complexity.clone(),
     }
 }

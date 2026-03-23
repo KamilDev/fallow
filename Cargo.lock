@@ -624,6 +624,7 @@ dependencies = [
  "colored",
  "fallow-config",
  "fallow-core",
+ "globset",
  "insta",
  "json_comments",
  "notify",

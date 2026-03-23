@@ -102,6 +102,16 @@ pub fn build_compact_lines(results: &AnalysisResults, root: &Path) -> Vec<String
     lines
 }
 
+pub(super) fn print_health_compact(report: &crate::health_types::HealthReport, root: &Path) {
+    for finding in &report.findings {
+        let relative = normalize_uri(&relative_path(&finding.path, root).display().to_string());
+        println!(
+            "high-complexity:{}:{}:{}:cyclomatic={},cognitive={}",
+            relative, finding.line, finding.name, finding.cyclomatic, finding.cognitive,
+        );
+    }
+}
+
 pub(super) fn print_duplication_compact(report: &DuplicationReport, root: &Path) {
     for (i, group) in report.clone_groups.iter().enumerate() {
         for instance in &group.instances {
@@ -189,7 +199,18 @@ mod tests {
         });
         r.duplicate_exports.push(DuplicateExport {
             export_name: "Config".to_string(),
-            locations: vec![root.join("src/config.ts"), root.join("src/types.ts")],
+            locations: vec![
+                DuplicateLocation {
+                    path: root.join("src/config.ts"),
+                    line: 15,
+                    col: 0,
+                },
+                DuplicateLocation {
+                    path: root.join("src/types.ts"),
+                    line: 30,
+                    col: 0,
+                },
+            ],
         });
         r.type_only_dependencies.push(TypeOnlyDependency {
             package_name: "zod".to_string(),
@@ -358,7 +379,18 @@ mod tests {
         let mut results = AnalysisResults::default();
         results.duplicate_exports.push(DuplicateExport {
             export_name: "Config".to_string(),
-            locations: vec![root.join("src/a.ts"), root.join("src/b.ts")],
+            locations: vec![
+                DuplicateLocation {
+                    path: root.join("src/a.ts"),
+                    line: 15,
+                    col: 0,
+                },
+                DuplicateLocation {
+                    path: root.join("src/b.ts"),
+                    line: 30,
+                    col: 0,
+                },
+            ],
         });
 
         let lines = build_compact_lines(&results, &root);

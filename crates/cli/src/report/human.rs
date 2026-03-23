@@ -309,9 +309,20 @@ pub(super) fn print_health_human(
     println!(
         "{} {}",
         "\u{25cf}".red(),
-        format!("High complexity functions ({})", report.findings.len())
-            .red()
-            .bold()
+        if report.findings.len() < report.summary.functions_above_threshold {
+            format!(
+                "High complexity functions ({} shown, {} total)",
+                report.findings.len(),
+                report.summary.functions_above_threshold
+            )
+        } else {
+            format!(
+                "High complexity functions ({})",
+                report.summary.functions_above_threshold
+            )
+        }
+        .red()
+        .bold()
     );
 
     let mut last_file = String::new();

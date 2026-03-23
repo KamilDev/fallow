@@ -35,6 +35,7 @@ cargo fmt --all -- --check
 ```bash
 cargo run -- check              # Unused code analysis
 cargo run -- dupes              # Duplication detection
+cargo run -- health             # Complexity metrics
 cargo run -- fix --dry-run      # Auto-fix preview
 cargo run -- list --plugins     # Show detected plugins
 ```

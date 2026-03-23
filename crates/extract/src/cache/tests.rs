@@ -41,6 +41,7 @@ fn cache_store_insert_and_get() {
         unused_import_bindings: vec![],
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: vec![],
     };
     store.insert(Path::new("test.ts"), module);
     assert_eq!(store.len(), 1);
@@ -67,6 +68,7 @@ fn cache_store_hash_mismatch_returns_none() {
         unused_import_bindings: vec![],
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: vec![],
     };
     store.insert(Path::new("test.ts"), module);
     assert!(store.get(Path::new("test.ts"), 99).is_none());
@@ -97,6 +99,7 @@ fn cache_store_overwrite_entry() {
         unused_import_bindings: vec![],
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: vec![],
     };
     let m2 = CachedModule {
         content_hash: 2,
@@ -114,6 +117,7 @@ fn cache_store_overwrite_entry() {
         unused_import_bindings: vec![],
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: vec![],
     };
     store.insert(Path::new("test.ts"), m1);
     store.insert(Path::new("test.ts"), m2);
@@ -146,6 +150,7 @@ fn module_to_cached_roundtrip_named_export() {
         content_hash: 123,
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: Vec::new(),
     };
 
     let cached = module_to_cached(&module, 0, 0);
@@ -186,6 +191,7 @@ fn module_to_cached_roundtrip_default_export() {
         content_hash: 456,
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: Vec::new(),
     };
 
     let cached = module_to_cached(&module, 0, 0);
@@ -240,6 +246,7 @@ fn module_to_cached_roundtrip_imports() {
         content_hash: 789,
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: Vec::new(),
     };
 
     let cached = module_to_cached(&module, 0, 0);
@@ -285,6 +292,7 @@ fn module_to_cached_roundtrip_re_exports() {
         content_hash: 0,
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: Vec::new(),
     };
 
     let cached = module_to_cached(&module, 0, 0);
@@ -327,6 +335,7 @@ fn module_to_cached_roundtrip_dynamic_imports() {
         suppressions: vec![],
         unused_import_bindings: vec![],
         line_offsets: vec![],
+        complexity: Vec::new(),
     };
 
     let cached = module_to_cached(&module, 0, 0);
@@ -389,6 +398,7 @@ fn module_to_cached_roundtrip_members() {
         content_hash: 0,
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: Vec::new(),
     };
 
     let cached = module_to_cached(&module, 0, 0);
@@ -441,6 +451,7 @@ fn cache_save_and_load_roundtrip() {
         unused_import_bindings: vec![],
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: vec![],
     };
     store.insert(Path::new("test.ts"), module);
     store.save(&dir).unwrap();
@@ -474,6 +485,7 @@ fn cache_version_mismatch_returns_none() {
         unused_import_bindings: vec![],
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: vec![],
     };
     store.insert(Path::new("test.ts"), module);
     store.save(&dir).unwrap();
@@ -522,6 +534,7 @@ fn module_to_cached_roundtrip_type_only_import() {
         content_hash: 0,
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: Vec::new(),
     };
 
     let cached = module_to_cached(&module, 0, 0);
@@ -551,6 +564,7 @@ fn get_by_path_only_returns_entry_regardless_of_hash() {
         unused_import_bindings: vec![],
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: vec![],
     };
     store.insert(Path::new("test.ts"), module);
 
@@ -592,6 +606,7 @@ fn retain_paths_removes_stale_entries() {
         unused_import_bindings: vec![],
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: vec![],
     };
 
     store.insert(Path::new("/project/a.ts"), m());
@@ -639,6 +654,7 @@ fn retain_paths_with_empty_files_clears_cache() {
         unused_import_bindings: vec![],
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: vec![],
     };
     store.insert(Path::new("a.ts"), m);
     assert_eq!(store.len(), 1);
@@ -666,6 +682,7 @@ fn get_by_metadata_returns_entry_on_match() {
         unused_import_bindings: vec![],
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: vec![],
     };
     store.insert(Path::new("test.ts"), module);
 
@@ -693,6 +710,7 @@ fn get_by_metadata_returns_none_on_mtime_mismatch() {
         unused_import_bindings: vec![],
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: vec![],
     };
     store.insert(Path::new("test.ts"), module);
 
@@ -722,6 +740,7 @@ fn get_by_metadata_returns_none_on_size_mismatch() {
         unused_import_bindings: vec![],
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: vec![],
     };
     store.insert(Path::new("test.ts"), module);
 
@@ -751,6 +770,7 @@ fn get_by_metadata_returns_none_for_zero_mtime() {
         unused_import_bindings: vec![],
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: vec![],
     };
     store.insert(Path::new("test.ts"), module);
 
@@ -789,6 +809,7 @@ fn module_to_cached_stores_mtime_and_size() {
         content_hash: 42,
         suppressions: vec![],
         line_offsets: vec![],
+        complexity: Vec::new(),
     };
 
     let cached = module_to_cached(&module, 12345, 6789);
@@ -814,6 +835,7 @@ fn module_to_cached_roundtrip_line_offsets() {
         content_hash: 0,
         suppressions: vec![],
         line_offsets: vec![0, 15, 30, 45],
+        complexity: Vec::new(),
     };
     let cached = module_to_cached(&module, 0, 0);
     let restored = cached_to_module(&cached, FileId(0));

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use super::duplicates_config::DuplicatesConfig;
 use super::format::OutputFormat;
+use super::health::HealthConfig;
 use super::rules::{PartialRulesConfig, RulesConfig, Severity};
 use crate::external_plugin::{ExternalPluginDef, discover_external_plugins};
 
@@ -51,6 +52,7 @@ pub struct ResolvedConfig {
     pub ignore_dependencies: Vec<String>,
     pub ignore_export_rules: Vec<IgnoreExportRule>,
     pub duplicates: DuplicatesConfig,
+    pub health: HealthConfig,
     pub rules: RulesConfig,
     /// Whether production mode is active.
     pub production: bool,
@@ -157,6 +159,7 @@ impl FallowConfig {
             ignore_dependencies: self.ignore_dependencies,
             ignore_export_rules: self.ignore_exports,
             duplicates: self.duplicates,
+            health: self.health,
             rules,
             production,
             quiet,
@@ -194,6 +197,7 @@ impl ResolvedConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::health::HealthConfig;
 
     #[test]
     fn overrides_deserialize() {
@@ -227,6 +231,7 @@ mod tests {
             ignore_dependencies: vec![],
             ignore_exports: vec![],
             duplicates: DuplicatesConfig::default(),
+            health: HealthConfig::default(),
             rules: RulesConfig::default(),
             production: false,
             plugins: vec![],
@@ -255,6 +260,7 @@ mod tests {
             ignore_dependencies: vec![],
             ignore_exports: vec![],
             duplicates: DuplicatesConfig::default(),
+            health: HealthConfig::default(),
             rules: RulesConfig::default(),
             production: false,
             plugins: vec![],
@@ -296,6 +302,7 @@ mod tests {
             ignore_dependencies: vec![],
             ignore_exports: vec![],
             duplicates: DuplicatesConfig::default(),
+            health: HealthConfig::default(),
             rules: RulesConfig::default(),
             production: false,
             plugins: vec![],

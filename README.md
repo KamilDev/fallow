@@ -20,6 +20,7 @@ Unused code, circular dependencies, and code duplication. Found in seconds, not 
 ```bash
 npx fallow check    # Unused code analysis
 npx fallow dupes    # Duplication detection
+npx fallow health   # Complexity — find high-complexity functions
 ```
 
 <p align="center">
@@ -32,6 +33,7 @@ npx fallow dupes    # Duplication detection
 npx fallow check                     # Unused code — zero config, sub-second
 npx fallow dupes                     # Duplication — find copy-paste clones
 npx fallow dupes --mode semantic     # Catch clones with renamed variables
+npx fallow health                    # Complexity — find high-complexity functions
 npx fallow fix --dry-run             # Preview auto-removal of dead exports and deps
 ```
 
@@ -57,6 +59,7 @@ cargo install fallow-cli     # Or via cargo
 - **Duplicate exports** — same symbol exported from multiple modules
 - **Circular dependencies** — import cycles detected via Tarjan's SCC algorithm
 - **Type-only dependencies** — production deps only used via `import type` (could be devDependencies)
+- **Complexity metrics** — cyclomatic and cognitive complexity per function, with configurable thresholds
 - **Function overload deduplication** — multiple overload signatures for the same function are deduplicated to avoid false positives
 
 ## Code duplication
@@ -82,6 +85,20 @@ fallow dupes --trace src/utils.ts:42  # Show all clones of code at this location
 | **semantic** | Clones with renamed variables and different literals |
 
 Clone groups sharing the same file set are grouped into **clone families** with refactoring suggestions (extract function or module).
+
+## Code health
+
+`fallow health` reports cyclomatic and cognitive complexity for every function in your codebase, surfacing the most complex functions that are candidates for refactoring.
+
+```bash
+fallow health                          # Report functions exceeding default thresholds
+fallow health --max-cyclomatic 15      # Custom cyclomatic complexity threshold
+fallow health --max-cognitive 10       # Custom cognitive complexity threshold
+fallow health --top 20                 # Show the 20 most complex functions
+fallow health --sort cognitive         # Sort by cognitive complexity
+fallow health --changed-since main     # Only analyze changed files
+fallow health --format json            # Machine-readable output
+```
 
 ## Benchmarks
 
@@ -191,7 +208,29 @@ Create a config file in your project root, or run `fallow init`:
 }
 ```
 
-TOML is also supported (`fallow init --toml` creates `fallow.toml`). See the [full configuration reference](https://docs.fallow.tools/configuration/overview) for all options, including `rules` severity levels, `duplicates` settings, `ignoreExports` rules, and custom framework presets.
+Complexity thresholds for `fallow health` can be configured in your config file:
+
+```jsonc
+// .fallowrc.json
+{
+  "health": {
+    "maxCyclomatic": 20,
+    "maxCognitive": 15,
+    "ignore": ["src/generated/**"]
+  }
+}
+```
+
+Or in TOML:
+
+```toml
+[health]
+maxCyclomatic = 20
+maxCognitive = 15
+ignore = ["src/generated/**"]
+```
+
+TOML is also supported (`fallow init --toml` creates `fallow.toml`). See the [full configuration reference](https://docs.fallow.tools/configuration/overview) for all options, including `rules` severity levels, `duplicates` settings, `health` thresholds, `ignoreExports` rules, and custom framework presets.
 
 ### Migrating from knip or jscpd
 
@@ -259,6 +298,7 @@ Supports `--changed-since main` for PR-only analysis, `--baseline` for failing o
 - **Non-JS file support** — Vue/Svelte SFC (`<script>` block extraction), Astro (frontmatter), MDX (import/export statements), CSS/SCSS (`@import`, `@use`, `@forward`, `@apply`/`@tailwind` as Tailwind dependency usage), CSS Modules (`.module.css`/`.module.scss` class name tracking)
 - **Production mode** — `--production` excludes test/story/dev files, only considers start/build scripts, and reports type-only dependencies that could be devDependencies
 - **Circular dependency detection** — finds import cycles using Tarjan's SCC algorithm; configurable via `"circular-dependencies"` rule. Unique feature not available in knip.
+- **Complexity metrics** — `fallow health` reports cyclomatic and cognitive complexity per function with configurable thresholds (`--max-cyclomatic`, `--max-cognitive`), top-N ranking (`--top`), and `--changed-since` for PR-scoped analysis
 - **JSDoc `@public` tag** — exports annotated with `/** @public */` are never reported as unused, for library authors whose exports are consumed by external projects
 
 ## Inline suppression comments
