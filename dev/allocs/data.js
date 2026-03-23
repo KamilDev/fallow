@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774273358851,
+  "lastUpdate": 1774276073014,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -219,6 +219,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Peak Allocations",
             "value": 3683,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "ef25d6dfb0a344ee4565ea6a5aedbaffbd82cadd",
+          "message": "feat: track class member usage through instance variables\n\nDetect `const x = new ClassName()` patterns and map subsequent\n`x.method()` / `x.property` accesses to `ClassName.method` /\n`ClassName.property`, so the unused class member detector correctly\nrecognizes instance-level usage.\n\nOn TanStack Query this eliminates 89 false positives (134 → 45 unused\nclass members). Built-in constructors (URL, Map, Set, etc.) are\nfiltered out to avoid spurious mappings.",
+          "timestamp": "2026-03-23T15:26:22+01:00",
+          "tree_id": "d46975e75975b260e1118bec84460380b601a405",
+          "url": "https://github.com/fallow-rs/fallow/commit/ef25d6dfb0a344ee4565ea6a5aedbaffbd82cadd"
+        },
+        "date": 1774276072603,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 2983675,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 11543,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 397066,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 3659,
             "unit": "allocations"
           }
         ]
