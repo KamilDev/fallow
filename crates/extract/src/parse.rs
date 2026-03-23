@@ -51,6 +51,11 @@ pub fn parse_source_to_module(
     let mut unused_bindings =
         compute_unused_import_bindings(&parser_return.program, &extractor.imports);
 
+    // Compute per-function complexity metrics from the initial parse
+    let line_offsets = fallow_types::extract::compute_line_offsets(source);
+    let mut complexity =
+        crate::complexity::compute_complexity(&parser_return.program, line_offsets.clone());
+
     // If parsing produced very few results relative to source size (likely parse errors
     // from Flow types or JSX in .js files), retry with JSX/TSX source type as a fallback.
     let total_extracted =
@@ -71,6 +76,9 @@ pub fn parse_source_to_module(
         if retry_total > total_extracted {
             unused_bindings =
                 compute_unused_import_bindings(&retry_return.program, &retry_extractor.imports);
+            // Recompute complexity from the successful retry parse
+            complexity =
+                crate::complexity::compute_complexity(&retry_return.program, line_offsets.clone());
             extractor = retry_extractor;
         }
     }
@@ -84,7 +92,9 @@ pub fn parse_source_to_module(
 
     let mut info = extractor.into_module_info(file_id, content_hash, suppressions);
     info.unused_import_bindings = unused_bindings;
-    info.line_offsets = fallow_types::extract::compute_line_offsets(source);
+    info.line_offsets = line_offsets;
+    info.complexity = complexity;
+
     info
 }
 

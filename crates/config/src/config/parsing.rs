@@ -224,6 +224,7 @@ mod tests {
     use crate::PackageJson;
     use crate::config::duplicates_config::DuplicatesConfig;
     use crate::config::format::OutputFormat;
+    use crate::config::health::HealthConfig;
     use crate::config::rules::{RulesConfig, Severity};
 
     /// Create a unique temp directory for this test to avoid parallel test races.
@@ -286,6 +287,7 @@ ignoreDependencies = ["autoprefixer", "postcss"]
             ignore_dependencies: vec![],
             ignore_exports: vec![],
             duplicates: DuplicatesConfig::default(),
+            health: HealthConfig::default(),
             rules: RulesConfig::default(),
             production: false,
             plugins: vec![],
@@ -321,6 +323,7 @@ ignoreDependencies = ["autoprefixer", "postcss"]
             ignore_dependencies: vec![],
             ignore_exports: vec![],
             duplicates: DuplicatesConfig::default(),
+            health: HealthConfig::default(),
             rules: RulesConfig::default(),
             production: false,
             plugins: vec![],
@@ -352,6 +355,7 @@ ignoreDependencies = ["autoprefixer", "postcss"]
             ignore_dependencies: vec![],
             ignore_exports: vec![],
             duplicates: DuplicatesConfig::default(),
+            health: HealthConfig::default(),
             rules: RulesConfig::default(),
             production: false,
             plugins: vec![],

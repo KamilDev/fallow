@@ -10,14 +10,14 @@ Fallow finds unused files, exports, dependencies, types, enum members, class mem
 crates/
   config/   — Configuration types, custom framework presets, package.json parsing, workspace discovery
   types/    — Shared type definitions (discover, extract, results, suppress, serde_path)
-  extract/  — AST extraction engine (visitor.rs, sfc.rs, astro.rs, mdx.rs, css.rs, parse.rs, cache.rs, suppress.rs, tests/)
+  extract/  — AST extraction engine (visitor.rs, complexity.rs, sfc.rs, astro.rs, mdx.rs, css.rs, parse.rs, cache.rs, suppress.rs, tests/)
   graph/    — Module graph construction (graph/), import resolution (resolve.rs), project state (project.rs)
   core/     — Analysis orchestration: discovery, plugins, scripts, duplicates, cross-reference, caching, progress
     analyze/    — Dead code detection (mod.rs orchestration, predicates.rs, unused_files/exports/deps/members.rs)
     plugins/    — Plugin system + tooling.rs (general tooling dependency detection)
     duplicates/ — Clone detection (families, normalize, tokenize)
   cli/      — CLI binary, split into per-command modules
-    check.rs, dupes.rs, watch.rs, fix/, init.rs, list.rs, schema.rs, validate.rs
+    check.rs, dupes.rs, health.rs, watch.rs, fix/, init.rs, list.rs, schema.rs, validate.rs
     report/     — Output formatting (mod.rs dispatch, human.rs, json.rs, sarif.rs, compact.rs, markdown.rs)
     migrate/    — Config migration (mod.rs, knip.rs, jscpd.rs)
   lsp/      — LSP server, split into modules
@@ -179,6 +179,8 @@ Comprehensive clippy and compiler lint configuration inspired by the Oxc ecosyst
 35. Package.json `imports` field (`#subpath` imports): imports using `#` prefixes (e.g., `import { foo } from '#utils'`) resolve via the `imports` field in the nearest `package.json`. Supports simple mappings (`"#utils": "./src/utils/index.ts"`), wildcard patterns (`"#components/*": "./src/components/*"`), and conditional exports (`"import"`, `"require"`, `"default"`, `"types"`). Resolved via `oxc_resolver`'s native `imports_fields` support. Per-package scoping: each workspace package uses its own `package.json` `imports` field.
 36. Class instance member tracking: `const svc = new MyService(); svc.greet()` correctly tracks `greet` as a used class member. The visitor detects `const x = new Identifier()` patterns and maps subsequent `x.method()` / `x.property` accesses to `Identifier.method` / `Identifier.property`. Also handles whole-object instance patterns (`Object.values(x)`, `{ ...x }`, `for..in`). Scope-unaware (same as namespace binding tracking) — false matches produce false negatives, not false positives.
 
+37. Complexity metrics (`fallow health`): per-function cyclomatic complexity (McCabe, classic variant — counts `if`, `for`, `while`, `do`, `switch case`, `catch`, `?:`, `&&`, `||`, `??`, `&&=`/`||=`/`??=`, `?.`) and cognitive complexity (SonarSource algorithm — structural increments with nesting penalty, boolean operator sequence detection, function scope reset, `?.` NOT counted). Computed in a single-pass `ComplexityVisitor` during the existing parse phase (zero additional parsing cost). Configurable thresholds (default: cyclomatic 20, cognitive 15) via `[health]` config section or `--max-cyclomatic`/`--max-cognitive` CLI flags. Results cached alongside other extraction data.
+
 ## Framework support (84 plugins)
 
 **Frameworks**: Next.js, Nuxt, Remix, SvelteKit, Gatsby, Astro, Angular, React Router, TanStack Router, React Native, Expo, NestJS, Docusaurus, Nitro, VitePress, Sanity, Capacitor, next-intl, Relay, Electron, i18next
@@ -220,6 +222,7 @@ Comprehensive clippy and compiler lint configuration inspired by the Oxc ecosyst
 ## CLI features
 
 - `check` — analyze with --format (human/json/sarif/compact/markdown), --changed-since, --baseline, --save-baseline, --fail-on-issues, --include-dupes (cross-reference with duplication), issue type filters (--unused-files, --unused-exports, etc.), --trace FILE:EXPORT (trace export usage), --trace-file PATH (trace file edges), --trace-dependency PACKAGE (trace dependency usage)
+- `health` — analyze function complexity (cyclomatic + cognitive), --max-cyclomatic, --max-cognitive, --top N, --sort (cyclomatic/cognitive/lines), --changed-since, --format (human/json/compact). Exit code 1 if any function exceeds thresholds.
 - `dupes` — find code duplication with clone families, refactoring suggestions, --changed-since, --baseline/--save-baseline, --mode (strict/mild/weak/semantic), --min-tokens, --min-lines, --threshold, --skip-local, --cross-language, --trace FILE:LINE (trace all clones at a specific location)
 - `watch` — file watcher with debounced re-analysis, screen clear between runs (--no-clear to disable), shows changed file paths
 - `fix` — auto-remove unused exports, enum members, and deps (--dry-run, --yes/--force for non-TTY confirmation, --format json for structured output)
@@ -246,6 +249,7 @@ See `AGENTS.md` for AI agent integration guide.
 - `analyze` — full dead code analysis (wraps `fallow check --format json`)
 - `check_changed` — incremental analysis of changed files (wraps `fallow check --changed-since`)
 - `find_dupes` — code duplication detection (wraps `fallow dupes --format json`)
+- `check_health` — code complexity metrics (wraps `fallow health --format json`)
 - `fix_preview` — dry-run auto-fix preview (wraps `fallow fix --dry-run --format json`)
 - `fix_apply` — apply auto-fixes (wraps `fallow fix --yes --format json`) — destructive
 - `project_info` — project metadata: plugins, files, entry points (wraps `fallow list --format json`)

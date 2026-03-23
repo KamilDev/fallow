@@ -23,7 +23,7 @@ These interfaces are covered by semver — breaking changes only happen in major
 
 ### CLI interface
 
-- **Subcommands**: `check`, `dupes`, `fix`, `watch`, `init`, `migrate`, `list`, `schema`, `config-schema`, `plugin-schema`
+- **Subcommands**: `check`, `dupes`, `health`, `fix`, `watch`, `init`, `migrate`, `list`, `schema`, `config-schema`, `plugin-schema`
 - **Exit codes**: 0 (success/no errors), 1 (issues with error severity found), 2 (runtime error)
 - **Global flags**: `--format`, `--config`, `--workspace`, `--performance`
 - **Environment variables**: `FALLOW_FORMAT`, `FALLOW_QUIET`, `FALLOW_BIN`

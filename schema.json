@@ -79,6 +79,15 @@
         "normalization": {}
       }
     },
+    "health": {
+      "description": "Complexity health metrics settings.",
+      "$ref": "#/$defs/HealthConfig",
+      "default": {
+        "maxCyclomatic": 20,
+        "maxCognitive": 15,
+        "ignore": []
+      }
+    },
     "rules": {
       "description": "Per-issue-type severity rules.",
       "$ref": "#/$defs/RulesConfig",
@@ -438,6 +447,36 @@
             "boolean",
             "null"
           ]
+        }
+      }
+    },
+    "HealthConfig": {
+      "description": "Configuration for complexity health metrics (`fallow health`).",
+      "type": "object",
+      "properties": {
+        "maxCyclomatic": {
+          "description": "Maximum allowed cyclomatic complexity per function (default: 20).\nFunctions exceeding this threshold are reported.",
+          "type": "integer",
+          "format": "uint16",
+          "minimum": 0,
+          "maximum": 65535,
+          "default": 20
+        },
+        "maxCognitive": {
+          "description": "Maximum allowed cognitive complexity per function (default: 15).\nFunctions exceeding this threshold are reported.",
+          "type": "integer",
+          "format": "uint16",
+          "minimum": 0,
+          "maximum": 65535,
+          "default": 15
+        },
+        "ignore": {
+          "description": "Glob patterns to exclude from complexity analysis.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
         }
       }
     },

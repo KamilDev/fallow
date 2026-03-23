@@ -20,6 +20,7 @@ npm install -g fallow
 fallow check                     # Unused code analysis -- zero config, sub-second
 fallow dupes                     # Duplication detection -- find copy-paste clones
 fallow dupes --mode semantic     # Catch clones with renamed variables
+fallow health                    # Complexity metrics -- cyclomatic + cognitive
 fallow fix --dry-run             # Preview auto-removal of unused exports and deps
 ```
 

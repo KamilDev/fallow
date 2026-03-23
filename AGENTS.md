@@ -6,7 +6,7 @@ agent-usage: This CLI is frequently invoked by AI coding agents (Claude Code, Cu
 
 # Fallow CLI -- Agent Integration Guide
 
-Fallow is a codebase analyzer for JS/TS projects. It detects unused files, exports, dependencies, types, enum members, class members, unresolved imports, unlisted dependencies, duplicate exports, circular dependencies, and code duplication.
+Fallow is a codebase analyzer for JS/TS projects. It detects unused files, exports, dependencies, types, enum members, class members, unresolved imports, unlisted dependencies, duplicate exports, circular dependencies, code duplication, and function complexity.
 
 ## Rules for AI agents
 
@@ -96,6 +96,27 @@ fallow dupes --format json --quiet --changed-since main
 - `--changed-since <ref>` -- only report duplication in files changed since a git ref
 - `--trace <FILE:LINE>` -- trace all clones at a specific source location
 - `--baseline <path>` / `--save-baseline <path>` -- incremental CI adoption
+
+### `health`
+
+Analyze function complexity (cyclomatic and cognitive).
+
+```bash
+fallow health --format json --quiet
+fallow health --format json --quiet --max-cyclomatic 15
+fallow health --format json --quiet --top 10 --sort cognitive
+```
+
+**Flags:**
+- `--max-cyclomatic <N>` -- cyclomatic complexity threshold (default: 20)
+- `--max-cognitive <N>` -- cognitive complexity threshold (default: 15)
+- `--top <N>` -- only show the top N most complex functions
+- `--sort cyclomatic|cognitive|lines` -- sort order for results
+- `--format human|json|compact` -- output format (default: human)
+
+**Exit codes:** 0 = no functions exceed thresholds, 1 = findings exist.
+
+**JSON output** includes a `findings` array and a `summary` object.
 
 ### `fix`
 
@@ -217,6 +238,13 @@ fallow check --format json --quiet --workspace my-package
 ```bash
 fallow dupes --format json --quiet
 fallow dupes --format json --quiet --mode semantic --threshold 5
+```
+
+### Find complex functions
+
+```bash
+fallow health --format json --quiet
+fallow health --format json --quiet --top 10 --sort cognitive
 ```
 
 ### Safe auto-fix cycle

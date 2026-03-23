@@ -93,6 +93,27 @@ pub struct ProjectInfoParams {
     pub config: Option<String>,
 }
 
+#[derive(Deserialize, JsonSchema)]
+pub struct HealthParams {
+    /// Root directory of the project to analyze. Defaults to current working directory.
+    pub root: Option<String>,
+
+    /// Maximum cyclomatic complexity threshold. Functions exceeding this are reported.
+    pub max_cyclomatic: Option<u16>,
+
+    /// Maximum cognitive complexity threshold. Functions exceeding this are reported.
+    pub max_cognitive: Option<u16>,
+
+    /// Number of top results to return, sorted by complexity.
+    pub top: Option<usize>,
+
+    /// Sort order for results (e.g., "cyclomatic", "cognitive").
+    pub sort: Option<String>,
+
+    /// Git ref to compare against. Only files changed since this ref are analyzed.
+    pub changed_since: Option<String>,
+}
+
 // ── Server ─────────────────────────────────────────────────────────
 
 #[derive(Clone)]
@@ -352,6 +373,44 @@ impl FallowMcp {
 
         run_fallow(&self.binary, &args).await
     }
+
+    #[tool(
+        description = "Check code health metrics (cyclomatic and cognitive complexity) for functions in the project. Returns structured JSON with complexity scores per function, sorted by severity. Useful for identifying hard-to-maintain code.",
+        annotations(read_only_hint = true, open_world_hint = true)
+    )]
+    async fn check_health(
+        &self,
+        params: Parameters<HealthParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let params = params.0;
+        let mut args = vec![
+            "health".to_string(),
+            "--format".to_string(),
+            "json".to_string(),
+            "--quiet".to_string(),
+        ];
+
+        if let Some(ref root) = params.root {
+            args.extend(["--root".to_string(), root.clone()]);
+        }
+        if let Some(max_cyclomatic) = params.max_cyclomatic {
+            args.extend(["--max-cyclomatic".to_string(), max_cyclomatic.to_string()]);
+        }
+        if let Some(max_cognitive) = params.max_cognitive {
+            args.extend(["--max-cognitive".to_string(), max_cognitive.to_string()]);
+        }
+        if let Some(top) = params.top {
+            args.extend(["--top".to_string(), top.to_string()]);
+        }
+        if let Some(ref sort) = params.sort {
+            args.extend(["--sort".to_string(), sort.clone()]);
+        }
+        if let Some(ref changed_since) = params.changed_since {
+            args.extend(["--changed-since".to_string(), changed_since.clone()]);
+        }
+
+        run_fallow(&self.binary, &args).await
+    }
 }
 
 // ── ServerHandler ──────────────────────────────────────────────────
@@ -368,7 +427,8 @@ impl ServerHandler for FallowMcp {
                 "Fallow MCP server — codebase analysis for JavaScript/TypeScript projects. \
                  Tools: analyze (full analysis), check_changed (incremental/PR analysis), \
                  find_dupes (code duplication), fix_preview/fix_apply (auto-fix), \
-                 project_info (plugins, files, entry points).",
+                 project_info (plugins, files, entry points), \
+                 check_health (code complexity metrics).",
             )
     }
 }
@@ -455,7 +515,8 @@ mod tests {
         assert!(names.contains(&"fix_preview".to_string()));
         assert!(names.contains(&"fix_apply".to_string()));
         assert!(names.contains(&"project_info".to_string()));
-        assert_eq!(tools.len(), 6);
+        assert!(names.contains(&"check_health".to_string()));
+        assert_eq!(tools.len(), 7);
     }
 
     #[test]
@@ -468,6 +529,7 @@ mod tests {
             "find_dupes",
             "fix_preview",
             "project_info",
+            "check_health",
         ];
         for tool in &tools {
             let name = tool.name.to_string();

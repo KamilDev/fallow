@@ -68,9 +68,15 @@ export interface UnlistedDependency {
   readonly path: string;
 }
 
+export interface DuplicateLocation {
+  readonly path: string;
+  readonly line: number;
+  readonly col: number;
+}
+
 export interface DuplicateExport {
   readonly export_name: string;
-  readonly locations: ReadonlyArray<string>;
+  readonly locations: ReadonlyArray<DuplicateLocation>;
 }
 
 export interface TypeOnlyDependency {

@@ -20,6 +20,8 @@ Code analysis should be fast enough to be invisible — part of the feedback loo
 
 **Non-JS files**: Vue/Svelte SFC, Astro frontmatter, MDX imports, CSS/SCSS modules.
 
+**Codebase health**: `fallow health` provides complexity metrics (cyclomatic + cognitive) per function, with project-level summaries and configurable thresholds.
+
 **Debug tooling**: `--trace` for exports, files, dependencies, and clone locations; `--performance` for pipeline timing breakdown.
 
 **1.0 readiness validation**: Tested against 5 real-world projects spanning major archetypes — dub.sh (Next.js), elk (Nuxt), nestjs-boilerplate (NestJS), showtime-frontend (React Native/Expo), trpc (pnpm monorepo). Six critical fixes shipped: `export *` chain propagation through multi-level barrels, tsconfig path alias resolution (`TsconfigDiscovery::Auto` for per-file resolution), Nuxt plugin enhancements (app/ directory, `resolve_config()`, path aliases), React Native platform extensions (`.web`/`.ios`/`.android`/`.native`) with hidden dir allowlist, decorated class member skip for DI frameworks, and plugin improvements (workspace dedup, tsdown, Jest mocks/inline config, Docusaurus virtual modules, `path_aliases()` trait). Backwards compatibility policy documented (`docs/backwards-compatibility.md`), JSON output schema formalized (`docs/output-schema.json`).
@@ -56,6 +58,7 @@ Fallow exists in a small but active space. Here's how it fits:
 
 These are ideas, not commitments. They ship as 1.x releases based on user demand.
 
+- ~~**Complexity metrics**~~ — shipped via `fallow health`.
 - **More auto-fix targets** — delete unused files (`--allow-remove-files`), remove unused class members, post-fix formatting integration. Auto-fix is the highest-leverage feature for adoption — users want one-command cleanup.
 - **Fine-grained incremental analysis** — patch the graph in place, track export-level dependencies. Cache-aware parsing already covers the main bottleneck; this would additionally skip file I/O for unchanged files.
 - **Custom export conditions / unbuilt workspace fallback** — when resolving cross-workspace imports and `build`/`dist` directories don't exist, fall back to `src/` resolution. Many monorepos (TanStack/query, etc.) use custom conditions.
