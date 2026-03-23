@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774257758282,
+  "lastUpdate": 1774258026738,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Benchmarks": [
@@ -1439,6 +1439,102 @@ window.BENCHMARK_DATA = {
             "name": "dupe_detect_2x5000_identical",
             "value": 2819656,
             "range": "± 7635",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "2a8ab7e14e1bf69949bfc2d2ffe6c7f0243a349e",
+          "message": "feat: add progress spinners to analysis pipeline and improve watch mode UX\n\nWire AnalysisProgress spinners into the analysis pipeline stages (discover,\nplugins, parse, resolve, graph, analyze). Progress is shown when stderr is a\nTTY and output format is human-readable — suppressed for --quiet, --format\njson/sarif, and non-TTY environments.\n\nAdd quiet field to ResolvedConfig to control progress bar visibility from\nthe CLI layer. Tracing level set to WARN when spinners are active to prevent\nstderr corruption between indicatif and tracing-subscriber output.",
+          "timestamp": "2026-03-23T10:23:06+01:00",
+          "tree_id": "86178de0d493c8c33df5a0597670b50f0b1f180a",
+          "url": "https://github.com/fallow-rs/fallow/commit/2a8ab7e14e1bf69949bfc2d2ffe6c7f0243a349e"
+        },
+        "date": 1774258026351,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_single_file",
+            "value": 41436,
+            "range": "± 1146",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_10_files",
+            "value": 1242692,
+            "range": "± 16947",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_100_files",
+            "value": 2857671,
+            "range": "± 49539",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_1000_files",
+            "value": 18317242,
+            "range": "± 341391",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "resolve_re_export_chains",
+            "value": 103779,
+            "range": "± 2334",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache_round_trip",
+            "value": 1998,
+            "range": "± 14",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x500_identical",
+            "value": 226963,
+            "range": "± 4129",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x2000_identical",
+            "value": 1025613,
+            "range": "± 10090",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_10x500_identical",
+            "value": 1791847,
+            "range": "± 20386",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_50x200_diverse",
+            "value": 544173,
+            "range": "± 34155",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_100x200_mixed",
+            "value": 4505971,
+            "range": "± 51940",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x5000_identical",
+            "value": 2850329,
+            "range": "± 10663",
             "unit": "ns/iter"
           }
         ]
