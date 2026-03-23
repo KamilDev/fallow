@@ -218,7 +218,7 @@ Comprehensive clippy and compiler lint configuration inspired by the Oxc ecosyst
 
 - `check` — analyze with --format (human/json/sarif/compact/markdown), --changed-since, --baseline, --save-baseline, --fail-on-issues, --include-dupes (cross-reference with duplication), issue type filters (--unused-files, --unused-exports, etc.), --trace FILE:EXPORT (trace export usage), --trace-file PATH (trace file edges), --trace-dependency PACKAGE (trace dependency usage)
 - `dupes` — find code duplication with clone families, refactoring suggestions, --changed-since, --baseline/--save-baseline, --mode (strict/mild/weak/semantic), --min-tokens, --min-lines, --threshold, --skip-local, --cross-language, --trace FILE:LINE (trace all clones at a specific location)
-- `watch` — file watcher with debounced re-analysis
+- `watch` — file watcher with debounced re-analysis, screen clear between runs (--no-clear to disable), shows changed file paths
 - `fix` — auto-remove unused exports, enum members, and deps (--dry-run, --yes/--force for non-TTY confirmation, --format json for structured output)
 - `init` — create .fallowrc.json (default) or fallow.toml (`--toml`), includes `$schema` for IDE autocomplete
 - `migrate` — migrate config from knip and/or jscpd to fallow (--toml, --dry-run, --from PATH; auto-detects knip.json/knip.jsonc/.knip.json/.knip.jsonc/package.json#knip and .jscpd.json/package.json#jscpd)
