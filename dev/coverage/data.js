@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774341273484,
+  "lastUpdate": 1774342664770,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -487,6 +487,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/d64a62b31c6d71e32f97372beee47d5cd259bf43"
         },
         "date": 1774341272689,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 83.1,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "922cc4a192f6a876a408af70dfadb6afb5b18c4a",
+          "message": "fix: make npm publish idempotent with provenance fallback\n\nSkip already-published packages on re-run via `npm view` check.\nFall back to publishing without `--provenance` when Sigstore tlog\nreturns a 409 conflict, which blocks retries after partial failures.",
+          "timestamp": "2026-03-24T09:56:59+01:00",
+          "tree_id": "5f06e0bbeaed1c297aae7dfab34c99ca7074fbf5",
+          "url": "https://github.com/fallow-rs/fallow/commit/922cc4a192f6a876a408af70dfadb6afb5b18c4a"
+        },
+        "date": 1774342664200,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
