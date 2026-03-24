@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774391143817,
+  "lastUpdate": 1774391735243,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -927,6 +927,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "Code Coverage",
             "value": 88.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "49cad71ec5ee2978e6a70789649d73098032668e",
+          "message": "Merge branch 'worktree-agent-a8f8b47c'",
+          "timestamp": "2026-03-24T23:32:43+01:00",
+          "tree_id": "21c55b2f8b467219a5008141256af3017db92fb3",
+          "url": "https://github.com/fallow-rs/fallow/commit/49cad71ec5ee2978e6a70789649d73098032668e"
+        },
+        "date": 1774391734860,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 90.3,
             "unit": "%"
           }
         ]
