@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774356038079,
+  "lastUpdate": 1774356923635,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -835,6 +835,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Peak Allocations",
             "value": 3986,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "eea2ee65096c378e3ce1cede9dbc260c8a9b5f1b",
+          "message": "fix: skip /bin/sh-dependent MCP tests on Windows\n\nGate MCP server tests that shell out to `/bin/sh` with `#[cfg(unix)]`\nsince `/bin/sh` does not exist on Windows.",
+          "timestamp": "2026-03-24T13:53:58+01:00",
+          "tree_id": "1afd5f598e5e0f57af12661989b944ee89f64c42",
+          "url": "https://github.com/fallow-rs/fallow/commit/eea2ee65096c378e3ce1cede9dbc260c8a9b5f1b"
+        },
+        "date": 1774356923291,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3038105,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 12154,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 424402,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 3978,
             "unit": "allocations"
           }
         ]
