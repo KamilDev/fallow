@@ -727,6 +727,9 @@ fn main() -> ExitCode {
             sort,
             production: cli.production,
             changed_since: cli.changed_since.as_deref(),
+            workspace: cli.workspace.as_deref(),
+            baseline: cli.baseline.as_deref(),
+            save_baseline: cli.save_baseline.as_deref(),
         }),
         Command::Schema => unreachable!("handled above"),
         Command::Migrate {
