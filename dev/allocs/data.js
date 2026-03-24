@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774392863354,
+  "lastUpdate": 1774393183037,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -1231,6 +1231,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Peak Allocations",
             "value": 5168,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "5d4e06f89e7bb8da14741c36b1f5490ceb5b30ba",
+          "message": "chore: apply cargo fmt to test code from refactoring agents",
+          "timestamp": "2026-03-24T23:58:24+01:00",
+          "tree_id": "22eb7bda7c26dbb7a4490be0e478e6454a3e7ff9",
+          "url": "https://github.com/fallow-rs/fallow/commit/5d4e06f89e7bb8da14741c36b1f5490ceb5b30ba"
+        },
+        "date": 1774393182448,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3037745,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 12054,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 423466,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 3976,
             "unit": "allocations"
           }
         ]
