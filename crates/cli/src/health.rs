@@ -3,7 +3,8 @@ use std::time::Instant;
 
 use fallow_config::OutputFormat;
 
-use crate::check::get_changed_files;
+use crate::baseline::{HealthBaselineData, filter_new_health_findings};
+use crate::check::{get_changed_files, resolve_workspace_filter};
 pub use crate::health_types::*;
 use crate::load_config;
 use crate::report;
@@ -29,6 +30,9 @@ pub struct HealthOptions<'a> {
     pub sort: SortBy,
     pub production: bool,
     pub changed_since: Option<&'a str>,
+    pub workspace: Option<&'a str>,
+    pub baseline: Option<&'a std::path::Path>,
+    pub save_baseline: Option<&'a std::path::Path>,
 }
 
 pub fn run_health(opts: &HealthOptions<'_>) -> ExitCode {
@@ -137,11 +141,49 @@ pub fn run_health(opts: &HealthOptions<'_>) -> ExitCode {
         }
     }
 
+    // Apply workspace filter
+    if let Some(ws_name) = opts.workspace {
+        match resolve_workspace_filter(opts.root, ws_name, &opts.output) {
+            Ok(ws_root) => {
+                findings.retain(|f| f.path.starts_with(&ws_root));
+            }
+            Err(code) => return code,
+        }
+    }
+
     // Sort findings
     match opts.sort {
         SortBy::Cyclomatic => findings.sort_by(|a, b| b.cyclomatic.cmp(&a.cyclomatic)),
         SortBy::Cognitive => findings.sort_by(|a, b| b.cognitive.cmp(&a.cognitive)),
         SortBy::Lines => findings.sort_by(|a, b| b.line_count.cmp(&a.line_count)),
+    }
+
+    // Save baseline (before filtering, captures full state)
+    if let Some(save_path) = opts.save_baseline {
+        let baseline = HealthBaselineData::from_findings(&findings, &config.root);
+        match serde_json::to_string_pretty(&baseline) {
+            Ok(json) => {
+                if let Err(e) = std::fs::write(save_path, json) {
+                    eprintln!("Warning: failed to save health baseline: {e}");
+                } else if !opts.quiet {
+                    eprintln!("Saved health baseline to {}", save_path.display());
+                }
+            }
+            Err(e) => eprintln!("Warning: failed to serialize health baseline: {e}"),
+        }
+    }
+
+    // Filter against baseline
+    if let Some(load_path) = opts.baseline {
+        match std::fs::read_to_string(load_path) {
+            Ok(json) => match serde_json::from_str::<HealthBaselineData>(&json) {
+                Ok(baseline) => {
+                    findings = filter_new_health_findings(findings, &baseline, &config.root);
+                }
+                Err(e) => eprintln!("Warning: failed to parse health baseline: {e}"),
+            },
+            Err(e) => eprintln!("Warning: failed to read health baseline: {e}"),
+        }
     }
 
     // Capture total before --top truncation

@@ -244,6 +244,53 @@ pub fn recompute_stats(report: &DuplicationReport) -> fallow_core::duplicates::D
     }
 }
 
+// ── Health baseline ─────────────────────────────────────────────────
+
+/// Baseline data for health (complexity) comparison.
+///
+/// Each finding is keyed by `relative_path:function_name:line` for stable comparison.
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct HealthBaselineData {
+    pub findings: Vec<String>,
+}
+
+impl HealthBaselineData {
+    /// Build a health baseline from a list of findings.
+    pub fn from_findings(findings: &[crate::health_types::HealthFinding], root: &Path) -> Self {
+        Self {
+            findings: findings
+                .iter()
+                .map(|f| health_finding_key(f, root))
+                .collect(),
+        }
+    }
+}
+
+/// Generate a stable key for a health finding.
+fn health_finding_key(finding: &crate::health_types::HealthFinding, root: &Path) -> String {
+    let relative = finding
+        .path
+        .strip_prefix(root)
+        .unwrap_or(&finding.path)
+        .to_string_lossy()
+        .replace('\\', "/");
+    format!("{}:{}:{}", relative, finding.name, finding.line)
+}
+
+/// Filter health findings to only include those not present in the baseline.
+pub fn filter_new_health_findings(
+    mut findings: Vec<crate::health_types::HealthFinding>,
+    baseline: &HealthBaselineData,
+    root: &Path,
+) -> Vec<crate::health_types::HealthFinding> {
+    let baseline_keys: FxHashSet<&str> = baseline.findings.iter().map(|s| s.as_str()).collect();
+    findings.retain(|f| {
+        let key = health_finding_key(f, root);
+        !baseline_keys.contains(key.as_str())
+    });
+    findings
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -605,5 +652,57 @@ mod tests {
         };
         let stats = super::recompute_stats(&report);
         assert_eq!(stats.duplication_percentage, 0.0);
+    }
+
+    // ── HealthBaselineData ──────────────────────────────────────────
+
+    fn make_health_finding(
+        root: &Path,
+        name: &str,
+        line: u32,
+    ) -> crate::health_types::HealthFinding {
+        crate::health_types::HealthFinding {
+            path: root.join("src/utils.ts"),
+            name: name.to_string(),
+            line,
+            col: 0,
+            cyclomatic: 25,
+            cognitive: 30,
+            line_count: 80,
+            exceeded: crate::health_types::ExceededThreshold::Both,
+        }
+    }
+
+    #[test]
+    fn health_baseline_roundtrip() {
+        let root = PathBuf::from("/project");
+        let findings = vec![make_health_finding(&root, "parseExpression", 42)];
+        let baseline = HealthBaselineData::from_findings(&findings, &root);
+        let json = serde_json::to_string(&baseline).unwrap();
+        let deserialized: HealthBaselineData = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.findings, baseline.findings);
+        assert_eq!(baseline.findings, vec!["src/utils.ts:parseExpression:42"]);
+    }
+
+    #[test]
+    fn health_baseline_filters_known_findings() {
+        let root = PathBuf::from("/project");
+        let findings = vec![
+            make_health_finding(&root, "parseExpression", 42),
+            make_health_finding(&root, "newFunction", 100),
+        ];
+        let baseline = HealthBaselineData::from_findings(&findings[..1], &root);
+        let filtered = filter_new_health_findings(findings, &baseline, &root);
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].name, "newFunction");
+    }
+
+    #[test]
+    fn health_baseline_empty_keeps_all() {
+        let root = PathBuf::from("/project");
+        let findings = vec![make_health_finding(&root, "parseExpression", 42)];
+        let baseline = HealthBaselineData { findings: vec![] };
+        let filtered = filter_new_health_findings(findings, &baseline, &root);
+        assert_eq!(filtered.len(), 1);
     }
 }
