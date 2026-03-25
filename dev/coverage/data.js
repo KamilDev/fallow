@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774463177483,
+  "lastUpdate": 1774464690870,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -1444,6 +1444,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/81d804e3bd71041e0036a3eb5d982238ccd0ca44"
         },
         "date": 1774463177073,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 87.5,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "b5355ff0299f405dfc0b12da19fc641528562b95",
+          "message": "docs: escape angle brackets in doc comments for rustdoc compatibility",
+          "timestamp": "2026-03-25T19:50:41+01:00",
+          "tree_id": "8c4b2d0f8360f5d56f7a7408058337c3ac75b855",
+          "url": "https://github.com/fallow-rs/fallow/commit/b5355ff0299f405dfc0b12da19fc641528562b95"
+        },
+        "date": 1774464689877,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
