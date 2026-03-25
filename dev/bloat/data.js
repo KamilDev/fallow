@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774461471033,
+  "lastUpdate": 1774464806664,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -429,6 +429,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/1dc7818b00ce8eae81af8649f11f1e48628dc079"
         },
         "date": 1774461470449,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 118931600,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "b5355ff0299f405dfc0b12da19fc641528562b95",
+          "message": "docs: escape angle brackets in doc comments for rustdoc compatibility",
+          "timestamp": "2026-03-25T19:50:41+01:00",
+          "tree_id": "8c4b2d0f8360f5d56f7a7408058337c3ac75b855",
+          "url": "https://github.com/fallow-rs/fallow/commit/b5355ff0299f405dfc0b12da19fc641528562b95"
+        },
+        "date": 1774464805609,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
