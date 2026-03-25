@@ -218,7 +218,10 @@ pub fn run_check(opts: &CheckOptions<'_>) -> ExitCode {
     opts.filters.apply(&mut results);
 
     // Baseline handling
-    handle_baseline(&mut results, opts.save_baseline, opts.baseline, opts.quiet);
+    if let Some(exit) = handle_baseline(&mut results, opts.save_baseline, opts.baseline, opts.quiet)
+    {
+        return exit;
+    }
 
     // SARIF file write
     if let Some(sarif_path) = opts.sarif_file {
@@ -253,34 +256,58 @@ pub fn run_check(opts: &CheckOptions<'_>) -> ExitCode {
 // ── Baseline helpers ────────────────────────────────────────────
 
 /// Save baseline and/or compare against an existing baseline.
+///
+/// Returns `Some(ExitCode)` on fatal errors (serialization/IO failure),
+/// `None` on success.
 fn handle_baseline(
     results: &mut fallow_core::results::AnalysisResults,
     save_path: Option<&std::path::Path>,
     load_path: Option<&std::path::Path>,
     quiet: bool,
-) {
+) -> Option<ExitCode> {
     // Save baseline if requested
     if let Some(baseline_path) = save_path {
         let baseline_data = BaselineData::from_results(results);
-        if let Ok(json) = serde_json::to_string_pretty(&baseline_data) {
-            if let Err(e) = std::fs::write(baseline_path, json) {
-                eprintln!("Failed to save baseline: {e}");
-            } else if !quiet {
-                eprintln!("Baseline saved to {}", baseline_path.display());
+        match serde_json::to_string_pretty(&baseline_data) {
+            Ok(json) => {
+                if let Err(e) = std::fs::write(baseline_path, json) {
+                    eprintln!("Error: failed to save baseline: {e}");
+                    return Some(ExitCode::from(2));
+                }
+                if !quiet {
+                    eprintln!("Baseline saved to {}", baseline_path.display());
+                }
+            }
+            Err(e) => {
+                eprintln!("Error: failed to serialize baseline: {e}");
+                return Some(ExitCode::from(2));
             }
         }
     }
 
     // Compare against baseline if provided
-    if let Some(baseline_path) = load_path
-        && let Ok(content) = std::fs::read_to_string(baseline_path)
-        && let Ok(baseline_data) = serde_json::from_str::<BaselineData>(&content)
-    {
-        *results = filter_new_issues(std::mem::take(results), &baseline_data);
-        if !quiet {
-            eprintln!("Comparing against baseline: {}", baseline_path.display());
+    if let Some(baseline_path) = load_path {
+        match std::fs::read_to_string(baseline_path) {
+            Ok(content) => match serde_json::from_str::<BaselineData>(&content) {
+                Ok(baseline_data) => {
+                    *results = filter_new_issues(std::mem::take(results), &baseline_data);
+                    if !quiet {
+                        eprintln!("Comparing against baseline: {}", baseline_path.display());
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Error: failed to parse baseline: {e}");
+                    return Some(ExitCode::from(2));
+                }
+            },
+            Err(e) => {
+                eprintln!("Error: failed to read baseline: {e}");
+                return Some(ExitCode::from(2));
+            }
         }
     }
+
+    None
 }
 
 #[cfg(test)]

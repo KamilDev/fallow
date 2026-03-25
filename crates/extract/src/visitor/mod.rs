@@ -6,6 +6,7 @@ use oxc_ast::ast::*;
 use oxc_ast_visit::Visit;
 use oxc_ast_visit::walk;
 use oxc_span::Span;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::suppress::Suppression;
 use crate::{
@@ -30,21 +31,21 @@ pub(crate) struct ModuleInfoExtractor {
     pub(crate) whole_object_uses: Vec<String>,
     pub(crate) has_cjs_exports: bool,
     /// Spans of `require()` calls already handled via destructured require detection.
-    handled_require_spans: Vec<Span>,
+    handled_require_spans: FxHashSet<Span>,
     /// Spans of `import()` expressions already handled via variable declarator detection.
-    handled_import_spans: Vec<Span>,
+    handled_import_spans: FxHashSet<Span>,
     /// Local names of namespace imports and namespace-like bindings
     /// (e.g., `import * as ns`, `const mod = require(...)`, `const mod = await import(...)`).
     /// Used to detect destructuring patterns like `const { a, b } = ns`.
     namespace_binding_names: Vec<String>,
     /// Local names bound to `new ClassName()` expressions.
-    /// Maps (local_name, class_name) so that `x.method()` member accesses
+    /// Maps local_name → class_name so that `x.method()` member accesses
     /// on an instance `const x = new Foo()` count against `Foo`'s members.
-    instance_binding_names: Vec<(String, String)>,
+    instance_binding_names: FxHashMap<String, String>,
 }
 
 impl ModuleInfoExtractor {
-    pub(crate) const fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             exports: Vec::new(),
             imports: Vec::new(),
@@ -55,10 +56,10 @@ impl ModuleInfoExtractor {
             member_accesses: Vec::new(),
             whole_object_uses: Vec::new(),
             has_cjs_exports: false,
-            handled_require_spans: Vec::new(),
-            handled_import_spans: Vec::new(),
+            handled_require_spans: FxHashSet::default(),
+            handled_import_spans: FxHashSet::default(),
             namespace_binding_names: Vec::new(),
-            instance_binding_names: Vec::new(),
+            instance_binding_names: FxHashMap::default(),
         }
     }
 
@@ -76,9 +77,8 @@ impl ModuleInfoExtractor {
             .iter()
             .filter_map(|access| {
                 self.instance_binding_names
-                    .iter()
-                    .find(|(local, _)| *local == access.object)
-                    .map(|(_, class_name)| MemberAccess {
+                    .get(&access.object)
+                    .map(|class_name| MemberAccess {
                         object: class_name.clone(),
                         member: access.member.clone(),
                     })
@@ -87,12 +87,7 @@ impl ModuleInfoExtractor {
         let additional_whole: Vec<String> = self
             .whole_object_uses
             .iter()
-            .filter_map(|name| {
-                self.instance_binding_names
-                    .iter()
-                    .find(|(local, _)| local == name)
-                    .map(|(_, class_name)| class_name.clone())
-            })
+            .filter_map(|name| self.instance_binding_names.get(name).cloned())
             .collect();
         self.member_accesses.extend(additional_accesses);
         self.whole_object_uses.extend(additional_whole);
@@ -301,7 +296,7 @@ impl ModuleInfoExtractor {
                     destructured_names: names,
                     local_name: None,
                 });
-                self.handled_require_spans.push(call.span);
+                self.handled_require_spans.insert(call.span);
             }
             BindingPattern::BindingIdentifier(id) => {
                 let local = id.name.to_string();
@@ -312,7 +307,7 @@ impl ModuleInfoExtractor {
                     destructured_names: Vec::new(),
                     local_name: Some(local),
                 });
-                self.handled_require_spans.push(call.span);
+                self.handled_require_spans.insert(call.span);
             }
             _ => {}
         }
@@ -360,7 +355,7 @@ impl ModuleInfoExtractor {
                     destructured_names: names,
                     local_name: None,
                 });
-                self.handled_import_spans.push(import_expr.span);
+                self.handled_import_spans.insert(import_expr.span);
             }
             BindingPattern::BindingIdentifier(id) => {
                 let local = id.name.to_string();
@@ -371,7 +366,7 @@ impl ModuleInfoExtractor {
                     destructured_names: Vec::new(),
                     local_name: Some(local),
                 });
-                self.handled_import_spans.push(import_expr.span);
+                self.handled_import_spans.insert(import_expr.span);
             }
             _ => {}
         }
@@ -652,7 +647,7 @@ impl<'a> Visit<'a> for ModuleInfoExtractor {
                 && !is_builtin_constructor(callee.name.as_str())
             {
                 self.instance_binding_names
-                    .push((id.name.to_string(), callee.name.to_string()));
+                    .insert(id.name.to_string(), callee.name.to_string());
                 // No `continue` — falls through to dynamic import detection (which
                 // won't match NewExpression) and then the loop continues.
             }

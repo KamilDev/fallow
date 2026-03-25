@@ -15,8 +15,7 @@ fn doc_link(anchor: &str) -> Option<CodeDescription> {
     Url::parse(&url).ok().map(|href| CodeDescription { href })
 }
 
-/// LSP range at position (0,0) used for file-level and package.json diagnostics.
-/// LSP range covering the entire first line — used for file-level diagnostics.
+/// LSP range covering the entire first line — used for file-level and package.json diagnostics.
 pub const FIRST_LINE_RANGE: Range = Range {
     start: Position {
         line: 0,
@@ -84,7 +83,7 @@ pub fn build_diagnostics(
         }
     }
 
-    // Unused files: path-only diagnostic at (0,0)
+    // Unused files: file-level diagnostic on first line
     for file in &results.unused_files {
         if let Ok(uri) = Url::from_file_path(&file.path) {
             diagnostics_by_file
@@ -190,7 +189,9 @@ pub fn build_diagnostics(
                 },
                 severity: Some(DiagnosticSeverity::WARNING),
                 source: Some("fallow".to_string()),
-                code: Some(NumberOrString::String("unused-optional-dependency".to_string())),
+                code: Some(NumberOrString::String(
+                    "unused-optional-dependency".to_string(),
+                )),
                 code_description: doc_link("unused-optionaldependencies"),
                 message: format!("Unused optionalDependency: {}", dep.package_name),
                 ..Default::default()
@@ -379,9 +380,11 @@ pub fn build_diagnostics(
                     severity: Some(DiagnosticSeverity::INFORMATION),
                     source: Some("fallow".to_string()),
                     code: Some(NumberOrString::String("code-duplication".to_string())),
-                    code_description: Url::parse("https://docs.fallow.tools/explanations/duplication")
-                        .ok()
-                        .map(|href| CodeDescription { href }),
+                    code_description: Url::parse(
+                        "https://docs.fallow.tools/explanations/duplication",
+                    )
+                    .ok()
+                    .map(|href| CodeDescription { href }),
                     message: format!(
                         "Duplicated code block ({} lines, {} instances)",
                         group.line_count,
@@ -463,6 +466,32 @@ pub fn build_diagnostics(
                     },
                     ..Default::default()
                 });
+        }
+    }
+
+    // Type-only dependencies: could be moved to devDependencies
+    for dep in &results.type_only_dependencies {
+        if let Ok(dep_uri) = Url::from_file_path(&dep.path) {
+            let line = dep.line.saturating_sub(1);
+            let entry = diagnostics_by_file.entry(dep_uri).or_default();
+            entry.push(Diagnostic {
+                range: Range {
+                    start: Position { line, character: 0 },
+                    end: Position {
+                        line,
+                        character: u32::MAX,
+                    },
+                },
+                severity: Some(DiagnosticSeverity::INFORMATION),
+                source: Some("fallow".to_string()),
+                code: Some(NumberOrString::String("type-only-dependency".to_string())),
+                code_description: doc_link("type-only-dependencies"),
+                message: format!(
+                    "Type-only dependency: {} (only used via type imports, could be a devDependency)",
+                    dep.package_name
+                ),
+                ..Default::default()
+            });
         }
     }
 

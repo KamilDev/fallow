@@ -169,15 +169,11 @@ pub fn is_builtin_module(name: &str) -> bool {
         "zlib",
     ];
     let stripped = name.strip_prefix("node:").unwrap_or(name);
-    // Check exact match or subpath (e.g., "fs/promises" matches "fs/promises",
-    // "assert/strict" matches "assert/strict")
-    builtins.contains(&stripped) || {
-        // Handle deep subpaths like "stream/consumers" or "test/reporters"
-        stripped
-            .split('/')
-            .next()
-            .is_some_and(|root| builtins.contains(&root))
-    }
+    // All known builtins and their subpaths (fs/promises, path/posix, test/reporters,
+    // stream/consumers, etc.) are listed explicitly in the array above.
+    // No fallback root-segment matching — it would false-positive on npm packages
+    // like test-utils, url-parse, path-browserify, stream-browserify, events-emitter.
+    builtins.contains(&stripped)
 }
 
 /// Dependencies that are used implicitly (not via imports).
@@ -407,6 +403,20 @@ mod tests {
         assert!(!is_builtin_module("filesystem"));
         assert!(!is_builtin_module("pathlib"));
         assert!(!is_builtin_module("node:react"));
+    }
+
+    /// Regression: npm packages whose name starts with a Node builtin name
+    /// (e.g., "test-utils", "url-parse") must not be classified as builtins.
+    #[test]
+    fn not_builtin_npm_packages_with_builtin_prefix() {
+        assert!(!is_builtin_module("test-utils/helpers"));
+        assert!(!is_builtin_module("url-parse"));
+        assert!(!is_builtin_module("path-browserify"));
+        assert!(!is_builtin_module("stream-browserify"));
+        assert!(!is_builtin_module("events-emitter"));
+        assert!(!is_builtin_module("util-deprecate"));
+        assert!(!is_builtin_module("os-tmpdir"));
+        assert!(!is_builtin_module("net-ping"));
     }
 
     // is_implicit_dependency tests

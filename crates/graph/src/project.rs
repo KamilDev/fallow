@@ -26,6 +26,10 @@ pub struct ProjectState {
 impl ProjectState {
     /// Build a new project state from discovered files and workspaces.
     pub fn new(files: Vec<DiscoveredFile>, workspaces: Vec<WorkspaceInfo>) -> Self {
+        debug_assert!(
+            files.iter().enumerate().all(|(i, f)| f.id.0 as usize == i),
+            "FileIds must be densely packed starting at 0"
+        );
         let path_to_id = files.iter().map(|f| (f.path.clone(), f.id)).collect();
         Self {
             files,

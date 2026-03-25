@@ -235,7 +235,7 @@ fn propagate_named_re_export(
         .exports
         .iter()
         .filter(|e| e.name.matches_str(exported_name))
-        .flat_map(|e| e.references.clone())
+        .flat_map(|e| e.references.iter().cloned())
         .collect();
 
     if refs_on_barrel.is_empty() {

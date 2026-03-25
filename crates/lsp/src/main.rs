@@ -39,6 +39,7 @@ struct AnalysisCompleteParams {
     unused_types: usize,
     unused_dependencies: usize,
     unused_dev_dependencies: usize,
+    unused_optional_dependencies: usize,
     unused_enum_members: usize,
     unused_class_members: usize,
     unresolved_imports: usize,
@@ -58,6 +59,7 @@ const ISSUE_TYPE_TO_DIAGNOSTIC_CODE: &[(&str, &str)] = &[
     ("unused-types", "unused-type"),
     ("unused-dependencies", "unused-dependency"),
     ("unused-dev-dependencies", "unused-dev-dependency"),
+    ("unused-optional-dependencies", "unused-optional-dependency"),
     ("unused-enum-members", "unused-enum-member"),
     ("unused-class-members", "unused-class-member"),
     ("unresolved-imports", "unresolved-import"),
@@ -369,11 +371,17 @@ impl FallowLspServer {
 
         match join_result {
             Ok((results, duplication, roots)) => {
-                // Publish diagnostics using all analysis roots
+                // Collect diagnostics across ALL roots before publishing,
+                // so multi-root monorepos don't overwrite each other's diagnostics.
+                let mut all_diagnostics: FxHashMap<Url, Vec<Diagnostic>> = FxHashMap::default();
                 for analysis_root in &roots {
-                    self.publish_diagnostics(&results, &duplication, analysis_root)
-                        .await;
+                    let by_file =
+                        diagnostics::build_diagnostics(&results, &duplication, analysis_root);
+                    for (uri, diags) in by_file {
+                        all_diagnostics.entry(uri).or_default().extend(diags);
+                    }
                 }
+                self.publish_collected_diagnostics(all_diagnostics).await;
 
                 // Send summary stats to the client before storing results
                 self.client
@@ -384,6 +392,7 @@ impl FallowLspServer {
                         unused_types: results.unused_types.len(),
                         unused_dependencies: results.unused_dependencies.len(),
                         unused_dev_dependencies: results.unused_dev_dependencies.len(),
+                        unused_optional_dependencies: results.unused_optional_dependencies.len(),
                         unused_enum_members: results.unused_enum_members.len(),
                         unused_class_members: results.unused_class_members.len(),
                         unresolved_imports: results.unresolved_imports.len(),
@@ -414,13 +423,10 @@ impl FallowLspServer {
     }
 
     #[expect(clippy::significant_drop_tightening)]
-    async fn publish_diagnostics(
+    async fn publish_collected_diagnostics(
         &self,
-        results: &AnalysisResults,
-        duplication: &DuplicationReport,
-        root: &std::path::Path,
+        diagnostics_by_file: FxHashMap<Url, Vec<Diagnostic>>,
     ) {
-        let diagnostics_by_file = diagnostics::build_diagnostics(results, duplication, root);
         let disabled = self.disabled_diagnostic_codes.read().await;
 
         // Collect the set of URIs we are publishing to
