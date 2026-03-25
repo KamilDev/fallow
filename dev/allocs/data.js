@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774428616650,
+  "lastUpdate": 1774428806647,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -1319,6 +1319,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Peak Allocations",
             "value": 3982,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "c479b3f59c31c6ac203f19e8ac04c956fb27188c",
+          "message": "fix: qualify Span in benchmark to resolve ambiguous import",
+          "timestamp": "2026-03-25T09:51:51+01:00",
+          "tree_id": "2bf39f35c8b234f291084a777104795c11dd36df",
+          "url": "https://github.com/fallow-rs/fallow/commit/c479b3f59c31c6ac203f19e8ac04c956fb27188c"
+        },
+        "date": 1774428805853,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3035073,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 12046,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 421570,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 3970,
             "unit": "allocations"
           }
         ]
