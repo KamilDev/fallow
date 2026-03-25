@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774455609545,
+  "lastUpdate": 1774456603821,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -1270,6 +1270,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/e2532d0dcdf3aee2e9a0db9763978cc4a3fd4e3a"
         },
         "date": 1774455609130,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 90,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "2436f291ef4d8bf690d0aec9c4d4d517533888a8",
+          "message": "fix: update action.yml name and description for Marketplace compliance\n\nName must match existing Marketplace listing and description must be\nunder 125 characters.",
+          "timestamp": "2026-03-25T17:35:31+01:00",
+          "tree_id": "7e01123220b5a6875599af866abfdaf18154b297",
+          "url": "https://github.com/fallow-rs/fallow/commit/2436f291ef4d8bf690d0aec9c4d4d517533888a8"
+        },
+        "date": 1774456603488,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
