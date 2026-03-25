@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774461973937,
+  "lastUpdate": 1774463177483,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -1415,6 +1415,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/3e8568d2d21782f0a8f25619495d5dc34f669d6d"
         },
         "date": 1774461973546,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 87.5,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "81d804e3bd71041e0036a3eb5d982238ccd0ca44",
+          "message": "docs: polish README — remove implementation details, add incremental adoption example",
+          "timestamp": "2026-03-25T19:25:34+01:00",
+          "tree_id": "cb7c168c7beada26842100ca0848c53712c57d71",
+          "url": "https://github.com/fallow-rs/fallow/commit/81d804e3bd71041e0036a3eb5d982238ccd0ca44"
+        },
+        "date": 1774463177073,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
