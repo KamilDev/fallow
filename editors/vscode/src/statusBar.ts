@@ -9,6 +9,7 @@ export interface AnalysisCompleteParams {
   unusedTypes: number;
   unusedDependencies: number;
   unusedDevDependencies: number;
+  unusedOptionalDependencies: number;
   unusedEnumMembers: number;
   unusedClassMembers: number;
   unresolvedImports: number;
@@ -120,6 +121,9 @@ export const updateStatusBarFromLsp = (params: AnalysisCompleteParams): void => 
   }
   if (params.unusedDevDependencies > 0) {
     lines.push(`$(warning) ${params.unusedDevDependencies} unused dev dependencies`);
+  }
+  if (params.unusedOptionalDependencies > 0) {
+    lines.push(`$(warning) ${params.unusedOptionalDependencies} unused optional dependencies`);
   }
   if (params.unusedEnumMembers > 0) {
     lines.push(`$(info) ${params.unusedEnumMembers} unused enum members`);

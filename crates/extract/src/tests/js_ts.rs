@@ -1083,3 +1083,37 @@ export default function Component() {
         "JSX retry should extract the default export from .js file with JSX"
     );
 }
+
+#[test]
+fn jsx_retry_preserves_jsdoc_public_tag() {
+    // Regression: @public tags were read from the original failed parse's comments
+    // instead of the retry parse's comments, silently ignoring @public on JSX .js files.
+    let source = r#"
+/** @public */
+export const Button = ({ children }) => <button className="btn">{children}</button>;
+"#;
+    let info = parse_as_js(source);
+    assert!(
+        !info.exports.is_empty(),
+        "JSX retry should extract Button export"
+    );
+    assert!(
+        info.exports[0].is_public,
+        "@public JSDoc tag must be recognized on JSX exports in .js files"
+    );
+}
+
+#[test]
+fn jsx_retry_preserves_suppressions() {
+    // Regression: suppression comments were parsed from the original failed parse's
+    // comments instead of the retry parse's comments.
+    let source = r#"
+// fallow-ignore-next-line unused-export
+export const Unused = ({ text }) => <span className="unused-component">{text}</span>;
+"#;
+    let info = parse_as_js(source);
+    assert!(
+        !info.suppressions.is_empty(),
+        "Suppressions must be parsed from retry parse comments, not the original failed parse"
+    );
+}

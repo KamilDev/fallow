@@ -40,8 +40,10 @@ pub fn parse_source_to_module(
     let allocator = Allocator::default();
     let parser_return = Parser::new(&allocator, source, source_type).parse();
 
-    // Parse suppression comments
-    let suppressions = crate::suppress::parse_suppressions(&parser_return.program.comments, source);
+    // Parse suppression comments from AST comments initially;
+    // re-parsed from retry comments below if JSX retry succeeds.
+    let mut suppressions =
+        crate::suppress::parse_suppressions(&parser_return.program.comments, source);
 
     // Extract imports/exports even if there are parse errors
     let mut extractor = ModuleInfoExtractor::new();
@@ -60,6 +62,7 @@ pub fn parse_source_to_module(
     // from Flow types or JSX in .js files), retry with JSX/TSX source type as a fallback.
     let total_extracted =
         extractor.exports.len() + extractor.imports.len() + extractor.re_exports.len();
+    let mut used_retry = false;
     if total_extracted == 0 && source.len() > 100 && !source_type.is_jsx() {
         let jsx_type = if source_type.is_typescript() {
             SourceType::tsx()
@@ -79,16 +82,28 @@ pub fn parse_source_to_module(
             // Recompute complexity from the successful retry parse
             complexity =
                 crate::complexity::compute_complexity(&retry_return.program, line_offsets.clone());
+            // Re-parse suppressions from the retry's comments (not the original failed parse)
+            suppressions =
+                crate::suppress::parse_suppressions(&retry_return.program.comments, source);
+            // Apply @public tags from the retry parse's comments (not the original failed parse)
+            apply_jsdoc_public_tags(
+                &mut retry_extractor.exports,
+                &retry_return.program.comments,
+                source,
+            );
             extractor = retry_extractor;
+            used_retry = true;
         }
     }
 
-    // Apply JSDoc @public tags to exports
-    apply_jsdoc_public_tags(
-        &mut extractor.exports,
-        &parser_return.program.comments,
-        source,
-    );
+    // Apply JSDoc @public tags from the original parse (skip if retry was used above)
+    if !used_retry {
+        apply_jsdoc_public_tags(
+            &mut extractor.exports,
+            &parser_return.program.comments,
+            source,
+        );
+    }
 
     let mut info = extractor.into_module_info(file_id, content_hash, suppressions);
     info.unused_import_bindings = unused_bindings;

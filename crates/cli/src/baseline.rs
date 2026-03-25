@@ -14,6 +14,27 @@ pub struct BaselineData {
     /// Circular dependency chains, keyed by sorted file paths joined with `->`.
     #[serde(default)]
     pub circular_dependencies: Vec<String>,
+    /// Unused optional dependencies, keyed by package name.
+    #[serde(default)]
+    pub unused_optional_dependencies: Vec<String>,
+    /// Unused enum members, keyed by `file:parent.member`.
+    #[serde(default)]
+    pub unused_enum_members: Vec<String>,
+    /// Unused class members, keyed by `file:parent.member`.
+    #[serde(default)]
+    pub unused_class_members: Vec<String>,
+    /// Unresolved imports, keyed by `file:specifier`.
+    #[serde(default)]
+    pub unresolved_imports: Vec<String>,
+    /// Unlisted dependencies, keyed by package name.
+    #[serde(default)]
+    pub unlisted_dependencies: Vec<String>,
+    /// Duplicate exports, keyed by export name.
+    #[serde(default)]
+    pub duplicate_exports: Vec<String>,
+    /// Type-only dependencies, keyed by package name.
+    #[serde(default)]
+    pub type_only_dependencies: Vec<String>,
 }
 
 impl BaselineData {
@@ -61,8 +82,74 @@ impl BaselineData {
                 .iter()
                 .map(circular_dep_key)
                 .collect(),
+            unused_optional_dependencies: results
+                .unused_optional_dependencies
+                .iter()
+                .map(|d| d.package_name.clone())
+                .collect(),
+            unused_enum_members: results
+                .unused_enum_members
+                .iter()
+                .map(|m| {
+                    format!(
+                        "{}:{}.{}",
+                        m.path.to_string_lossy().replace('\\', "/"),
+                        m.parent_name,
+                        m.member_name
+                    )
+                })
+                .collect(),
+            unused_class_members: results
+                .unused_class_members
+                .iter()
+                .map(|m| {
+                    format!(
+                        "{}:{}.{}",
+                        m.path.to_string_lossy().replace('\\', "/"),
+                        m.parent_name,
+                        m.member_name
+                    )
+                })
+                .collect(),
+            unresolved_imports: results
+                .unresolved_imports
+                .iter()
+                .map(|i| {
+                    format!(
+                        "{}:{}",
+                        i.path.to_string_lossy().replace('\\', "/"),
+                        i.specifier
+                    )
+                })
+                .collect(),
+            unlisted_dependencies: results
+                .unlisted_dependencies
+                .iter()
+                .map(|d| d.package_name.clone())
+                .collect(),
+            duplicate_exports: results
+                .duplicate_exports
+                .iter()
+                .map(duplicate_export_key)
+                .collect(),
+            type_only_dependencies: results
+                .type_only_dependencies
+                .iter()
+                .map(|d| d.package_name.clone())
+                .collect(),
         }
     }
+}
+
+/// Generate a stable key for a duplicate export: `name|sorted_paths`.
+fn duplicate_export_key(dup: &fallow_core::results::DuplicateExport) -> String {
+    let mut locs: Vec<String> = dup
+        .locations
+        .iter()
+        .map(|l| l.path.to_string_lossy().replace('\\', "/"))
+        .collect();
+    locs.sort();
+    format!("{}|{}", dup.export_name, locs.join("|"))
 }
 
 /// Generate a stable key for a circular dependency based on sorted file paths.
@@ -133,6 +220,87 @@ pub fn filter_new_issues(
         let key = circular_dep_key(c);
         !baseline_circular.contains(key.as_str())
     });
+
+    let baseline_optional_deps: FxHashSet<&str> = baseline
+        .unused_optional_dependencies
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+    results
+        .unused_optional_dependencies
+        .retain(|d| !baseline_optional_deps.contains(d.package_name.as_str()));
+
+    let baseline_enum_members: FxHashSet<&str> = baseline
+        .unused_enum_members
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+    results.unused_enum_members.retain(|m| {
+        let key = format!(
+            "{}:{}.{}",
+            m.path.to_string_lossy().replace('\\', "/"),
+            m.parent_name,
+            m.member_name
+        );
+        !baseline_enum_members.contains(key.as_str())
+    });
+
+    let baseline_class_members: FxHashSet<&str> = baseline
+        .unused_class_members
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+    results.unused_class_members.retain(|m| {
+        let key = format!(
+            "{}:{}.{}",
+            m.path.to_string_lossy().replace('\\', "/"),
+            m.parent_name,
+            m.member_name
+        );
+        !baseline_class_members.contains(key.as_str())
+    });
+
+    let baseline_unresolved: FxHashSet<&str> = baseline
+        .unresolved_imports
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+    results.unresolved_imports.retain(|i| {
+        let key = format!(
+            "{}:{}",
+            i.path.to_string_lossy().replace('\\', "/"),
+            i.specifier
+        );
+        !baseline_unresolved.contains(key.as_str())
+    });
+
+    let baseline_unlisted: FxHashSet<&str> = baseline
+        .unlisted_dependencies
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+    results
+        .unlisted_dependencies
+        .retain(|d| !baseline_unlisted.contains(d.package_name.as_str()));
+
+    let baseline_dup_exports: FxHashSet<&str> = baseline
+        .duplicate_exports
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+    results.duplicate_exports.retain(|d| {
+        let key = duplicate_export_key(d);
+        !baseline_dup_exports.contains(key.as_str())
+    });
+
+    let baseline_type_only: FxHashSet<&str> = baseline
+        .type_only_dependencies
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+    results
+        .type_only_dependencies
+        .retain(|d| !baseline_type_only.contains(d.package_name.as_str()));
 
     results
 }
@@ -249,21 +417,44 @@ pub fn recompute_stats(report: &DuplicationReport) -> fallow_core::duplicates::D
 /// Baseline data for health (complexity) comparison.
 ///
 /// Each finding is keyed by `relative_path:function_name:line` for stable comparison.
+/// Target keys use `relative_path:category` so category changes surface as new targets.
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct HealthBaselineData {
     pub findings: Vec<String>,
+    /// Refactoring target keys: `relative_path:category`.
+    #[serde(default)]
+    pub target_keys: Vec<String>,
 }
 
 impl HealthBaselineData {
-    /// Build a health baseline from a list of findings.
-    pub fn from_findings(findings: &[crate::health_types::HealthFinding], root: &Path) -> Self {
+    /// Build a health baseline from findings and targets.
+    pub fn from_findings(
+        findings: &[crate::health_types::HealthFinding],
+        targets: &[crate::health_types::RefactoringTarget],
+        root: &Path,
+    ) -> Self {
         Self {
             findings: findings
                 .iter()
                 .map(|f| health_finding_key(f, root))
                 .collect(),
+            target_keys: targets
+                .iter()
+                .map(|t| target_baseline_key(t, root))
+                .collect(),
         }
     }
+}
+
+/// Generate a stable key for a refactoring target: `relative_path:category`.
+fn target_baseline_key(target: &crate::health_types::RefactoringTarget, root: &Path) -> String {
+    let relative = target
+        .path
+        .strip_prefix(root)
+        .unwrap_or(&target.path)
+        .to_string_lossy()
+        .replace('\\', "/");
+    format!("{}:{}", relative, target.category.label())
 }
 
 /// Generate a stable key for a health finding.
@@ -289,6 +480,20 @@ pub fn filter_new_health_findings(
         !baseline_keys.contains(key.as_str())
     });
     findings
+}
+
+/// Filter refactoring targets to only include those not present in the baseline.
+pub fn filter_new_health_targets(
+    mut targets: Vec<crate::health_types::RefactoringTarget>,
+    baseline: &HealthBaselineData,
+    root: &Path,
+) -> Vec<crate::health_types::RefactoringTarget> {
+    let baseline_keys: FxHashSet<&str> = baseline.target_keys.iter().map(|s| s.as_str()).collect();
+    targets.retain(|t| {
+        let key = target_baseline_key(t, root);
+        !baseline_keys.contains(key.as_str())
+    });
+    targets
 }
 
 #[cfg(test)]
@@ -416,6 +621,13 @@ mod tests {
             unused_dependencies: vec![],
             unused_dev_dependencies: vec![],
             circular_dependencies: vec![],
+            unused_optional_dependencies: vec![],
+            unused_enum_members: vec![],
+            unused_class_members: vec![],
+            unresolved_imports: vec![],
+            unlisted_dependencies: vec![],
+            duplicate_exports: vec![],
+            type_only_dependencies: vec![],
         };
         let results = AnalysisResults {
             unused_files: vec![
@@ -445,6 +657,13 @@ mod tests {
             unused_dependencies: vec![],
             unused_dev_dependencies: vec![],
             circular_dependencies: vec![],
+            unused_optional_dependencies: vec![],
+            unused_enum_members: vec![],
+            unused_class_members: vec![],
+            unresolved_imports: vec![],
+            unlisted_dependencies: vec![],
+            duplicate_exports: vec![],
+            type_only_dependencies: vec![],
         };
         let results = make_results();
         let filtered = filter_new_issues(results, &baseline);
@@ -461,6 +680,13 @@ mod tests {
             unused_dependencies: vec![],
             unused_dev_dependencies: vec![],
             circular_dependencies: vec![],
+            unused_optional_dependencies: vec![],
+            unused_enum_members: vec![],
+            unused_class_members: vec![],
+            unresolved_imports: vec![],
+            unlisted_dependencies: vec![],
+            duplicate_exports: vec![],
+            type_only_dependencies: vec![],
         };
         let results = AnalysisResults {
             unused_exports: vec![
@@ -677,7 +903,7 @@ mod tests {
     fn health_baseline_roundtrip() {
         let root = PathBuf::from("/project");
         let findings = vec![make_health_finding(&root, "parseExpression", 42)];
-        let baseline = HealthBaselineData::from_findings(&findings, &root);
+        let baseline = HealthBaselineData::from_findings(&findings, &[], &root);
         let json = serde_json::to_string(&baseline).unwrap();
         let deserialized: HealthBaselineData = serde_json::from_str(&json).unwrap();
         assert_eq!(deserialized.findings, baseline.findings);
@@ -691,7 +917,7 @@ mod tests {
             make_health_finding(&root, "parseExpression", 42),
             make_health_finding(&root, "newFunction", 100),
         ];
-        let baseline = HealthBaselineData::from_findings(&findings[..1], &root);
+        let baseline = HealthBaselineData::from_findings(&findings[..1], &[], &root);
         let filtered = filter_new_health_findings(findings, &baseline, &root);
         assert_eq!(filtered.len(), 1);
         assert_eq!(filtered[0].name, "newFunction");
@@ -701,7 +927,10 @@ mod tests {
     fn health_baseline_empty_keeps_all() {
         let root = PathBuf::from("/project");
         let findings = vec![make_health_finding(&root, "parseExpression", 42)];
-        let baseline = HealthBaselineData { findings: vec![] };
+        let baseline = HealthBaselineData {
+            findings: vec![],
+            target_keys: vec![],
+        };
         let filtered = filter_new_health_findings(findings, &baseline, &root);
         assert_eq!(filtered.len(), 1);
     }
