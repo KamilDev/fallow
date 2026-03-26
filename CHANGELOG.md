@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-03-26
+
+### Changed
+
+- **Parallel workspace processing** — workspace entry point discovery and plugin runs now execute in parallel using rayon, with sequential merge for deterministic results. Up to 21% faster on monorepos (vite: 507ms → 399ms, next.js: 1532ms → 1371ms)
+- **Lazy canonicalize** — skips upfront bulk `canonicalize()` of all source files when the project root is already canonical (common case). A `OnceLock`-based fallback handles the rare intra-project symlink edge case on demand. Saves up to 148ms on 20k-file projects
+- **O(1) plugin dedup** — workspace plugin name and virtual module prefix deduplication uses `FxHashSet` instead of `Vec::contains` (O(n²) → O(n))
+
+### Fixed
+
+- **Benchmark accuracy** — benchmark script now correctly excludes knip runs that crash (exit code 2) instead of counting crash timings as valid results. Also guards against null status from timeouts
+- **Updated benchmark numbers** — rebenchmarked all projects with honest error handling. Speed claims updated: 5-41x vs knip v5 (was 3-36x), 2-18x vs knip v6 (was 2-14x), 8-26x vs jscpd (was 20-33x)
+
 ## [2.2.0] - 2026-03-26
 
 ### Added
@@ -451,7 +464,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--changed-since` and `--fail-on-issues` for CI
 - Cross-workspace resolution for npm/yarn/pnpm workspaces
 
-[Unreleased]: https://github.com/fallow-rs/fallow/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/fallow-rs/fallow/compare/v2.2.1...HEAD
+[2.2.1]: https://github.com/fallow-rs/fallow/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/fallow-rs/fallow/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/fallow-rs/fallow/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/fallow-rs/fallow/compare/v2.0.0...v2.0.1
