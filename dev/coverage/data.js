@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774560326983,
+  "lastUpdate": 1774560794166,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -1937,6 +1937,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/fb850bf9d3c0eae4a46e40fc0e8fad9f1b05d40c"
         },
         "date": 1774560325974,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 87.7,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "389cdb5c09408b30b937cf31eebb2a20fde79922",
+          "message": "fix: handle dict locations in duplicate_exports comparison\n\nThe duplicate_exports JSON format uses {path, line, col} objects in\nthe locations array, not plain strings. compare.py was passing the\ndict directly to normalize_path, causing a TypeError on real projects.",
+          "timestamp": "2026-03-26T22:32:25+01:00",
+          "tree_id": "153f7f7db2a486d8816085cf9075145f5b65dfba",
+          "url": "https://github.com/fallow-rs/fallow/commit/389cdb5c09408b30b937cf31eebb2a20fde79922"
+        },
+        "date": 1774560793822,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
