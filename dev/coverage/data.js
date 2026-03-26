@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774559637118,
+  "lastUpdate": 1774560326983,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -1908,6 +1908,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/ae5fa1ea8e0970762d49a18b669e8dea80a4fd92"
         },
         "date": 1774559636247,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 87.7,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "fb850bf9d3c0eae4a46e40fc0e8fad9f1b05d40c",
+          "message": "fix: use correct pnpm/action-setup commit hash\n\nThe previous hash fe02b34 does not exist in the pnpm/action-setup\nrepo. Use fc06bc1 which matches the ecosystem-full workflow.",
+          "timestamp": "2026-03-26T22:24:29+01:00",
+          "tree_id": "426e268379444f7a6d82f330474aae37899f97d8",
+          "url": "https://github.com/fallow-rs/fallow/commit/fb850bf9d3c0eae4a46e40fc0e8fad9f1b05d40c"
+        },
+        "date": 1774560325974,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
