@@ -157,6 +157,7 @@ fallow health --format json --quiet --targets
 - `--max-cognitive <N>` -- cognitive complexity threshold (default: 15)
 - `--top <N>` -- only show the top N most complex functions (and file scores/hotspots/targets)
 - `--sort cyclomatic|cognitive|lines` -- sort order for results
+- `--complexity` -- show only complexity findings section (functions exceeding thresholds)
 - `--file-scores` -- compute per-file maintainability index (fan-in, fan-out, dead code ratio, complexity density). Runs the full analysis pipeline.
 - `--hotspots` -- identify files that are both complex and frequently changing (combines git churn with complexity). Requires a git repository.
 - `--targets` -- ranked refactoring recommendations based on complexity, coupling, churn, and dead code signals. Categories: churn+complexity, circular dep, high impact, dead code, complexity, coupling.
@@ -329,6 +330,40 @@ fallow list --plugins --format json --quiet
 
 ```bash
 fallow schema
+```
+
+## CI integration
+
+### GitHub Actions
+
+```yaml
+- uses: fallow-rs/fallow@v1
+  with:
+    format: sarif
+    fail-on-issues: true
+```
+
+The action supports SARIF upload to GitHub Code Scanning, PR comments, and all fallow commands/options.
+
+### GitLab CI
+
+```yaml
+include:
+  - remote: 'https://raw.githubusercontent.com/fallow-rs/fallow/main/ci/gitlab-ci.yml'
+
+fallow:
+  extends: .fallow
+  variables:
+    FALLOW_COMMAND: "dead-code"
+    FALLOW_COMMENT: "true"
+```
+
+The template generates GitLab Code Quality reports (CodeClimate format) for inline MR annotations, supports MR comments, and all fallow commands. Variables use `FALLOW_` prefix (e.g., `FALLOW_ROOT`, `FALLOW_FAIL_ON_ISSUES`, `FALLOW_CHANGED_SINCE`). MR comments require a `GITLAB_TOKEN` CI/CD variable (project access token with `api` scope) or enabling job token API access in project settings.
+
+### Any CI
+
+```bash
+npx fallow --ci  # equivalent to: --format sarif --fail-on-issues --quiet
 ```
 
 ## Configuration

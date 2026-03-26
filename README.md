@@ -97,7 +97,13 @@ fallow health --changed-since main        # Only changed files
 # GitHub Action
 - uses: fallow-rs/fallow@v1
 
-# Or run directly
+# GitLab CI — include the template and extend
+include:
+  - remote: 'https://raw.githubusercontent.com/fallow-rs/fallow/main/ci/gitlab-ci.yml'
+fallow:
+  extends: .fallow
+
+# Or run directly on any CI
 - run: npx fallow --ci
 ```
 
@@ -106,6 +112,7 @@ fallow health --changed-since main        # Only changed files
 - `--changed-since main` -- analyze only files touched in a PR
 - `--baseline` / `--save-baseline` -- fail only on **new** issues
 - `--format sarif` -- upload to GitHub Code Scanning
+- GitLab Code Quality reports (inline MR annotations) via `ci/gitlab-ci.yml`
 - `--format json` / `--format markdown` -- for custom workflows
 Adopt incrementally -- surface issues without blocking CI, then promote when ready:
 
