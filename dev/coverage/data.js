@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774526527349,
+  "lastUpdate": 1774528372721,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -1676,6 +1676,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/084f6c5a0a00a639a35c16c1960543d365ab9046"
         },
         "date": 1774526526300,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 87.5,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "900a7d0f3b1f0280ff04a05ce4efe8d69e595566",
+          "message": "fix: use Alpine image and detect package manager in GitLab CI template\n\n- Change default image from node:20-slim to node:22-alpine for smaller\n  image size and to avoid glibc version mismatch (binary requires 2.39,\n  Bookworm has 2.36). Alpine uses the musl binary instead.\n- Add package manager detection so the template works with both Alpine\n  (apk) and Debian/Ubuntu (apt-get) images when users override the image.",
+          "timestamp": "2026-03-26T13:31:52+01:00",
+          "tree_id": "35145be12bf968703dd7e24d778fea21c974af19",
+          "url": "https://github.com/fallow-rs/fallow/commit/900a7d0f3b1f0280ff04a05ce4efe8d69e595566"
+        },
+        "date": 1774528371721,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
