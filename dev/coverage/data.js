@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774515273155,
+  "lastUpdate": 1774515544141,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -1531,6 +1531,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/06ae1122bd093070ac5b2a4264b7d96a3fa99937"
         },
         "date": 1774515272808,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 87.5,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "45aeb4f8b473f4343e6d875587c4ae7fce760832",
+          "message": "fix: correct alert-threshold for customBiggerIsBetter benchmarks\n\nFor customBiggerIsBetter, benchmark-action calculates ratio as\nprevious/current and alerts when ratio >= threshold. With 95%, identical\nvalues (ratio 1.0 = 100%) always triggered false alerts. Changed to 105%\nso it only alerts on actual regressions (>5% drop).",
+          "timestamp": "2026-03-26T09:58:01+01:00",
+          "tree_id": "08ef6ce718b82f1dbf561c9a5405d41d7a29457d",
+          "url": "https://github.com/fallow-rs/fallow/commit/45aeb4f8b473f4343e6d875587c4ae7fce760832"
+        },
+        "date": 1774515543169,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
