@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774522926721,
+  "lastUpdate": 1774526374422,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -1618,6 +1618,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/b04395c60fd4c8b2ae37a2b8ab492b4d0170ea35"
         },
         "date": 1774522926199,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 87.5,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "649bbd4c342f634da0996af76c6a7ddbc3cec864",
+          "message": "fix: test-json job uses dead-code command to match verify assertions\n\nThe test-json job ran a bare invocation (no command) which produces\ncombined JSON output, but the verify step expected dead-code output\nstructure (.total_issues at root level). A separate test-bare-combined\njob already covers the bare invocation case.",
+          "timestamp": "2026-03-26T12:57:29+01:00",
+          "tree_id": "af175352950d824e897a72c12c00cfd1bd0f5e64",
+          "url": "https://github.com/fallow-rs/fallow/commit/649bbd4c342f634da0996af76c6a7ddbc3cec864"
+        },
+        "date": 1774526373436,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
