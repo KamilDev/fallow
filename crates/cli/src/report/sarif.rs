@@ -540,10 +540,13 @@ pub fn build_health_sarif(
     for target in &report.targets {
         let uri = relative_uri(&target.path, root);
         let message = format!(
-            "[{}] {} (effort: {})",
+            "[{}] {} (priority: {:.1}, efficiency: {:.1}, effort: {}, confidence: {})",
             target.category.label(),
             target.recommendation,
+            target.priority,
+            target.efficiency,
             target.effort.label(),
+            target.confidence.label(),
         );
         sarif_results.push(sarif_result(
             "fallow/refactoring-target",
@@ -1028,6 +1031,7 @@ mod tests {
             hotspots: vec![],
             hotspot_summary: None,
             targets: vec![],
+            target_thresholds: None,
         };
         let sarif = build_health_sarif(&report, &root);
         assert_eq!(sarif["version"], "2.1.0");
@@ -1067,6 +1071,7 @@ mod tests {
             hotspots: vec![],
             hotspot_summary: None,
             targets: vec![],
+            target_thresholds: None,
         };
         let sarif = build_health_sarif(&report, &root);
         let entry = &sarif["runs"][0]["results"][0];
@@ -1115,6 +1120,7 @@ mod tests {
             hotspots: vec![],
             hotspot_summary: None,
             targets: vec![],
+            target_thresholds: None,
         };
         let sarif = build_health_sarif(&report, &root);
         let entry = &sarif["runs"][0]["results"][0];
@@ -1157,6 +1163,7 @@ mod tests {
             hotspots: vec![],
             hotspot_summary: None,
             targets: vec![],
+            target_thresholds: None,
         };
         let sarif = build_health_sarif(&report, &root);
         let entry = &sarif["runs"][0]["results"][0];

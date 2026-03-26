@@ -28,7 +28,7 @@ These interfaces are covered by semver — breaking changes only happen in major
 - **Exit codes**: 0 (success/no errors), 1 (issues with error severity found), 2 (runtime error)
 - **Global flags**: `--format`, `--config`, `--workspace`, `--production`, `--baseline`, `--save-baseline`, `--no-cache`, `--threads`, `--changed-since`, `--performance`, `--explain`, `--ci`, `--fail-on-issues`, `--sarif-file`
 - **Bare command flags**: `--only`, `--skip` (select which analyses to run)
-- **Health flags**: `--save-snapshot` (saves vital signs snapshot for trend tracking)
+- **Health flags**: `--targets` (refactoring recommendations), `--save-snapshot` (saves vital signs snapshot for trend tracking)
 - **Environment variables**: `FALLOW_FORMAT`, `FALLOW_QUIET`, `FALLOW_BIN`
 
 ### External plugin format

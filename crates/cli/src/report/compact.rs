@@ -162,11 +162,18 @@ pub(super) fn print_health_compact(report: &crate::health_types::HealthReport, r
     }
     for target in &report.targets {
         let relative = normalize_uri(&relative_path(&target.path, root).display().to_string());
-        let category = target.category.label();
+        let category = target.category.compact_label();
         let effort = target.effort.label();
+        let confidence = target.confidence.label();
         println!(
-            "refactoring-target:{}:priority={:.1},category={},effort={}:{}",
-            relative, target.priority, category, effort, target.recommendation,
+            "refactoring-target:{}:priority={:.1},efficiency={:.1},category={},effort={},confidence={}:{}",
+            relative,
+            target.priority,
+            target.efficiency,
+            category,
+            effort,
+            confidence,
+            target.recommendation,
         );
     }
 }

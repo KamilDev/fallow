@@ -277,15 +277,27 @@ pub fn health_meta() -> Value {
             },
             "priority": {
                 "name": "Refactoring Priority",
-                "description": "Weighted score: complexity density (30%), hotspot boost (25%), dead code ratio (20%), fan-in (15%), fan-out (10%). Does not use the maintainability index to avoid double-counting.",
+                "description": "Weighted score: complexity density (30%), hotspot boost (25%), dead code ratio (20%), fan-in (15%), fan-out (10%). Fan-in and fan-out normalization uses adaptive percentile-based thresholds (p95 of the project distribution). Does not use the maintainability index to avoid double-counting.",
                 "range": "[0, 100]",
                 "interpretation": "higher = more urgent to refactor"
             },
+            "efficiency": {
+                "name": "Efficiency Score",
+                "description": "priority / effort_numeric (Low=1, Medium=2, High=3). Surfaces quick wins: high-priority, low-effort targets rank first. Default sort order.",
+                "range": "[0, 100] \u{2014} effective max depends on effort: Low=100, Medium=50, High\u{2248}33",
+                "interpretation": "higher = better quick-win value; targets are sorted by efficiency descending"
+            },
             "effort": {
                 "name": "Effort Estimate",
-                "description": "Heuristic effort estimate based on file size, function count, and fan-in. Low: <100 lines, \u{2264}3 functions, <5 importers. High: \u{2265}500 lines, \u{2265}20 importers, or \u{2265}15 functions with high density. Medium: everything else.",
+                "description": "Heuristic effort estimate based on file size, function count, and fan-in. Thresholds adapt to the project\u{2019}s distribution (percentile-based). Low: small file, few functions, low fan-in. High: large file, high fan-in, or many functions with high density. Medium: everything else.",
                 "values": ["low", "medium", "high"],
                 "interpretation": "low = quick win, high = needs planning and coordination"
+            },
+            "confidence": {
+                "name": "Confidence Level",
+                "description": "Reliability of the recommendation based on data source. High: deterministic graph/AST analysis (dead code, circular deps, complexity). Medium: heuristic thresholds (fan-in/fan-out coupling). Low: depends on git history quality (churn-based recommendations).",
+                "values": ["high", "medium", "low"],
+                "interpretation": "high = act on it, medium = verify context, low = treat as a signal, not a directive"
             }
         }
     })

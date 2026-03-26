@@ -172,6 +172,11 @@ pub(super) fn compute_file_scores(
                 .extend(others);
         }
     }
+    // Deduplicate: a file may appear in multiple cycles
+    for members in cycle_members.values_mut() {
+        members.sort();
+        members.dedup();
+    }
 
     // Build unused export names per file for evidence linking
     let mut unused_export_names: rustc_hash::FxHashMap<std::path::PathBuf, Vec<String>> =

@@ -124,7 +124,7 @@ impl FallowMcp {
     }
 
     #[tool(
-        description = "Check code health metrics (cyclomatic and cognitive complexity) for functions in the project. Returns structured JSON with complexity scores per function, sorted by severity. Set file_scores=true for per-file maintainability index (fan-in, fan-out, dead code ratio, complexity density). Set hotspots=true to identify files that are both complex and frequently changing (combines git churn with complexity). Set targets=true for ranked refactoring recommendations based on complexity, coupling, churn, and dead code signals. Supports config, baseline comparisons, and performance tuning (no_cache, threads). Useful for identifying hard-to-maintain code and prioritizing refactoring.",
+        description = "Check code health metrics (cyclomatic and cognitive complexity) for functions in the project. Returns structured JSON with complexity scores per function, sorted by severity. Set file_scores=true for per-file maintainability index (fan-in, fan-out, dead code ratio, complexity density). Set hotspots=true to identify files that are both complex and frequently changing (combines git churn with complexity). Set targets=true for ranked refactoring recommendations sorted by efficiency (quick wins first), with confidence scores and adaptive percentile-based thresholds. Supports config, baseline comparisons, and performance tuning (no_cache, threads). Useful for identifying hard-to-maintain code and prioritizing refactoring.",
         annotations(read_only_hint = true, open_world_hint = true)
     )]
     async fn check_health(

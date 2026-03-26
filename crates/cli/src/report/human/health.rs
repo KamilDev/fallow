@@ -351,34 +351,63 @@ pub(in crate::report) fn build_health_human_lines(
                 .cyan()
                 .bold()
         ));
+
+        // Effort summary: "3 low effort · 5 medium effort · 2 high effort"
+        let low = report
+            .targets
+            .iter()
+            .filter(|t| matches!(t.effort, crate::health_types::EffortEstimate::Low))
+            .count();
+        let medium = report
+            .targets
+            .iter()
+            .filter(|t| matches!(t.effort, crate::health_types::EffortEstimate::Medium))
+            .count();
+        let high = report
+            .targets
+            .iter()
+            .filter(|t| matches!(t.effort, crate::health_types::EffortEstimate::High))
+            .count();
+        let mut effort_parts = Vec::new();
+        if low > 0 {
+            effort_parts.push(format!("{low} low effort"));
+        }
+        if medium > 0 {
+            effort_parts.push(format!("{medium} medium"));
+        }
+        if high > 0 {
+            effort_parts.push(format!("{high} high"));
+        }
+        lines.push(format!("  {}", effort_parts.join(" \u{00b7} ").dimmed()));
         lines.push(String::new());
 
         let shown_targets = report.targets.len().min(MAX_FLAT_ITEMS);
         for target in &report.targets[..shown_targets] {
             let file_str = relative_path(&target.path, root).display().to_string();
 
-            // Priority score: color-coded by urgency
-            let score_str = format!("{:>5.1}", target.priority);
-            let score_colored = if target.priority >= 70.0 {
-                score_str.red().bold().to_string()
-            } else if target.priority >= 40.0 {
-                score_str.yellow().to_string()
+            // Efficiency score (sort key): color-coded by quick-win value
+            let eff_str = format!("{:>5.1}", target.efficiency);
+            let eff_colored = if target.efficiency >= 40.0 {
+                eff_str.green().to_string()
+            } else if target.efficiency >= 20.0 {
+                eff_str.yellow().to_string()
             } else {
-                score_str.green().to_string()
+                eff_str.dimmed().to_string()
             };
 
             // Path: dim directory, normal filename
             let (dir, filename) = split_dir_filename(&file_str);
 
-            // Line 1: priority score + path
+            // Line 1: efficiency (sort key) + priority (secondary) + path
             lines.push(format!(
-                "  {}    {}{}",
-                score_colored,
+                "  {}  {}    {}{}",
+                eff_colored,
+                format!("pri:{:.1}", target.priority).dimmed(),
                 dir.dimmed(),
                 filename,
             ));
 
-            // Line 2: category label (yellow) + effort (colored) + recommendation (dimmed)
+            // Line 2: category (yellow) + effort:label (colored) + confidence:label + recommendation (dimmed)
             let label = target.category.label();
             let effort = target.effort.label();
             let effort_colored = match target.effort {
@@ -386,10 +415,17 @@ pub(in crate::report) fn build_health_human_lines(
                 crate::health_types::EffortEstimate::Medium => effort.yellow().to_string(),
                 crate::health_types::EffortEstimate::High => effort.red().to_string(),
             };
+            let confidence = target.confidence.label();
+            let confidence_colored = match target.confidence {
+                crate::health_types::Confidence::High => confidence.green().to_string(),
+                crate::health_types::Confidence::Medium => confidence.yellow().to_string(),
+                crate::health_types::Confidence::Low => confidence.dimmed().to_string(),
+            };
             lines.push(format!(
-                "         {} \u{00b7} {}  {}",
+                "         {} \u{00b7} effort:{} \u{00b7} confidence:{}  {}",
                 label.yellow(),
                 effort_colored,
+                confidence_colored,
                 target.recommendation.dimmed(),
             ));
 
@@ -470,6 +506,7 @@ mod tests {
             hotspots: vec![],
             hotspot_summary: None,
             targets: vec![],
+            target_thresholds: None,
         };
         let lines = build_health_human_lines(&report, &root);
         let text = plain(&lines);
@@ -505,6 +542,7 @@ mod tests {
             hotspots: vec![],
             hotspot_summary: None,
             targets: vec![],
+            target_thresholds: None,
         };
         let lines = build_health_human_lines(&report, &root);
         let text = plain(&lines);
@@ -545,6 +583,7 @@ mod tests {
             hotspots: vec![],
             hotspot_summary: None,
             targets: vec![],
+            target_thresholds: None,
         };
         let lines = build_health_human_lines(&report, &root);
         let text = plain(&lines);
@@ -592,6 +631,7 @@ mod tests {
             hotspots: vec![],
             hotspot_summary: None,
             targets: vec![],
+            target_thresholds: None,
         };
         let lines = build_health_human_lines(&report, &root);
         let text = plain(&lines);

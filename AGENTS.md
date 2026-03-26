@@ -160,7 +160,7 @@ fallow health --format json --quiet --targets
 - `--complexity` -- show only complexity findings section (functions exceeding thresholds)
 - `--file-scores` -- compute per-file maintainability index (fan-in, fan-out, dead code ratio, complexity density). Runs the full analysis pipeline.
 - `--hotspots` -- identify files that are both complex and frequently changing (combines git churn with complexity). Requires a git repository.
-- `--targets` -- ranked refactoring recommendations based on complexity, coupling, churn, and dead code signals. Categories: churn+complexity, circular dep, high impact, dead code, complexity, coupling.
+- `--targets` -- ranked refactoring recommendations based on complexity, coupling, churn, and dead code signals. Sorted by efficiency (priority/effort) to surface quick wins. Categories: churn+complexity, circular dep, high impact, dead code, complexity, coupling.
 - `--since <DURATION>` -- git history window for hotspot analysis (default: 6m). Accepts durations (6m, 90d, 1y, 2w) or ISO dates (2025-06-01).
 - `--min-commits <N>` -- minimum commits for a file to appear in hotspot ranking (default: 3)
 - `--save-snapshot [PATH]` -- save vital signs snapshot for trend tracking. Defaults to `.fallow/snapshots/<timestamp>.json`. Forces file-scores + hotspot computation.
@@ -168,7 +168,7 @@ fallow health --format json --quiet --targets
 
 **Exit codes:** 0 = no functions exceed thresholds, 1 = findings exist.
 
-**JSON output** includes a `findings` array, a `summary` object, and a `vital_signs` object (project-wide metrics: `dead_file_pct`, `dead_export_pct`, `avg_cyclomatic`, `p90_cyclomatic`, `maintainability_avg`, `hotspot_count`, `circular_dep_count`, `unused_dep_count`; null when data source not available). With `--file-scores`, also includes a `file_scores` array with per-file metrics and `summary.files_scored` / `summary.average_maintainability`. With `--targets`, includes a `targets` array with `path`, `priority`, `recommendation`, `category`, `effort` (low/medium/high), `factors` (with raw `value`/`threshold`), and `evidence` (unused export names, complex function names+lines, cycle paths). Target baselines are supported via `--save-baseline` / `--baseline`.
+**JSON output** includes a `findings` array, a `summary` object, and a `vital_signs` object (project-wide metrics: `dead_file_pct`, `dead_export_pct`, `avg_cyclomatic`, `p90_cyclomatic`, `maintainability_avg`, `hotspot_count`, `circular_dep_count`, `unused_dep_count`; null when data source not available). With `--file-scores`, also includes a `file_scores` array with per-file metrics and `summary.files_scored` / `summary.average_maintainability`. With `--targets`, includes a `targets` array with `path`, `priority`, `efficiency` (priority/effort — default sort), `recommendation`, `category`, `effort` (low/medium/high), `confidence` (high/medium/low — based on data source reliability), `factors` (with raw `value`/`threshold`), and `evidence` (unused export names, complex function names+lines, cycle paths). A `target_thresholds` object exposes the adaptive percentile-based thresholds (`fan_in_p95`, `fan_in_p75`, `fan_out_p95`, `fan_out_p90`) used for scoring. Target baselines are supported via `--save-baseline` / `--baseline`.
 
 **Vital signs snapshots:** `--save-snapshot` persists a `VitalSignsSnapshot` JSON file containing `vital_signs` (metrics), `counts` (raw numerators/denominators), and git metadata (`git_sha`, `git_branch`, `shallow_clone`). Snapshot schema version is independent of the report schema_version.
 

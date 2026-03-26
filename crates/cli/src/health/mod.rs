@@ -275,7 +275,7 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
     };
 
     // Compute refactoring targets when requested.
-    let targets = if opts.targets {
+    let (targets, target_thresholds) = if opts.targets {
         if let Some((
             ref circular_files,
             ref top_complex_fns,
@@ -293,7 +293,8 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
                 unused_export_names,
                 cycle_members,
             };
-            let mut tgts = compute_refactoring_targets(&file_scores, &target_aux, &hotspots);
+            let (mut tgts, thresholds) =
+                compute_refactoring_targets(&file_scores, &target_aux, &hotspots);
             // Filter targets against baseline (before --top truncation)
             if let Some(ref baseline) = loaded_baseline {
                 tgts = filter_new_health_targets(tgts, baseline, &config.root);
@@ -301,12 +302,12 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
             if let Some(top) = opts.top {
                 tgts.truncate(top);
             }
-            tgts
+            (tgts, Some(thresholds))
         } else {
-            Vec::new()
+            (Vec::new(), None)
         }
     } else {
-        Vec::new()
+        (Vec::new(), None)
     };
 
     // Save baseline (after targets are computed, captures full state)
@@ -413,6 +414,7 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
         hotspots: report_hotspots,
         hotspot_summary: report_hotspot_summary,
         targets,
+        target_thresholds,
     };
 
     let elapsed = start.elapsed();

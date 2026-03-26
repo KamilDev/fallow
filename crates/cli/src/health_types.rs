@@ -26,6 +26,9 @@ pub struct HealthReport {
     /// Ranked refactoring recommendations (only populated with `--targets`).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub targets: Vec<RefactoringTarget>,
+    /// Adaptive thresholds used for target scoring (only set with `--targets`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub target_thresholds: Option<TargetThresholds>,
 }
 
 /// Project-wide vital signs — a fixed set of metrics for trend tracking.
@@ -259,6 +262,23 @@ pub struct HotspotSummary {
     pub shallow_clone: bool,
 }
 
+/// Adaptive thresholds used for refactoring target scoring.
+///
+/// Derived from the project's metric distribution (percentile-based with floors).
+/// Exposed in JSON output so consumers can interpret scores in context.
+#[derive(Debug, Clone, serde::Serialize)]
+#[allow(clippy::struct_field_names)] // triggered in bin but not lib — #[expect] would fail in lib
+pub struct TargetThresholds {
+    /// Fan-in saturation point for priority formula (p95, floor 5).
+    pub fan_in_p95: f64,
+    /// Fan-in moderate threshold for contributing factors (p75, floor 3).
+    pub fan_in_p75: f64,
+    /// Fan-out saturation point for priority formula (p95, floor 8).
+    pub fan_out_p95: f64,
+    /// Fan-out high threshold for rules and contributing factors (p90, floor 5).
+    pub fan_out_p90: usize,
+}
+
 /// Category of refactoring recommendation.
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -278,13 +298,25 @@ pub enum RecommendationCategory {
 }
 
 impl RecommendationCategory {
-    /// Human-readable label for terminal and compact output.
+    /// Human-readable label for terminal output.
     pub fn label(&self) -> &'static str {
         match self {
             Self::UrgentChurnComplexity => "churn+complexity",
             Self::BreakCircularDependency => "circular dep",
             Self::SplitHighImpact => "high impact",
             Self::RemoveDeadCode => "dead code",
+            Self::ExtractComplexFunctions => "complexity",
+            Self::ExtractDependencies => "coupling",
+        }
+    }
+
+    /// Machine-parseable label for compact output (no spaces).
+    pub fn compact_label(&self) -> &'static str {
+        match self {
+            Self::UrgentChurnComplexity => "churn_complexity",
+            Self::BreakCircularDependency => "circular_dep",
+            Self::SplitHighImpact => "high_impact",
+            Self::RemoveDeadCode => "dead_code",
             Self::ExtractComplexFunctions => "complexity",
             Self::ExtractDependencies => "coupling",
         }
@@ -309,16 +341,19 @@ pub struct ContributingFactor {
 /// ## Priority Formula
 ///
 /// ```text
-/// priority = min(complexity_density, 1) × 30
-///          + hotspot_boost × 25            (hotspot_score / 100 if in hotspots, else 0)
-///          + dead_code_ratio × 20
-///          + fan_in_norm × 15              (min(fan_in / 20, 1.0))
-///          + fan_out_norm × 10             (min(fan_out / 30, 1.0))
+/// priority = min(density, 1) × 30 + hotspot_boost × 25 + dead_code × 20 + fan_in_norm × 15 + fan_out_norm × 10
 /// ```
 ///
-/// All inputs clamped to \[0, 1\] so each weight is a true percentage share.
-/// Clamped to \[0, 100\]. Higher is more urgent. Does not use the maintainability
-/// index to avoid double-counting (MI already incorporates density and dead code).
+/// Fan-in and fan-out normalization uses adaptive percentile-based thresholds
+/// (p95 of the project distribution, with floors) instead of fixed constants.
+///
+/// ## Efficiency (default sort)
+///
+/// ```text
+/// efficiency = priority / effort_numeric   (Low=1, Medium=2, High=3)
+/// ```
+///
+/// Surfaces quick wins: high-priority, low-effort targets rank first.
 /// Effort estimate for a refactoring target.
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -338,6 +373,43 @@ impl EffortEstimate {
             Self::Low => "low",
             Self::Medium => "medium",
             Self::High => "high",
+        }
+    }
+
+    /// Numeric value for arithmetic (efficiency = priority / effort).
+    pub fn numeric(&self) -> f64 {
+        match self {
+            Self::Low => 1.0,
+            Self::Medium => 2.0,
+            Self::High => 3.0,
+        }
+    }
+}
+
+/// Confidence level for a refactoring recommendation.
+///
+/// Based on the data source reliability:
+/// - **High**: deterministic graph/AST analysis (dead code, circular deps, complexity)
+/// - **Medium**: heuristic thresholds (fan-in/fan-out coupling)
+/// - **Low**: depends on git history quality (churn-based recommendations)
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Confidence {
+    /// Recommendation based on deterministic analysis (graph, AST).
+    High,
+    /// Recommendation based on heuristic thresholds.
+    Medium,
+    /// Recommendation depends on external data quality (git history).
+    Low,
+}
+
+impl Confidence {
+    /// Human-readable label for terminal output.
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::High => "high",
+            Self::Medium => "medium",
+            Self::Low => "low",
         }
     }
 }
@@ -376,12 +448,17 @@ pub struct RefactoringTarget {
     pub path: std::path::PathBuf,
     /// Priority score (0–100, higher = more urgent).
     pub priority: f64,
+    /// Efficiency score (priority / effort). Higher = better quick-win value.
+    /// Surfaces low-effort, high-priority targets first.
+    pub efficiency: f64,
     /// One-line actionable recommendation.
     pub recommendation: String,
     /// Recommendation category for tooling/filtering.
     pub category: RecommendationCategory,
     /// Estimated effort to address this target.
     pub effort: EffortEstimate,
+    /// Confidence in this recommendation based on data source reliability.
+    pub confidence: Confidence,
     /// Which metric values contributed to this recommendation.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub factors: Vec<ContributingFactor>,
@@ -464,6 +541,7 @@ mod tests {
             hotspots: vec![],
             hotspot_summary: None,
             targets: vec![],
+            target_thresholds: None,
         };
         let json = serde_json::to_string(&report).unwrap();
         // Empty vecs should be omitted due to skip_serializing_if
@@ -541,15 +619,42 @@ mod tests {
         let target = RefactoringTarget {
             path: std::path::PathBuf::from("/src/foo.ts"),
             priority: 75.0,
+            efficiency: 75.0,
             recommendation: "Test recommendation".into(),
             category: RecommendationCategory::RemoveDeadCode,
             effort: EffortEstimate::Low,
+            confidence: Confidence::High,
             factors: vec![],
             evidence: None,
         };
         let json = serde_json::to_string(&target).unwrap();
         assert!(!json.contains("factors"));
         assert!(!json.contains("evidence"));
+    }
+
+    #[test]
+    fn effort_numeric_values() {
+        assert!((EffortEstimate::Low.numeric() - 1.0).abs() < f64::EPSILON);
+        assert!((EffortEstimate::Medium.numeric() - 2.0).abs() < f64::EPSILON);
+        assert!((EffortEstimate::High.numeric() - 3.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn confidence_labels_are_non_empty() {
+        let levels = [Confidence::High, Confidence::Medium, Confidence::Low];
+        for level in &levels {
+            assert!(!level.label().is_empty(), "{level:?} should have a label");
+        }
+    }
+
+    #[test]
+    fn confidence_serializes_as_snake_case() {
+        let json = serde_json::to_string(&Confidence::High).unwrap();
+        assert_eq!(json, r#""high""#);
+        let json = serde_json::to_string(&Confidence::Medium).unwrap();
+        assert_eq!(json, r#""medium""#);
+        let json = serde_json::to_string(&Confidence::Low).unwrap();
+        assert_eq!(json, r#""low""#);
     }
 
     #[test]

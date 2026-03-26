@@ -542,16 +542,17 @@ pub fn build_health_markdown(report: &crate::health_types::HealthReport, root: &
             "\n### Refactoring Targets ({})\n\n",
             report.targets.len()
         );
-        out.push_str("| Priority | Category | Effort | File | Recommendation |\n");
-        out.push_str("|----------|----------|--------|------|----------------|\n");
+        out.push_str("| Efficiency | Category | Effort / Confidence | File | Recommendation |\n");
+        out.push_str("|:-----------|:---------|:--------------------|:-----|:---------------|\n");
         for target in &report.targets {
             let file_str = normalize_uri(&relative_path(&target.path, root).display().to_string());
             let category = target.category.label();
             let effort = target.effort.label();
+            let confidence = target.confidence.label();
             let _ = writeln!(
                 out,
-                "| {:.1} | {category} | {effort} | `{file_str}` | {} |",
-                target.priority, target.recommendation,
+                "| {:.1} | {category} | {effort} / {confidence} | `{file_str}` | {} |",
+                target.efficiency, target.recommendation,
             );
         }
     }
@@ -578,9 +579,10 @@ pub fn build_health_markdown(report: &crate::health_types::HealthReport, root: &
             out.push_str("- **Trend** — accelerating / stable / cooling\n");
         }
         if has_targets {
-            out.push_str("- **Priority** — weighted refactoring urgency (0\u{2013}100, higher = more urgent)\n");
+            out.push_str("- **Efficiency** — priority / effort (higher = better quick-win value, default sort)\n");
             out.push_str("- **Category** — recommendation type (churn+complexity, high impact, dead code, complexity, coupling, circular dep)\n");
             out.push_str("- **Effort** — estimated effort (low / medium / high) based on file size, function count, and fan-in\n");
+            out.push_str("- **Confidence** — recommendation reliability (high = deterministic analysis, medium = heuristic, low = git-dependent)\n");
         }
         out.push_str("\n[Full metric reference](https://docs.fallow.tools/explanations/metrics)\n\n</details>\n");
     }
@@ -999,6 +1001,7 @@ mod tests {
             hotspots: vec![],
             hotspot_summary: None,
             targets: vec![],
+            target_thresholds: None,
         };
         let md = build_health_markdown(&report, &root);
         assert!(md.contains("no functions exceed complexity thresholds"));
@@ -1033,6 +1036,7 @@ mod tests {
             hotspots: vec![],
             hotspot_summary: None,
             targets: vec![],
+            target_thresholds: None,
         };
         let md = build_health_markdown(&report, &root);
         assert!(md.contains("## Fallow: 1 high complexity function\n"));
@@ -1072,6 +1076,7 @@ mod tests {
             hotspots: vec![],
             hotspot_summary: None,
             targets: vec![],
+            target_thresholds: None,
         };
         let md = build_health_markdown(&report, &root);
         // Cyclomatic 15 is below threshold 20, no marker
@@ -1104,9 +1109,11 @@ mod tests {
                 RefactoringTarget {
                     path: PathBuf::from("/project/src/complex.ts"),
                     priority: 82.5,
+                    efficiency: 27.5,
                     recommendation: "Split high-impact file".into(),
                     category: RecommendationCategory::SplitHighImpact,
                     effort: crate::health_types::EffortEstimate::High,
+                    confidence: crate::health_types::Confidence::Medium,
                     factors: vec![ContributingFactor {
                         metric: "fan_in",
                         value: 25.0,
@@ -1118,13 +1125,16 @@ mod tests {
                 RefactoringTarget {
                     path: PathBuf::from("/project/src/legacy.ts"),
                     priority: 45.0,
+                    efficiency: 45.0,
                     recommendation: "Remove 5 unused exports".into(),
                     category: RecommendationCategory::RemoveDeadCode,
                     effort: crate::health_types::EffortEstimate::Low,
+                    confidence: crate::health_types::Confidence::High,
                     factors: vec![],
                     evidence: None,
                 },
             ],
+            target_thresholds: None,
         };
         let md = build_health_markdown(&report, &root);
 
@@ -1137,7 +1147,7 @@ mod tests {
             md.contains("src/complex.ts"),
             "should contain target file path"
         );
-        assert!(md.contains("82.5"), "should contain priority score");
+        assert!(md.contains("27.5"), "should contain efficiency score");
         assert!(
             md.contains("Split high-impact file"),
             "should contain recommendation"
