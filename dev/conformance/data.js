@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774260107136,
+  "lastUpdate": 1774508416201,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Conformance": [
@@ -21,6 +21,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/bd1e9597c24d5083496cde7e016efa4246bcf52a"
         },
         "date": 1774260106606,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Agreement Rate",
+            "value": 66.7,
+            "unit": "%"
+          },
+          {
+            "name": "Agreed Issues",
+            "value": 6,
+            "unit": "issues"
+          },
+          {
+            "name": "Fallow Total",
+            "value": 9,
+            "unit": "issues"
+          },
+          {
+            "name": "Knip Total",
+            "value": 6,
+            "unit": "issues"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "committer": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "id": "48650d8d08b8185490c17e10497098a52cc3e971",
+          "message": "chore: release v2.0.1",
+          "timestamp": "2026-03-25T21:23:18Z",
+          "url": "https://github.com/fallow-rs/fallow/commit/48650d8d08b8185490c17e10497098a52cc3e971"
+        },
+        "date": 1774508415306,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
