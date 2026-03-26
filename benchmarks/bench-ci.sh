@@ -114,50 +114,19 @@ clear_cache() {
     rm -rf "${dir}/.fallow"
 }
 
-# Returns elapsed time in milliseconds via /usr/bin/time + peak RSS
-# Sets: ELAPSED_MS, PEAK_RSS_BYTES
+# Returns elapsed time in milliseconds
+# Sets: ELAPSED_MS
 time_fallow() {
     local dir="$1"; shift
-    local args=("$@")
-    local time_bin="/usr/bin/time"
-    local is_linux=false
-
-    [[ "$(uname)" == "Linux" ]] && is_linux=true
-
-    local time_args
-    if $is_linux; then
-        time_args=(-v)
-    else
-        time_args=(-l)
-    fi
-
     local start end
     start=$(date +%s%N 2>/dev/null || python3 -c "import time; print(int(time.time()*1e9))")
 
-    # Capture /usr/bin/time stderr via tempfile — direct redirect would lose it
-    local time_output
-    time_output=$(mktemp)
-    "${time_bin}" "${time_args[@]}" \
-        "${FALLOW_BIN}" check --quiet --format json "${args[@]}" --root "${dir}" \
-        >/dev/null 2>"${time_output}" || true
-    local time_stderr
-    time_stderr=$(cat "${time_output}")
-    rm -f "${time_output}"
+    "${FALLOW_BIN}" check --quiet --format json "$@" --root "${dir}" \
+        >/dev/null 2>/dev/null || true
 
     end=$(date +%s%N 2>/dev/null || python3 -c "import time; print(int(time.time()*1e9))")
 
     ELAPSED_MS=$(( (end - start) / 1000000 ))
-
-    PEAK_RSS_BYTES=0
-    if $is_linux; then
-        local match
-        match=$(echo "${time_stderr}" | grep -o 'Maximum resident set size (kbytes): [0-9]*' | grep -o '[0-9]*$') || true
-        [[ -n "${match}" ]] && PEAK_RSS_BYTES=$(( match * 1024 ))
-    else
-        local match
-        match=$(echo "${time_stderr}" | grep -o '[0-9]* maximum resident set size' | grep -o '^[0-9]*') || true
-        [[ -n "${match}" ]] && PEAK_RSS_BYTES="${match}"
-    fi
 }
 
 median() {
@@ -175,19 +144,6 @@ fmt_ms() {
         echo "${ms}ms"
     else
         python3 -c "print(f'{${ms}/1000:.2f}s')"
-    fi
-}
-
-fmt_mem() {
-    local bytes="$1"
-    if [[ ${bytes} -eq 0 ]]; then
-        echo "?"
-    else
-        python3 -c "
-b = ${bytes}
-mb = b / 1024 / 1024
-print(f'{mb:.1f} MB' if mb < 1024 else f'{mb/1024:.2f} GB')
-"
     fi
 }
 
@@ -228,12 +184,10 @@ for entry in "${PROJECTS[@]}"; do
 
     # --- Cold runs (no cache) ---
     cold_times=()
-    cold_rss=0
     for (( i=0; i<RUNS; i++ )); do
         clear_cache "${dest}"
         time_fallow "${dest}" --no-cache
         cold_times+=("${ELAPSED_MS}")
-        [[ ${i} -eq 0 ]] && cold_rss=${PEAK_RSS_BYTES}
     done
     cold_median=$(median "${cold_times[@]}")
 
@@ -250,7 +204,7 @@ for entry in "${PROJECTS[@]}"; do
     warm_median=$(median "${warm_times[@]}")
     clear_cache "${dest}"
 
-    echo "    Cold: $(fmt_ms "${cold_median}") (median of ${RUNS}), RSS: $(fmt_mem "${cold_rss}")" >&2
+    echo "    Cold: $(fmt_ms "${cold_median}") (median of ${RUNS})" >&2
     echo "    Warm: $(fmt_ms "${warm_median}") (median of ${RUNS})" >&2
     echo "    Runs: cold=[${cold_times[*]}] warm=[${warm_times[*]}]" >&2
     echo "" >&2
@@ -261,7 +215,6 @@ import json
 for entry in [
     {'name': '${name} (cold)', 'unit': 'ms', 'value': ${cold_median}},
     {'name': '${name} (warm)', 'unit': 'ms', 'value': ${warm_median}},
-    {'name': '${name} RSS', 'unit': 'bytes', 'value': ${cold_rss}},
 ]:
     print(json.dumps(entry))
 " >> "${BENCH_JSONL}"

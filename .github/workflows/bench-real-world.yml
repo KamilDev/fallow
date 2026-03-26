@@ -98,23 +98,17 @@ jobs:
               elif name.endswith(' (warm)'):
                   proj = name.removesuffix(' (warm)')
                   projects.setdefault(proj, {})['warm'] = entry['value']
-              elif name.endswith(' RSS'):
-                  proj = name.removesuffix(' RSS')
-                  projects.setdefault(proj, {})['rss'] = entry['value']
-          print('| Project | Cold | Warm | Cache speedup | Peak RSS |')
-          print('|---------|------|------|---------------|----------|')
+          print('| Project | Cold | Warm | Cache speedup |')
+          print('|---------|------|------|---------------|')
           for proj in sorted(projects.keys()):
               d = projects[proj]
               cold = d.get('cold', 0)
               warm = d.get('warm', 0)
-              rss = d.get('rss', 0)
               cold_str = f'{cold}ms' if cold < 1000 else f'{cold/1000:.2f}s'
               warm_str = f'{warm}ms' if warm < 1000 else f'{warm/1000:.2f}s'
               speedup = f'{cold/warm:.1f}x' if warm > 0 else '-'
-              mb = rss / 1024 / 1024
-              rss_str = f'{mb:.1f} MB' if mb < 1024 else f'{mb/1024:.2f} GB'
-              print(f'| {proj} | {cold_str} | {warm_str} | {speedup} | {rss_str} |')
-          " >> "$GITHUB_STEP_SUMMARY"
+              print(f'| {proj} | {cold_str} | {warm_str} | {speedup} |')
+          " >> "\$GITHUB_STEP_SUMMARY"
 
       - name: Upload report
         if: always()
