@@ -85,6 +85,8 @@ Surfaces the most complex functions in your codebase and identifies where to spe
 
 ```bash
 fallow health                             # Functions exceeding thresholds
+fallow health --score                     # Project health score (0-100) with letter grade
+fallow health --min-score 70              # CI gate: fail if score drops below 70
 fallow health --top 20                    # 20 most complex functions
 fallow health --file-scores               # Per-file maintainability index (0-100)
 fallow health --hotspots                  # Riskiest files (git churn x complexity)
@@ -112,6 +114,7 @@ fallow:
 
 - `--changed-since main` -- analyze only files touched in a PR
 - `--baseline` / `--save-baseline` -- fail only on **new** issues
+- `--fail-on-regression` / `--tolerance 2%` -- fail only if issues **grew** beyond tolerance
 - `--format sarif` -- upload to GitHub Code Scanning
 - `--format codeclimate` -- GitLab Code Quality inline MR annotations
 - `--format annotations` -- GitHub Actions inline PR annotations (no Action required)
