@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774600490157,
+  "lastUpdate": 1774603897415,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -2287,6 +2287,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Peak Allocations",
             "value": 5168,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "3cd88222fa193fd203a41196a527734f0ef5773e",
+          "message": "feat: expand VS Code extension UX and pnpm tooling",
+          "timestamp": "2026-03-27T10:29:12+01:00",
+          "tree_id": "55d28599bacf2e47b511563a66d807564e0e9802",
+          "url": "https://github.com/fallow-rs/fallow/commit/3cd88222fa193fd203a41196a527734f0ef5773e"
+        },
+        "date": 1774603896449,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3043786,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 11975,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 423974,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 3888,
             "unit": "allocations"
           }
         ]
