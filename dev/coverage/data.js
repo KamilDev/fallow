@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774603863008,
+  "lastUpdate": 1774609473067,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -2256,6 +2256,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/3cd88222fa193fd203a41196a527734f0ef5773e"
         },
         "date": 1774603862626,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 88.2,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "439a334f81e342617841d912bb15ffb58e7846cf",
+          "message": "feat: add auto-changed-since for automatic PR scoping\n\nAutomatically detects pull_request context and scopes analysis to files\nchanged since the PR base SHA. Enabled by default (auto-changed-since: true).\nIgnored when changed-since is explicitly set.\n\nThis eliminates the need for separate PR-scoped jobs in workflows.",
+          "timestamp": "2026-03-27T12:03:36+01:00",
+          "tree_id": "7a487f18cf3d6aed21406a1002a283433aa205b7",
+          "url": "https://github.com/fallow-rs/fallow/commit/439a334f81e342617841d912bb15ffb58e7846cf"
+        },
+        "date": 1774609472686,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
