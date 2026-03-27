@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774618675653,
+  "lastUpdate": 1774618799409,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -2662,6 +2662,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/ea730db740ecd0c91b517edf4ea0ccccdf91b815"
         },
         "date": 1774618675237,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 87.8,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "aa93d75aefc17563829e193c64fb077b376c8201",
+          "message": "fix: attach review body to first successful comment, not first attempted",
+          "timestamp": "2026-03-27T14:39:00+01:00",
+          "tree_id": "20ac06b802461de82be731a436bb9c88c22d4545",
+          "url": "https://github.com/fallow-rs/fallow/commit/aa93d75aefc17563829e193c64fb077b376c8201"
+        },
+        "date": 1774618798347,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
