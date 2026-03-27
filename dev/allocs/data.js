@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774647041915,
+  "lastUpdate": 1774647482773,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -2805,6 +2805,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15635,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534634,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5820,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "6c07b7a474dbc42decd683345774b85dcb05aff5",
+          "message": "docs: add test-only-dependencies to README and output schema\n\nUpdate \"What it finds\" list to include the new test-only production\ndependency diagnostic (14 issue types total). Add TestOnlyDependency\ndefinition and field to docs/output-schema.json. Regenerate schema.json.\nIncludes residual formatting from rustfmt.",
+          "timestamp": "2026-03-27T22:36:33+01:00",
+          "tree_id": "7b92b205753a426cc46ee4a133cf128c10fda990",
+          "url": "https://github.com/fallow-rs/fallow/commit/6c07b7a474dbc42decd683345774b85dcb05aff5"
+        },
+        "date": 1774647482121,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3576188,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15661,
             "unit": "allocations"
           },
           {
