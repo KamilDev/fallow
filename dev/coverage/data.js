@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774618799409,
+  "lastUpdate": 1774619068463,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -2691,6 +2691,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/aa93d75aefc17563829e193c64fb077b376c8201"
         },
         "date": 1774618798347,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 87.8,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "1fd8e16996a80a6c2e3e90126c4874a521be7158",
+          "message": "feat: add GitHub suggestion blocks for unused exports\n\nWhen an individual unused export is found, reads the source file and\ngenerates a ```suggestion block that strips the `export` keyword.\nThis creates a one-click \"Commit suggestion\" button in the PR diff.\n\nOnly applies to individual unused exports (not grouped per-file ones),\nsince suggestion blocks can only replace the lines the comment is on.",
+          "timestamp": "2026-03-27T14:43:34+01:00",
+          "tree_id": "ec69d5c5836d6dc42e3953c1c92fe1a839e6fb8a",
+          "url": "https://github.com/fallow-rs/fallow/commit/1fd8e16996a80a6c2e3e90126c4874a521be7158"
+        },
+        "date": 1774619067838,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
