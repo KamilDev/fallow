@@ -8,6 +8,7 @@ rules:
     ignore:
       - allocs.yml
       - bench.yml
+      - bench-real-world.yml
       - bloat.yml
       - ci.yml
       - conformance.yml
