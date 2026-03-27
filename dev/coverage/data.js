@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774611674490,
+  "lastUpdate": 1774612041024,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -2488,6 +2488,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/a2f72ea6a3b4476f50e8120339d38c7d2c817759"
         },
         "date": 1774611673823,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 87.8,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "658106c3e3c984decea45c756dd789cf10a44ed0",
+          "message": "feat: redesign PR review comments with rich markdown formatting\n\nInspired by CodeRabbit, Semgrep, and SonarCloud patterns:\n- Collapsible <details> sections explaining why each issue matters\n- Emoji severity indicators (:warning:, :x:, :bulb:, :blue_book:)\n- Code blocks with copy-paste fix commands (npm uninstall/install)\n- Tables for complexity metrics with threshold comparison\n- Duplication: collapsible code fragments, clone family suggestions with savings\n- Refactoring targets: priority/effort/confidence table with evidence\n- Footer with docs links and suppression instructions\n- Fix broken docs link (configuration/entry-points → configuration/overview)",
+          "timestamp": "2026-03-27T12:46:32+01:00",
+          "tree_id": "f77a92fd2797c23f39cf750e460fad9dc7839036",
+          "url": "https://github.com/fallow-rs/fallow/commit/658106c3e3c984decea45c756dd789cf10a44ed0"
+        },
+        "date": 1774612040667,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
