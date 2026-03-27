@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774600574724,
+  "lastUpdate": 1774603977400,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -922,6 +922,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/22ee80595999ee8784e93520d18f1c761accf564"
         },
         "date": 1774600574185,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 120887776,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "3cd88222fa193fd203a41196a527734f0ef5773e",
+          "message": "feat: expand VS Code extension UX and pnpm tooling",
+          "timestamp": "2026-03-27T10:29:12+01:00",
+          "tree_id": "55d28599bacf2e47b511563a66d807564e0e9802",
+          "url": "https://github.com/fallow-rs/fallow/commit/3cd88222fa193fd203a41196a527734f0ef5773e"
+        },
+        "date": 1774603976449,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
