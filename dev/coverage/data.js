@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774609473067,
+  "lastUpdate": 1774609812052,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -2285,6 +2285,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/439a334f81e342617841d912bb15ffb58e7846cf"
         },
         "date": 1774609472686,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 88.2,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "a76fa95e1a62d26b2e6ad18089fcefdde83c8a07",
+          "message": "fix: handle pull_request_target event in auto-changed-since\n\nAlso supports pull_request_target for workflows that need default branch\npermissions (common with external fork PRs).",
+          "timestamp": "2026-03-27T12:09:12+01:00",
+          "tree_id": "f4ae1627955a9d1cbb0400440ee658452da8496c",
+          "url": "https://github.com/fallow-rs/fallow/commit/a76fa95e1a62d26b2e6ad18089fcefdde83c8a07"
+        },
+        "date": 1774609811060,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
