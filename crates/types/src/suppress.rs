@@ -43,6 +43,8 @@ pub enum IssueKind {
     CodeDuplication,
     /// A circular dependency chain.
     CircularDependency,
+    /// A production dependency only imported by test files.
+    TestOnlyDependency,
 }
 
 impl IssueKind {
@@ -62,6 +64,7 @@ impl IssueKind {
             "duplicate-export" => Some(Self::DuplicateExport),
             "code-duplication" => Some(Self::CodeDuplication),
             "circular-dependency" => Some(Self::CircularDependency),
+            "test-only-dependency" => Some(Self::TestOnlyDependency),
             _ => None,
         }
     }
@@ -82,6 +85,7 @@ impl IssueKind {
             Self::DuplicateExport => 10,
             Self::CodeDuplication => 11,
             Self::CircularDependency => 12,
+            Self::TestOnlyDependency => 13,
         }
     }
 
@@ -101,6 +105,7 @@ impl IssueKind {
             10 => Some(Self::DuplicateExport),
             11 => Some(Self::CodeDuplication),
             12 => Some(Self::CircularDependency),
+            13 => Some(Self::TestOnlyDependency),
             _ => None,
         }
     }
@@ -185,6 +190,10 @@ mod tests {
             IssueKind::parse("circular-dependency"),
             Some(IssueKind::CircularDependency)
         );
+        assert_eq!(
+            IssueKind::parse("test-only-dependency"),
+            Some(IssueKind::TestOnlyDependency)
+        );
     }
 
     #[test]
@@ -206,7 +215,7 @@ mod tests {
     #[test]
     fn discriminant_out_of_range() {
         assert_eq!(IssueKind::from_discriminant(0), None);
-        assert_eq!(IssueKind::from_discriminant(13), None);
+        assert_eq!(IssueKind::from_discriminant(14), None);
         assert_eq!(IssueKind::from_discriminant(u8::MAX), None);
     }
 
@@ -225,6 +234,7 @@ mod tests {
             IssueKind::DuplicateExport,
             IssueKind::CodeDuplication,
             IssueKind::CircularDependency,
+            IssueKind::TestOnlyDependency,
         ] {
             assert_eq!(
                 IssueKind::from_discriminant(kind.to_discriminant()),
@@ -232,7 +242,7 @@ mod tests {
             );
         }
         assert_eq!(IssueKind::from_discriminant(0), None);
-        assert_eq!(IssueKind::from_discriminant(13), None);
+        assert_eq!(IssueKind::from_discriminant(14), None);
     }
 
     // ── Discriminant uniqueness ─────────────────────────────────
@@ -252,6 +262,7 @@ mod tests {
             IssueKind::DuplicateExport,
             IssueKind::CodeDuplication,
             IssueKind::CircularDependency,
+            IssueKind::TestOnlyDependency,
         ];
         let discriminants: Vec<u8> = all_kinds.iter().map(|k| k.to_discriminant()).collect();
         let mut sorted = discriminants.clone();

@@ -17,8 +17,8 @@ use crate::results::*;
 use crate::suppress::{self, IssueKind, Suppression};
 
 use unused_deps::{
-    find_type_only_dependencies, find_unlisted_dependencies, find_unresolved_imports,
-    find_unused_dependencies,
+    find_test_only_dependencies, find_type_only_dependencies, find_unlisted_dependencies,
+    find_unresolved_imports, find_unused_dependencies,
 };
 use unused_exports::{collect_export_usages, find_duplicate_exports, find_unused_exports};
 use unused_files::find_unused_files;
@@ -201,6 +201,15 @@ pub fn find_dead_code_full(
     {
         results.type_only_dependencies =
             find_type_only_dependencies(graph, pkg, config, workspaces);
+    }
+
+    // In non-production mode, detect production deps only imported by test/dev files
+    if !config.production
+        && config.rules.test_only_dependencies != Severity::Off
+        && let Some(ref pkg) = pkg
+    {
+        results.test_only_dependencies =
+            find_test_only_dependencies(graph, pkg, config, workspaces);
     }
 
     // Detect circular dependencies
@@ -438,6 +447,7 @@ mod tests {
                 duplicate_exports: Severity::Off,
                 type_only_dependencies: Severity::Off,
                 circular_dependencies: Severity::Off,
+                test_only_dependencies: Severity::Off,
             };
             let config = make_config_with_rules(rules);
             let results = find_dead_code(&graph, &config);

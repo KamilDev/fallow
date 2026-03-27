@@ -117,6 +117,22 @@ expression: json_str
   },
   {
     "type": "issue",
+    "check_name": "fallow/test-only-dependency",
+    "description": "Package 'msw' is only imported by test files (consider moving to devDependencies)",
+    "categories": [
+      "Bug Risk"
+    ],
+    "severity": "minor",
+    "fingerprint": "ebc538b211ef05f5",
+    "location": {
+      "path": "package.json",
+      "lines": {
+        "begin": 12
+      }
+    }
+  },
+  {
+    "type": "issue",
     "check_name": "fallow/unused-enum-member",
     "description": "Enum member 'Status.Deprecated' is never referenced",
     "categories": [

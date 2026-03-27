@@ -232,6 +232,24 @@ pub fn build_sarif(
         }
     });
 
+    push_sarif_results(&mut sarif_results, &results.test_only_dependencies, |dep| {
+        SarifFields {
+            rule_id: "fallow/test-only-dependency",
+            level: severity_to_sarif_level(rules.test_only_dependencies),
+            message: format!(
+                "Package '{}' is only imported by test files (consider moving to devDependencies)",
+                dep.package_name
+            ),
+            uri: relative_uri(&dep.path, root),
+            region: if dep.line > 0 {
+                Some((dep.line, 1))
+            } else {
+                None
+            },
+            properties: None,
+        }
+    });
+
     let sarif_member = |member: &UnusedMember,
                         rule_id: &'static str,
                         level: &'static str,
@@ -372,6 +390,11 @@ pub fn build_sarif(
             "fallow/type-only-dependency",
             "Production dependency only used via type-only imports",
             severity_to_sarif_level(rules.type_only_dependencies),
+        ),
+        sarif_rule(
+            "fallow/test-only-dependency",
+            "Production dependency only imported by test files",
+            severity_to_sarif_level(rules.test_only_dependencies),
         ),
         sarif_rule(
             "fallow/unused-enum-member",
@@ -632,7 +655,7 @@ mod tests {
         let rules = sarif["runs"][0]["tool"]["driver"]["rules"]
             .as_array()
             .expect("rules should be an array");
-        assert_eq!(rules.len(), 13);
+        assert_eq!(rules.len(), 14);
 
         let rule_ids: Vec<&str> = rules.iter().map(|r| r["id"].as_str().unwrap()).collect();
         assert!(rule_ids.contains(&"fallow/unused-file"));
@@ -642,6 +665,7 @@ mod tests {
         assert!(rule_ids.contains(&"fallow/unused-dev-dependency"));
         assert!(rule_ids.contains(&"fallow/unused-optional-dependency"));
         assert!(rule_ids.contains(&"fallow/type-only-dependency"));
+        assert!(rule_ids.contains(&"fallow/test-only-dependency"));
         assert!(rule_ids.contains(&"fallow/unused-enum-member"));
         assert!(rule_ids.contains(&"fallow/unused-class-member"));
         assert!(rule_ids.contains(&"fallow/unresolved-import"));
@@ -822,8 +846,8 @@ mod tests {
         let sarif = build_sarif(&results, &root, &RulesConfig::default());
 
         let entries = sarif["runs"][0]["results"].as_array().unwrap();
-        // 12 issues but duplicate_exports has 2 locations => 13 SARIF results
-        assert_eq!(entries.len(), 13);
+        // 13 issues but duplicate_exports has 2 locations => 14 SARIF results
+        assert_eq!(entries.len(), 14);
 
         let rule_ids: Vec<&str> = entries
             .iter()
@@ -835,6 +859,7 @@ mod tests {
         assert!(rule_ids.contains(&"fallow/unused-dependency"));
         assert!(rule_ids.contains(&"fallow/unused-dev-dependency"));
         assert!(rule_ids.contains(&"fallow/type-only-dependency"));
+        assert!(rule_ids.contains(&"fallow/test-only-dependency"));
         assert!(rule_ids.contains(&"fallow/unused-enum-member"));
         assert!(rule_ids.contains(&"fallow/unused-class-member"));
         assert!(rule_ids.contains(&"fallow/unresolved-import"));

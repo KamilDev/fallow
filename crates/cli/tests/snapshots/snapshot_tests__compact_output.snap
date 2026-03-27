@@ -14,4 +14,5 @@ unresolved-import:src/app.ts:3:./missing-module
 unlisted-dep:chalk
 duplicate-export:Config
 type-only-dep:zod
+test-only-dep:msw
 circular-dependency:src/a.ts:3:src/a.ts → src/b.ts → src/a.ts

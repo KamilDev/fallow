@@ -941,7 +941,7 @@ mod tests {
         assert_eq!(output["elapsed_ms"], 99);
     }
 
-    // ── All 13 issue type arrays present ────────────────────────────
+    // ── All 14 issue type arrays present ────────────────────────────
 
     #[test]
     fn json_all_issue_type_arrays_present_in_empty_results() {
@@ -963,6 +963,7 @@ mod tests {
             "unlisted_dependencies",
             "duplicate_exports",
             "type_only_dependencies",
+            "test_only_dependencies",
             "circular_dependencies",
         ];
         for key in &expected_arrays {

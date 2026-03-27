@@ -495,6 +495,32 @@ pub fn build_diagnostics(
         }
     }
 
+    // Test-only dependencies: could be moved to devDependencies
+    for dep in &results.test_only_dependencies {
+        if let Ok(dep_uri) = Url::from_file_path(&dep.path) {
+            let line = dep.line.saturating_sub(1);
+            let entry = diagnostics_by_file.entry(dep_uri).or_default();
+            entry.push(Diagnostic {
+                range: Range {
+                    start: Position { line, character: 0 },
+                    end: Position {
+                        line,
+                        character: u32::MAX,
+                    },
+                },
+                severity: Some(DiagnosticSeverity::INFORMATION),
+                source: Some("fallow".to_string()),
+                code: Some(NumberOrString::String("test-only-dependency".to_string())),
+                code_description: doc_link("test-only-dependencies"),
+                message: format!(
+                    "Production dependency '{}' is only imported by test files — consider moving to devDependencies",
+                    dep.package_name
+                ),
+                ..Default::default()
+            });
+        }
+    }
+
     diagnostics_by_file
 }
 
@@ -507,8 +533,8 @@ mod tests {
     use fallow_core::extract::MemberKind;
     use fallow_core::results::{
         CircularDependency, DependencyLocation, DuplicateExport, DuplicateLocation, ImportSite,
-        TypeOnlyDependency, UnlistedDependency, UnresolvedImport, UnusedDependency, UnusedExport,
-        UnusedFile, UnusedMember,
+        TestOnlyDependency, TypeOnlyDependency, UnlistedDependency, UnresolvedImport,
+        UnusedDependency, UnusedExport, UnusedFile, UnusedMember,
     };
 
     fn test_root() -> PathBuf {
@@ -1180,6 +1206,37 @@ mod tests {
         assert!(d.message.contains("Type-only dependency"));
         assert!(d.message.contains("devDependency"));
         assert_eq!(d.range.start.line, 7); // 1-based 8 -> 0-based 7
+        assert_eq!(d.range.start.character, 0);
+        assert_eq!(d.range.end.character, u32::MAX);
+    }
+
+    #[test]
+    fn test_only_dependency_produces_information_diagnostic() {
+        let root = test_root();
+        let mut results = AnalysisResults::default();
+        results.test_only_dependencies.push(TestOnlyDependency {
+            package_name: "test-utils-lib".to_string(),
+            path: root.join("package.json"),
+            line: 5,
+        });
+
+        let duplication = empty_duplication();
+        let diags = build_diagnostics(&results, &duplication, &root);
+
+        let uri = Url::from_file_path(root.join("package.json")).unwrap();
+        let file_diags = &diags[&uri];
+        assert_eq!(file_diags.len(), 1);
+
+        let d = &file_diags[0];
+        assert_eq!(d.severity, Some(DiagnosticSeverity::INFORMATION));
+        assert_eq!(
+            d.code,
+            Some(NumberOrString::String("test-only-dependency".to_string()))
+        );
+        assert!(d.message.contains("test-utils-lib"));
+        assert!(d.message.contains("test files"));
+        assert!(d.message.contains("devDependencies"));
+        assert_eq!(d.range.start.line, 4); // 1-based 5 -> 0-based 4
         assert_eq!(d.range.start.character, 0);
         assert_eq!(d.range.end.character, u32::MAX);
     }

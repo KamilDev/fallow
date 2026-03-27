@@ -35,5 +35,6 @@ expression: redact_version(&json_str)
     }
   ],
   "type_only_dependencies": [],
+  "test_only_dependencies": [],
   "circular_dependencies": []
 }

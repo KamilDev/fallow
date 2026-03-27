@@ -441,14 +441,7 @@ mod tests {
     #[test]
     fn tooling_dep_prefixes() {
         assert!(crate::plugins::is_known_tooling_dependency("@types/node"));
-        assert!(crate::plugins::is_known_tooling_dependency("eslint"));
-        assert!(crate::plugins::is_known_tooling_dependency(
-            "eslint-plugin-react"
-        ));
         assert!(crate::plugins::is_known_tooling_dependency("prettier"));
-        assert!(crate::plugins::is_known_tooling_dependency(
-            "@typescript-eslint/parser"
-        ));
         assert!(crate::plugins::is_known_tooling_dependency("husky"));
         assert!(crate::plugins::is_known_tooling_dependency("lint-staged"));
         assert!(crate::plugins::is_known_tooling_dependency("commitlint"));
@@ -456,10 +449,22 @@ mod tests {
             "@commitlint/config-conventional"
         ));
         assert!(crate::plugins::is_known_tooling_dependency("stylelint"));
-        assert!(crate::plugins::is_known_tooling_dependency("postcss"));
-        assert!(crate::plugins::is_known_tooling_dependency("autoprefixer"));
-        assert!(crate::plugins::is_known_tooling_dependency("tailwindcss"));
-        assert!(crate::plugins::is_known_tooling_dependency(
+    }
+
+    #[test]
+    fn tooling_dep_plugin_handled_not_blanket() {
+        // These prefixes removed — handled by plugin config parsing
+        assert!(!crate::plugins::is_known_tooling_dependency("eslint"));
+        assert!(!crate::plugins::is_known_tooling_dependency(
+            "eslint-plugin-react"
+        ));
+        assert!(!crate::plugins::is_known_tooling_dependency(
+            "@typescript-eslint/parser"
+        ));
+        assert!(!crate::plugins::is_known_tooling_dependency("postcss"));
+        assert!(!crate::plugins::is_known_tooling_dependency("autoprefixer"));
+        assert!(!crate::plugins::is_known_tooling_dependency("tailwindcss"));
+        assert!(!crate::plugins::is_known_tooling_dependency(
             "@tailwindcss/forms"
         ));
     }

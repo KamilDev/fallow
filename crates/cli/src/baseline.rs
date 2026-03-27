@@ -35,6 +35,9 @@ pub struct BaselineData {
     /// Type-only dependencies, keyed by package name.
     #[serde(default)]
     pub type_only_dependencies: Vec<String>,
+    /// Test-only dependencies, keyed by package name.
+    #[serde(default)]
+    pub test_only_dependencies: Vec<String>,
 }
 
 impl BaselineData {
@@ -134,6 +137,11 @@ impl BaselineData {
                 .collect(),
             type_only_dependencies: results
                 .type_only_dependencies
+                .iter()
+                .map(|d| d.package_name.clone())
+                .collect(),
+            test_only_dependencies: results
+                .test_only_dependencies
                 .iter()
                 .map(|d| d.package_name.clone())
                 .collect(),
@@ -301,6 +309,15 @@ pub fn filter_new_issues(
     results
         .type_only_dependencies
         .retain(|d| !baseline_type_only.contains(d.package_name.as_str()));
+
+    let baseline_test_only: FxHashSet<&str> = baseline
+        .test_only_dependencies
+        .iter()
+        .map(String::as_str)
+        .collect();
+    results
+        .test_only_dependencies
+        .retain(|d| !baseline_test_only.contains(d.package_name.as_str()));
 
     results
 }
@@ -628,6 +645,7 @@ mod tests {
             unlisted_dependencies: vec![],
             duplicate_exports: vec![],
             type_only_dependencies: vec![],
+            test_only_dependencies: vec![],
         };
         let results = AnalysisResults {
             unused_files: vec![
@@ -664,6 +682,7 @@ mod tests {
             unlisted_dependencies: vec![],
             duplicate_exports: vec![],
             type_only_dependencies: vec![],
+            test_only_dependencies: vec![],
         };
         let results = make_results();
         let filtered = filter_new_issues(results, &baseline);
@@ -687,6 +706,7 @@ mod tests {
             unlisted_dependencies: vec![],
             duplicate_exports: vec![],
             type_only_dependencies: vec![],
+            test_only_dependencies: vec![],
         };
         let results = AnalysisResults {
             unused_exports: vec![

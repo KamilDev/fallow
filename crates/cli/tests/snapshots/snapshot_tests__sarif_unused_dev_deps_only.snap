@@ -105,6 +105,15 @@ expression: redact_sarif_version(&json_str)
               }
             },
             {
+              "id": "fallow/test-only-dependency",
+              "shortDescription": {
+                "text": "Production dependency only imported by test files"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
               "id": "fallow/unused-enum-member",
               "shortDescription": {
                 "text": "Enum member is never referenced"

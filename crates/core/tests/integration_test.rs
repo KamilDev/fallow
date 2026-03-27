@@ -40,6 +40,8 @@ mod production_mode;
 mod re_export_chains;
 #[path = "integration_test/suppression_comments.rs"]
 mod suppression_comments;
+#[path = "integration_test/test_only_deps.rs"]
+mod test_only_deps;
 #[path = "integration_test/type_only_deps.rs"]
 mod type_only_deps;
 #[path = "integration_test/unused_enum_members.rs"]

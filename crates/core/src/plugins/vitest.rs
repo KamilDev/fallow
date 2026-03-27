@@ -33,13 +33,7 @@ const ALWAYS_USED: &[&str] = &[
     "**/src/test-setup.{ts,tsx,js,jsx}",
 ];
 
-const TOOLING_DEPENDENCIES: &[&str] = &[
-    "vitest",
-    "@vitest/coverage-v8",
-    "@vitest/coverage-istanbul",
-    "@vitest/ui",
-    "@vitest/browser",
-];
+const TOOLING_DEPENDENCIES: &[&str] = &["vitest"];
 
 /// Vitest config filenames for file-based activation.
 /// In monorepos, `vitest` may only be in some workspaces, but shared vite configs

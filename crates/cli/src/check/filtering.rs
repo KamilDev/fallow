@@ -38,6 +38,7 @@ pub fn filter_to_workspace(
         .unused_optional_dependencies
         .retain(|d| d.path == ws_pkg);
     results.type_only_dependencies.retain(|d| d.path == ws_pkg);
+    results.test_only_dependencies.retain(|d| d.path == ws_pkg);
 
     // Unlisted deps: keep only if any importing file is in this workspace
     results

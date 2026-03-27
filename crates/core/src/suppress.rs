@@ -86,6 +86,7 @@ mod tests {
             IssueKind::DuplicateExport,
             IssueKind::CodeDuplication,
             IssueKind::CircularDependency,
+            IssueKind::TestOnlyDependency,
         ] {
             assert_eq!(
                 IssueKind::from_discriminant(kind.to_discriminant()),
@@ -93,7 +94,7 @@ mod tests {
             );
         }
         assert_eq!(IssueKind::from_discriminant(0), None);
-        assert_eq!(IssueKind::from_discriminant(13), None);
+        assert_eq!(IssueKind::from_discriminant(14), None);
     }
 
     #[test]

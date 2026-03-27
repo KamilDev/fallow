@@ -27,23 +27,7 @@ const ALWAYS_USED: &[&str] = &[
     "lint-staged.config.{js,mjs,cjs}",
 ];
 
-const TOOLING_DEPENDENCIES: &[&str] = &[
-    "eslint",
-    "@eslint/js",
-    "@eslint/eslintrc",
-    "eslint-config-next",
-    "eslint-config-prettier",
-    "eslint-plugin-react",
-    "eslint-plugin-react-hooks",
-    "eslint-plugin-jsx-a11y",
-    "eslint-plugin-import",
-    "@typescript-eslint/parser",
-    "@typescript-eslint/eslint-plugin",
-    "prettier",
-    "eslint-plugin-prettier",
-    "eslint-plugin-sonarjs",
-    "eslint-plugin-storybook",
-];
+const TOOLING_DEPENDENCIES: &[&str] = &["eslint"];
 
 const ESLINT_CONFIG_EXPORTS: &[&str] = &["default"];
 
@@ -98,6 +82,10 @@ impl Plugin for EslintPlugin {
         TOOLING_DEPENDENCIES
     }
 
+    fn package_json_config_key(&self) -> Option<&'static str> {
+        Some("eslintConfig")
+    }
+
     fn used_exports(&self) -> Vec<(&'static str, &'static [&'static str])> {
         vec![(
             "eslint.config.{js,mjs,cjs,ts,mts,cts}",
@@ -105,7 +93,7 @@ impl Plugin for EslintPlugin {
         )]
     }
 
-    fn resolve_config(&self, config_path: &Path, source: &str, _root: &Path) -> PluginResult {
+    fn resolve_config(&self, config_path: &Path, source: &str, root: &Path) -> PluginResult {
         let mut result = PluginResult::default();
 
         // For JSON configs, wrap in parens so Oxc can parse them
@@ -122,6 +110,22 @@ impl Plugin for EslintPlugin {
         for imp in &imports {
             let dep = crate::resolve::extract_package_name(imp);
             result.referenced_dependencies.push(dep);
+        }
+
+        // Follow shared config imports one level deep to discover peer deps.
+        // e.g. eslint.config.js imports @sveltejs/eslint-config, which internally
+        // imports typescript-eslint, eslint-plugin-svelte, @eslint/js — all peer deps
+        // that the host project must install.
+        for imp in &imports {
+            let pkg_name = crate::resolve::extract_package_name(imp);
+            if let Some((entry_source, entry_path)) = read_package_entry(root, &pkg_name) {
+                let nested = config_parser::extract_imports(&entry_source, &entry_path);
+                for nested_imp in &nested {
+                    result
+                        .referenced_dependencies
+                        .push(crate::resolve::extract_package_name(nested_imp));
+                }
+            }
         }
 
         // Legacy .eslintrc: extract plugins by short name
@@ -165,6 +169,28 @@ impl Plugin for EslintPlugin {
 
         result
     }
+}
+
+/// Read a package's entry point source from node_modules.
+///
+/// Resolves the package's `module` or `main` field from its `package.json`,
+/// reads the entry file, and returns its source and path. Returns `None` if
+/// the package is not found or the entry file is unreadable.
+fn read_package_entry(root: &Path, pkg_name: &str) -> Option<(String, std::path::PathBuf)> {
+    let pkg_dir = root.join("node_modules").join(pkg_name);
+    let pkg_json_str = std::fs::read_to_string(pkg_dir.join("package.json")).ok()?;
+    let pkg_json: serde_json::Value = serde_json::from_str(&pkg_json_str).ok()?;
+
+    // Prefer "module" (ESM) over "main" (CJS), fall back to "index.js"
+    let entry_rel = pkg_json
+        .get("module")
+        .and_then(|v| v.as_str())
+        .or_else(|| pkg_json.get("main").and_then(|v| v.as_str()))
+        .unwrap_or("index.js");
+
+    let entry_path = pkg_dir.join(entry_rel);
+    let source = std::fs::read_to_string(&entry_path).ok()?;
+    Some((source, entry_path))
 }
 
 /// Resolve `ESLint` plugin short name to full package name.

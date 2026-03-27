@@ -85,6 +85,9 @@ pub fn build_compact_lines(results: &AnalysisResults, root: &Path) -> Vec<String
     for dep in &results.type_only_dependencies {
         lines.push(format!("type-only-dep:{}", dep.package_name));
     }
+    for dep in &results.test_only_dependencies {
+        lines.push(format!("test-only-dep:{}", dep.package_name));
+    }
     for cycle in &results.circular_dependencies {
         let chain: Vec<String> = cycle.files.iter().map(|p| rel(p)).collect();
         let mut display_chain = chain.clone();
@@ -389,8 +392,8 @@ mod tests {
         let results = sample_results(&root);
         let lines = build_compact_lines(&results, &root);
 
-        // 12 issue types, one of each
-        assert_eq!(lines.len(), 12);
+        // 13 issue types, one of each
+        assert_eq!(lines.len(), 13);
 
         // Verify ordering matches output order
         assert!(lines[0].starts_with("unused-file:"));
@@ -404,7 +407,8 @@ mod tests {
         assert!(lines[8].starts_with("unlisted-dep:"));
         assert!(lines[9].starts_with("duplicate-export:"));
         assert!(lines[10].starts_with("type-only-dep:"));
-        assert!(lines[11].starts_with("circular-dependency:"));
+        assert!(lines[11].starts_with("test-only-dep:"));
+        assert!(lines[12].starts_with("circular-dependency:"));
     }
 
     #[test]

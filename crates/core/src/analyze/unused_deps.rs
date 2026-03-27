@@ -344,6 +344,93 @@ pub fn find_type_only_dependencies(
     type_only_deps
 }
 
+/// Find production dependencies that are only imported by test/dev files.
+///
+/// When NOT in production mode (where test files are still discovered), a dep
+/// that appears exclusively in test/story/config files should be a devDependency.
+pub fn find_test_only_dependencies(
+    graph: &ModuleGraph,
+    pkg: &PackageJson,
+    config: &ResolvedConfig,
+    workspaces: &[fallow_config::WorkspaceInfo],
+) -> Vec<TestOnlyDependency> {
+    // Build a GlobSet from the production exclude patterns (test/dev/story files)
+    let test_globs = {
+        let mut builder = globset::GlobSetBuilder::new();
+        for pattern in crate::discover::PRODUCTION_EXCLUDE_PATTERNS {
+            if let Ok(glob) = globset::Glob::new(pattern) {
+                builder.add(glob);
+            }
+        }
+        match builder.build() {
+            Ok(set) => set,
+            Err(_) => return Vec::new(),
+        }
+    };
+
+    let root_pkg_path = config.root.join("package.json");
+    let root_pkg_content = read_pkg_json_content(&root_pkg_path);
+    let workspace_names: FxHashSet<&str> = workspaces.iter().map(|ws| ws.name.as_str()).collect();
+    let ignore_deps: FxHashSet<&str> = config
+        .ignore_dependencies
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+
+    let mut test_only_deps = Vec::new();
+
+    for dep in pkg.production_dependency_names() {
+        if workspace_names.contains(dep.as_str()) {
+            continue;
+        }
+        if ignore_deps.contains(dep.as_str()) {
+            continue;
+        }
+
+        let Some(file_ids) = graph.package_usage.get(dep.as_str()) else {
+            // Not used at all — caught by unused_dependencies
+            continue;
+        };
+
+        // Skip if already caught as type-only (all usages are type-only imports)
+        let total_count = file_ids.len();
+        let type_only_count = graph
+            .type_only_package_usage
+            .get(dep.as_str())
+            .map_or(0, Vec::len);
+        if type_only_count == total_count {
+            continue;
+        }
+
+        // Check if ALL importing files are test/dev files
+        let all_test_only = file_ids.iter().all(|id| {
+            graph
+                .modules
+                .get(id.0 as usize)
+                .is_some_and(|module| {
+                    let relative = module
+                        .path
+                        .strip_prefix(&config.root)
+                        .unwrap_or(&module.path);
+                    test_globs.is_match(relative)
+                })
+        });
+
+        if all_test_only {
+            let line = root_pkg_content
+                .as_deref()
+                .map_or(1, |c| find_dep_line_in_json(c, &dep));
+            test_only_deps.push(TestOnlyDependency {
+                package_name: dep,
+                path: root_pkg_path.clone(),
+                line,
+            });
+        }
+    }
+
+    test_only_deps
+}
+
 /// Check whether a package is listed in root deps or in the workspace that owns `file_path`.
 pub fn is_package_listed_for_file(
     file_path: &Path,

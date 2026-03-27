@@ -52,6 +52,9 @@ pub struct AnalysisResults {
     /// Production dependencies only used via type-only imports (could be devDependencies).
     /// Only populated in production mode.
     pub type_only_dependencies: Vec<TypeOnlyDependency>,
+    /// Production dependencies only imported by test files (could be devDependencies).
+    #[serde(default)]
+    pub test_only_dependencies: Vec<TestOnlyDependency>,
     /// Circular dependency chains detected in the module graph.
     pub circular_dependencies: Vec<CircularDependency>,
     /// Usage counts for all exports across the project. Used by the LSP for Code Lens.
@@ -99,6 +102,7 @@ impl AnalysisResults {
             + self.unlisted_dependencies.len()
             + self.duplicate_exports.len()
             + self.type_only_dependencies.len()
+            + self.test_only_dependencies.len()
             + self.circular_dependencies.len()
     }
 
@@ -261,6 +265,19 @@ pub struct DuplicateLocation {
 /// is not needed at runtime and could be moved to devDependencies.
 #[derive(Debug, Clone, Serialize)]
 pub struct TypeOnlyDependency {
+    /// npm package name.
+    pub package_name: String,
+    /// Path to the package.json where the dependency is listed.
+    #[serde(serialize_with = "serde_path::serialize")]
+    pub path: PathBuf,
+    /// 1-based line number of the dependency entry in package.json.
+    pub line: u32,
+}
+
+/// A production dependency that is only imported by test files.
+/// Since it is never used in production code, it could be moved to devDependencies.
+#[derive(Debug, Clone, Serialize)]
+pub struct TestOnlyDependency {
     /// npm package name.
     pub package_name: String,
     /// Path to the package.json where the dependency is listed.
@@ -448,6 +465,11 @@ mod tests {
             path: PathBuf::from("package.json"),
             line: 8,
         });
+        results.test_only_dependencies.push(TestOnlyDependency {
+            package_name: "test-only".to_string(),
+            path: PathBuf::from("package.json"),
+            line: 9,
+        });
         results.circular_dependencies.push(CircularDependency {
             files: vec![PathBuf::from("a.ts"), PathBuf::from("b.ts")],
             length: 2,
@@ -455,8 +477,8 @@ mod tests {
             col: 0,
         });
 
-        // 13 categories, one of each
-        assert_eq!(results.total_issues(), 13);
+        // 14 categories, one of each
+        assert_eq!(results.total_issues(), 14);
         assert!(results.has_issues());
     }
 
@@ -512,6 +534,7 @@ mod tests {
         assert!(r.unlisted_dependencies.is_empty());
         assert!(r.duplicate_exports.is_empty());
         assert!(r.type_only_dependencies.is_empty());
+        assert!(r.test_only_dependencies.is_empty());
         assert!(r.circular_dependencies.is_empty());
         assert!(r.export_usages.is_empty());
     }

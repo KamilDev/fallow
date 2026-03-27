@@ -16,15 +16,7 @@ const CONFIG_PATTERNS: &[&str] = &["tailwind.config.{ts,js,cjs,mjs}"];
 
 const ALWAYS_USED: &[&str] = &["tailwind.config.{ts,js,cjs,mjs}"];
 
-const TOOLING_DEPENDENCIES: &[&str] = &[
-    "tailwindcss",
-    "@tailwindcss/postcss",
-    "@tailwindcss/typography",
-    "@tailwindcss/forms",
-    "@tailwindcss/aspect-ratio",
-    "@tailwindcss/container-queries",
-    "autoprefixer",
-];
+const TOOLING_DEPENDENCIES: &[&str] = &["tailwindcss", "@tailwindcss/postcss"];
 
 impl Plugin for TailwindPlugin {
     fn name(&self) -> &'static str {

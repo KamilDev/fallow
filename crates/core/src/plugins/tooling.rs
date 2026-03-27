@@ -7,23 +7,16 @@
 /// Prefixes of package names that are always dev tooling.
 const GENERAL_TOOLING_PREFIXES: &[&str] = &[
     "@types/",
-    "eslint",
-    "@typescript-eslint",
     "husky",
     "lint-staged",
     "commitlint",
     "@commitlint",
     "stylelint",
-    "postcss",
-    "autoprefixer",
-    "tailwindcss",
-    "@tailwindcss",
     "@vitest/",
     "@jest/",
+    "@tapjs/",
     "@testing-library/",
     "@playwright/",
-    "@storybook/",
-    "storybook",
     "@react-native-community/cli",
     "@react-native/",
     "secretlint",
@@ -58,6 +51,7 @@ const GENERAL_TOOLING_EXACT: &[&str] = &[
     "fallow",
     "jest",
     "vitest",
+    "tap",
     "happy-dom",
     "jsdom",
     "vite",
@@ -158,10 +152,11 @@ mod tests {
     }
 
     #[test]
-    fn storybook_prefix_matches() {
-        assert!(is_known_tooling_dependency("@storybook/react"));
-        assert!(is_known_tooling_dependency("@storybook/addon-essentials"));
-        assert!(is_known_tooling_dependency("storybook"));
+    fn storybook_not_blanket_matched() {
+        // @storybook/ and storybook prefixes removed — handled by StorybookPlugin config parsing
+        assert!(!is_known_tooling_dependency("@storybook/react"));
+        assert!(!is_known_tooling_dependency("@storybook/addon-essentials"));
+        assert!(!is_known_tooling_dependency("storybook"));
     }
 
     #[test]
@@ -186,10 +181,12 @@ mod tests {
     }
 
     #[test]
-    fn eslint_prefix_matches() {
-        assert!(is_known_tooling_dependency("eslint"));
-        assert!(is_known_tooling_dependency("eslint-plugin-react"));
-        assert!(is_known_tooling_dependency("eslint-config-next"));
+    fn eslint_not_blanket_matched() {
+        // eslint and @typescript-eslint prefixes removed — handled by EslintPlugin config parsing
+        assert!(!is_known_tooling_dependency("eslint"));
+        assert!(!is_known_tooling_dependency("eslint-plugin-react"));
+        assert!(!is_known_tooling_dependency("eslint-config-next"));
+        assert!(!is_known_tooling_dependency("@typescript-eslint/parser"));
     }
 
     #[test]
@@ -386,7 +383,18 @@ mod tests {
         assert!(is_known_tooling_dependency("@playwright/test"));
     }
 
+    #[test]
+    fn tapjs_prefix_matches() {
+        assert!(is_known_tooling_dependency("@tapjs/test"));
+        assert!(is_known_tooling_dependency("@tapjs/snapshot"));
+    }
+
     // ── Additional exact matching ─────────────────────────────────
+
+    #[test]
+    fn exact_tap_matches() {
+        assert!(is_known_tooling_dependency("tap"));
+    }
 
     #[test]
     fn exact_rolldown_matches() {
@@ -483,10 +491,14 @@ mod tests {
     }
 
     #[test]
-    fn postcss_prefix_matches_derived_packages() {
-        // "postcss" IS in GENERAL_TOOLING_PREFIXES, so postcss-* matches
-        assert!(is_known_tooling_dependency("postcss-modules"));
-        assert!(is_known_tooling_dependency("postcss-import"));
+    fn postcss_not_blanket_matched() {
+        // postcss, autoprefixer, tailwindcss, @tailwindcss prefixes removed —
+        // handled by PostCssPlugin and TailwindPlugin config parsing
+        assert!(!is_known_tooling_dependency("postcss-modules"));
+        assert!(!is_known_tooling_dependency("postcss-import"));
+        assert!(!is_known_tooling_dependency("autoprefixer"));
+        assert!(!is_known_tooling_dependency("tailwindcss"));
+        assert!(!is_known_tooling_dependency("@tailwindcss/typography"));
     }
 
     #[test]

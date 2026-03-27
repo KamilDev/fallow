@@ -82,6 +82,8 @@ pub struct RulesConfig {
     pub duplicate_exports: Severity,
     #[serde(default = "Severity::default_warn")]
     pub type_only_dependencies: Severity,
+    #[serde(default = "Severity::default_warn")]
+    pub test_only_dependencies: Severity,
     #[serde(default)]
     pub circular_dependencies: Severity,
 }
@@ -101,6 +103,7 @@ impl Default for RulesConfig {
             unlisted_dependencies: Severity::Error,
             duplicate_exports: Severity::Error,
             type_only_dependencies: Severity::Warn,
+            test_only_dependencies: Severity::Warn,
             circular_dependencies: Severity::Error,
         }
     }
@@ -145,6 +148,9 @@ impl RulesConfig {
         if let Some(s) = partial.type_only_dependencies {
             self.type_only_dependencies = s;
         }
+        if let Some(s) = partial.test_only_dependencies {
+            self.test_only_dependencies = s;
+        }
         if let Some(s) = partial.circular_dependencies {
             self.circular_dependencies = s;
         }
@@ -180,6 +186,8 @@ pub struct PartialRulesConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub type_only_dependencies: Option<Severity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub test_only_dependencies: Option<Severity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub circular_dependencies: Option<Severity>,
 }
 
@@ -201,6 +209,7 @@ mod tests {
         assert_eq!(rules.unlisted_dependencies, Severity::Error);
         assert_eq!(rules.duplicate_exports, Severity::Error);
         assert_eq!(rules.type_only_dependencies, Severity::Warn);
+        assert_eq!(rules.test_only_dependencies, Severity::Warn);
         assert_eq!(rules.circular_dependencies, Severity::Error);
     }
 
@@ -282,12 +291,14 @@ mod tests {
             unlisted_dependencies: Some(Severity::Off),
             duplicate_exports: Some(Severity::Off),
             type_only_dependencies: Some(Severity::Off),
+            test_only_dependencies: Some(Severity::Off),
             circular_dependencies: Some(Severity::Off),
         };
         rules.apply_partial(&partial);
         assert_eq!(rules.unused_files, Severity::Off);
         assert_eq!(rules.circular_dependencies, Severity::Off);
         assert_eq!(rules.type_only_dependencies, Severity::Off);
+        assert_eq!(rules.test_only_dependencies, Severity::Off);
     }
 
     #[test]

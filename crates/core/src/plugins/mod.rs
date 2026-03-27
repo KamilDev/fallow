@@ -740,6 +740,7 @@ mod tests {
             &nx::NxPlugin,
             &rollup::RollupPlugin,
             &sveltekit::SvelteKitPlugin,
+            &prettier::PrettierPlugin,
         ];
         for plugin in plugins {
             assert!(
@@ -836,6 +837,22 @@ mod tests {
     #[test]
     fn babel_has_package_json_config_key() {
         assert_eq!(babel::BabelPlugin.package_json_config_key(), Some("babel"));
+    }
+
+    #[test]
+    fn eslint_has_package_json_config_key() {
+        assert_eq!(
+            eslint::EslintPlugin.package_json_config_key(),
+            Some("eslintConfig")
+        );
+    }
+
+    #[test]
+    fn prettier_has_package_json_config_key() {
+        assert_eq!(
+            prettier::PrettierPlugin.package_json_config_key(),
+            Some("prettier")
+        );
     }
 
     #[test]

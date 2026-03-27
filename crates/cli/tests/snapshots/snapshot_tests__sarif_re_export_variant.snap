@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/snapshot_tests.rs
-expression: "json_str.replace(&format!(\"\\\"version\\\": \\\"{}\\\"\", env!(\"CARGO_PKG_VERSION\")),\n\"\\\"version\\\": \\\"[VERSION]\\\"\",)"
+expression: redact_sarif_version(&json_str)
 ---
 {
   "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
@@ -100,6 +100,15 @@ expression: "json_str.replace(&format!(\"\\\"version\\\": \\\"{}\\\"\", env!(\"C
                 "text": "Production dependencies that are only imported via `import type` statements. These can be moved to devDependencies since they generate no runtime code and are stripped during compilation."
               },
               "helpUri": "https://docs.fallow.tools/explanations/dead-code#type-only-dependencies",
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "fallow/test-only-dependency",
+              "shortDescription": {
+                "text": "Production dependency only imported by test files"
+              },
               "defaultConfiguration": {
                 "level": "warning"
               }

@@ -93,6 +93,11 @@ pub(super) fn sample_results(root: &Path) -> AnalysisResults {
         path: root.join("package.json"),
         line: 8,
     });
+    r.test_only_dependencies.push(TestOnlyDependency {
+        package_name: "msw".to_string(),
+        path: root.join("package.json"),
+        line: 12,
+    });
     r.circular_dependencies.push(CircularDependency {
         files: vec![root.join("src/a.ts"), root.join("src/b.ts")],
         length: 2,

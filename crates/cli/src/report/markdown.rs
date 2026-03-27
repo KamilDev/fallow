@@ -147,6 +147,14 @@ pub fn build_markdown(results: &AnalysisResults, root: &Path) -> String {
         |dep| format_dependency(&dep.package_name, &dep.path, root),
     );
 
+    // ── Test-only dependencies ──
+    markdown_section(
+        &mut out,
+        &results.test_only_dependencies,
+        "Test-only production dependencies (consider moving to devDependencies)",
+        |dep| format_dependency(&dep.package_name, &dep.path, root),
+    );
+
     // ── Circular dependencies ──
     markdown_section(
         &mut out,
@@ -629,6 +637,7 @@ mod tests {
         assert!(md.contains("### Unlisted dependencies (1)"));
         assert!(md.contains("### Duplicate exports (1)"));
         assert!(md.contains("### Type-only dependencies"));
+        assert!(md.contains("### Test-only production dependencies"));
         assert!(md.contains("### Circular dependencies (1)"));
     }
 

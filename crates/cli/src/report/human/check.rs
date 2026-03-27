@@ -205,6 +205,14 @@ pub(in crate::report) fn build_human_lines(
         |dep| vec![format!("  {}", format_dep(&dep.package_name, &dep.path))],
     );
 
+    build_human_section_ex(
+        &mut lines,
+        &results.test_only_dependencies,
+        "Test-only production dependencies (consider moving to devDependencies)",
+        severity_to_level(rules.test_only_dependencies),
+        |dep| vec![format!("  {}", format_dep(&dep.package_name, &dep.path))],
+    );
+
     build_circular_deps_section(
         &mut lines,
         &results.circular_dependencies,
@@ -481,6 +489,7 @@ fn build_summary_footer(results: &AnalysisResults) -> String {
     add(results.unlisted_dependencies.len(), "unlisted");
     add(results.duplicate_exports.len(), "duplicate");
     add(results.type_only_dependencies.len(), "type-only");
+    add(results.test_only_dependencies.len(), "test-only");
     add(results.circular_dependencies.len(), "circular");
 
     parts.join(" \u{00b7} ")
@@ -993,6 +1002,7 @@ mod tests {
         assert!(text.contains("Unlisted dependencies (1)"));
         assert!(text.contains("Duplicate exports (1)"));
         assert!(text.contains("Type-only dependencies (consider moving to devDependencies) (1)"));
+        assert!(text.contains("Test-only production dependencies (consider moving to devDependencies) (1)"));
         assert!(text.contains("Circular dependencies (1)"));
     }
 

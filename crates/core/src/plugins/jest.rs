@@ -25,14 +25,7 @@ const CONFIG_PATTERNS: &[&str] = &["jest.config.{ts,js,mjs,cjs}", "jest.config.j
 
 const ALWAYS_USED: &[&str] = &["jest.config.{ts,js,mjs,cjs}", "jest.setup.{ts,js,tsx,jsx}"];
 
-const TOOLING_DEPENDENCIES: &[&str] = &[
-    "jest",
-    "@jest/globals",
-    "jest-environment-jsdom",
-    "ts-jest",
-    "babel-jest",
-    "@jest/types",
-];
+const TOOLING_DEPENDENCIES: &[&str] = &["jest", "jest-environment-jsdom", "ts-jest", "babel-jest"];
 
 /// Built-in Jest reporter names that should not be treated as dependencies.
 const BUILTIN_REPORTERS: &[&str] = &["default", "verbose", "summary"];

@@ -12,7 +12,7 @@ pub use entry_points::{
     discover_workspace_entry_points,
 };
 pub use infrastructure::discover_infrastructure_entry_points;
-pub use walk::{SOURCE_EXTENSIONS, discover_files};
+pub use walk::{PRODUCTION_EXCLUDE_PATTERNS, SOURCE_EXTENSIONS, discover_files};
 
 /// Hidden (dot-prefixed) directories that should be included in file discovery.
 ///

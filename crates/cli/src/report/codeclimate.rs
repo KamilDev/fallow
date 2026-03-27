@@ -218,6 +218,26 @@ pub fn build_codeclimate(
         ));
     }
 
+    // Test-only dependencies
+    let level = severity_to_codeclimate(rules.test_only_dependencies);
+    for dep in &results.test_only_dependencies {
+        let path = cc_path(&dep.path, root);
+        let line = if dep.line > 0 { Some(dep.line) } else { None };
+        let fp = fingerprint_hash(&["fallow/test-only-dependency", &dep.package_name]);
+        issues.push(cc_issue(
+            "fallow/test-only-dependency",
+            &format!(
+                "Package '{}' is only imported by test files (consider moving to devDependencies)",
+                dep.package_name
+            ),
+            level,
+            "Bug Risk",
+            &path,
+            line,
+            &fp,
+        ));
+    }
+
     // Unused enum members
     let level = severity_to_codeclimate(rules.unused_enum_members);
     for member in &results.unused_enum_members {
