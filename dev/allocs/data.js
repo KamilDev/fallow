@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774611067964,
+  "lastUpdate": 1774611705574,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -2419,6 +2419,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Peak Allocations",
             "value": 5168,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "a2f72ea6a3b4476f50e8120339d38c7d2c817759",
+          "message": "refactor: migrate 5 more plugins to define_plugin! imports_only macro",
+          "timestamp": "2026-03-27T12:40:16+01:00",
+          "tree_id": "1406214f0a632d83d59aa87ef497b9fd7ed8553e",
+          "url": "https://github.com/fallow-rs/fallow/commit/a2f72ea6a3b4476f50e8120339d38c7d2c817759"
+        },
+        "date": 1774611704954,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3037550,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 11959,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 424018,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 3882,
             "unit": "allocations"
           }
         ]
