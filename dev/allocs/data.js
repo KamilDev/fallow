@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774644686986,
+  "lastUpdate": 1774645496429,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -2727,6 +2727,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Peak Allocations",
             "value": 5168,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "483bb84e822fb970851c062bfdcd68964209a906",
+          "message": "fix: Windows CI test failure and typos check\n\n- Use platform-appropriate absolute path in extends_absolute_path_rejected\n  test (Unix: /path, Windows: C:\\path)\n- Add German unicode test words (Konfiguration, Paket) to typos allowlist",
+          "timestamp": "2026-03-27T22:03:32+01:00",
+          "tree_id": "095f6e0a0ae1b9adc2855b655a4f79d49bd9326c",
+          "url": "https://github.com/fallow-rs/fallow/commit/483bb84e822fb970851c062bfdcd68964209a906"
+        },
+        "date": 1774645495401,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3045786,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 11976,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 424018,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 3882,
             "unit": "allocations"
           }
         ]
