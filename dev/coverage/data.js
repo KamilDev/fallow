@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774600464756,
+  "lastUpdate": 1774603374156,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -2198,6 +2198,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/22ee80595999ee8784e93520d18f1c761accf564"
         },
         "date": 1774600464209,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 88.2,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "cd53d47846621068903e58382b74cbdd06fdc34c",
+          "message": "Improve VS Code extension quality",
+          "timestamp": "2026-03-27T10:21:41+01:00",
+          "tree_id": "0f985a9a613a4aad3e00bcfb4a4c93fe7cbc9d41",
+          "url": "https://github.com/fallow-rs/fallow/commit/cd53d47846621068903e58382b74cbdd06fdc34c"
+        },
+        "date": 1774603373563,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
