@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774611049311,
+  "lastUpdate": 1774611143235,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -2401,6 +2401,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/de836c95c858d3877c254d261307f948c515a53e"
         },
         "date": 1774611048607,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 87.7,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "91e8882dcb496cd04a2e21fe48e4aba59161be5c",
+          "message": "fix: add missing review-comments input definition",
+          "timestamp": "2026-03-27T12:31:28+01:00",
+          "tree_id": "3f938607817918b7029115be72a27c53a593c5a9",
+          "url": "https://github.com/fallow-rs/fallow/commit/91e8882dcb496cd04a2e21fe48e4aba59161be5c"
+        },
+        "date": 1774611142540,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
