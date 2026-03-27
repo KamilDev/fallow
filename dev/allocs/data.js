@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774595758339,
+  "lastUpdate": 1774596271531,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -2145,6 +2145,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 11965,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 420346,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5168,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "87a04f23f8d13d1209efe56f45af20c96296e1c2",
+          "message": "fix: normalize path separators in discovery tests for Windows",
+          "timestamp": "2026-03-27T08:22:42+01:00",
+          "tree_id": "e8bc879c46922544d685e5103f01832cdd30f8e2",
+          "url": "https://github.com/fallow-rs/fallow/commit/87a04f23f8d13d1209efe56f45af20c96296e1c2"
+        },
+        "date": 1774596270608,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3033490,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 11953,
             "unit": "allocations"
           },
           {
