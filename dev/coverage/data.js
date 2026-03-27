@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774595737783,
+  "lastUpdate": 1774596230443,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -2082,6 +2082,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/280fa8f27836a15549c515ddfb44285475067879"
         },
         "date": 1774595737001,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 88.1,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "87a04f23f8d13d1209efe56f45af20c96296e1c2",
+          "message": "fix: normalize path separators in discovery tests for Windows",
+          "timestamp": "2026-03-27T08:22:42+01:00",
+          "tree_id": "e8bc879c46922544d685e5103f01832cdd30f8e2",
+          "url": "https://github.com/fallow-rs/fallow/commit/87a04f23f8d13d1209efe56f45af20c96296e1c2"
+        },
+        "date": 1774596229725,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
