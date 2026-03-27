@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.2] - 2026-03-27
+
+### Added
+
+- **CodeClimate output format** — `--format codeclimate` for GitLab Code Quality integration, with deterministic FNV-1a fingerprints and proper severity mapping
+- **GitHub Actions inline annotations** — `--format annotations` emits `::warning` / `::error` workflow commands for inline PR annotations without any Action dependency
+- **Real-world conformance benchmarks** — CI now validates against 8 real-world projects (zod, preact, vite, next.js, angular, nuxt, svelte, vue-core)
+- **~283 new tests** — comprehensive coverage for complexity metrics, JSDoc @public tags, config extends/merge, re-export chain propagation, dynamic import patterns, declaration extraction, visitor helpers, analysis predicates, cycle detection, and file discovery
+
+### Fixed
+
+- **CodeClimate fingerprint stability** — use FNV-1a instead of `DefaultHasher` for deterministic cross-run fingerprints; include group index in duplication fingerprints
+- **Circular dependency annotations** — sanitize chain strings and guard against empty files in annotation output
+- **npm/pnpm install stdout leak** — suppress package manager install stdout that leaked into JSON report output
+- **Duplicate exports comparison** — handle dict locations correctly in `duplicate_exports` comparison
+
 ## [2.2.1] - 2026-03-26
 
 ### Changed
@@ -487,6 +503,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [1.0.3]: https://github.com/fallow-rs/fallow/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/fallow-rs/fallow/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/fallow-rs/fallow/compare/v1.0.0...v1.0.1
+[2.2.2]: https://github.com/fallow-rs/fallow/compare/v2.2.1...v2.2.2
 [1.0.0]: https://github.com/fallow-rs/fallow/compare/v0.3.0...v1.0.0
 [0.3.0]: https://github.com/fallow-rs/fallow/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/fallow-rs/fallow/compare/v0.1.7...v0.2.0

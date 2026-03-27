@@ -114,6 +114,7 @@ fallow:
 - `--baseline` / `--save-baseline` -- fail only on **new** issues
 - `--format sarif` -- upload to GitHub Code Scanning
 - `--format codeclimate` -- GitLab Code Quality inline MR annotations
+- `--format annotations` -- GitHub Actions inline PR annotations (no Action required)
 - `--format json` / `--format markdown` -- for custom workflows
 Adopt incrementally -- surface issues without blocking CI, then promote when ready:
 
