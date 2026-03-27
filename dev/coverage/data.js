@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774613230751,
+  "lastUpdate": 1774613332679,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -2575,6 +2575,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/55811de52c25f67d7712d52a84cfed7fe24a5092"
         },
         "date": 1774613229746,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 87.8,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "c1be81fb4ba0432a2102843a33765ef2fddaea6d",
+          "message": "fix: remove set -u from action scripts (GitHub Actions sets empty strings, not unset)",
+          "timestamp": "2026-03-27T13:07:59+01:00",
+          "tree_id": "4c1e335bce8fb5bfb831471887e9bd0fc6d44f52",
+          "url": "https://github.com/fallow-rs/fallow/commit/c1be81fb4ba0432a2102843a33765ef2fddaea6d"
+        },
+        "date": 1774613332045,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
