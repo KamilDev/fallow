@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774597385957,
+  "lastUpdate": 1774600490157,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -2233,6 +2233,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 11937,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 420346,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5168,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "22ee80595999ee8784e93520d18f1c761accf564",
+          "message": "Improve code quality and harden watch reloads",
+          "timestamp": "2026-03-27T09:33:16+01:00",
+          "tree_id": "488046ee4e9dfd8066d522d088c12d74f7ceb002",
+          "url": "https://github.com/fallow-rs/fallow/commit/22ee80595999ee8784e93520d18f1c761accf564"
+        },
+        "date": 1774600489784,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3033762,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 11957,
             "unit": "allocations"
           },
           {
