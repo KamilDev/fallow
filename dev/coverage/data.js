@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774597368301,
+  "lastUpdate": 1774597620654,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -2140,6 +2140,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/46f631633f91e246dabdb1956c009221c39bae94"
         },
         "date": 1774597367376,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 88.1,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "56b4a06bd9fc6f2bed96134bdea34f968795a24c",
+          "message": "fix: add bench-real-world.yml to zizmor superfluous-actions ignore list",
+          "timestamp": "2026-03-27T08:46:07+01:00",
+          "tree_id": "5ae10669e4ecc4f57c0039106c86b6146b7479b5",
+          "url": "https://github.com/fallow-rs/fallow/commit/56b4a06bd9fc6f2bed96134bdea34f968795a24c"
+        },
+        "date": 1774597620237,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
