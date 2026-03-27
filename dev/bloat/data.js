@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774596360202,
+  "lastUpdate": 1774597470788,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -864,6 +864,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/87a04f23f8d13d1209efe56f45af20c96296e1c2"
         },
         "date": 1774596359861,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 120888272,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "46f631633f91e246dabdb1956c009221c39bae94",
+          "message": "fix: run cargo fmt on entry_points test path normalization",
+          "timestamp": "2026-03-27T08:41:36+01:00",
+          "tree_id": "5a0ba06b24e125b28524417591bc2b6648f9e93c",
+          "url": "https://github.com/fallow-rs/fallow/commit/46f631633f91e246dabdb1956c009221c39bae94"
+        },
+        "date": 1774597470228,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
