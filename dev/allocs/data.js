@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774722887448,
+  "lastUpdate": 1774723097331,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -3289,6 +3289,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15651,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534634,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5820,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "14bdc956c891961215879504eca8a29cb727ab45",
+          "message": "fix: use relative paths in duplication refactoring suggestions\n\nThe location hint in clone family suggestions (e.g. \"Extract ... into\nsrc/hooks\") was printing absolute paths from the filesystem. Thread\nthe project root through group_into_families and strip_prefix it from\ndirectory paths so suggestions always show project-relative paths.",
+          "timestamp": "2026-03-28T19:36:46+01:00",
+          "tree_id": "2c1c21ae1393cd380ec889c230494c41cd47b186",
+          "url": "https://github.com/fallow-rs/fallow/commit/14bdc956c891961215879504eca8a29cb727ab45"
+        },
+        "date": 1774723096702,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3573676,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15657,
             "unit": "allocations"
           },
           {
