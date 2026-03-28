@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774732112160,
+  "lastUpdate": 1774734077122,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -3242,6 +3242,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/22fa64be94ed9ab619c325e79737a4b11b97396a"
         },
         "date": 1774732111508,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 91,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "b5d12c934e03f448e4beaeafb44b44f512194735",
+          "message": "fix: track enum usage in Record<Enum, T> and keyof typeof mapped types",
+          "timestamp": "2026-03-28T22:32:45+01:00",
+          "tree_id": "e144545d50fbc8cf1c71a6dda73a59ebb0b7b670",
+          "url": "https://github.com/fallow-rs/fallow/commit/b5d12c934e03f448e4beaeafb44b44f512194735"
+        },
+        "date": 1774734076717,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
