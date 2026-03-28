@@ -299,8 +299,9 @@ enum Command {
 
     /// Analyze function complexity (cyclomatic + cognitive)
     ///
-    /// By default, shows all sections: complexity findings, file scores, and hotspots.
-    /// When any section flag is specified, only those sections are shown.
+    /// By default, shows all sections: health score, complexity findings, file scores,
+    /// hotspots, and refactoring targets. When any section flag is specified, only those
+    /// sections are shown.
     Health {
         /// Maximum cyclomatic complexity threshold (overrides config)
         #[arg(long)]
@@ -341,7 +342,7 @@ enum Command {
         targets: bool,
 
         /// Show only the project health score (0–100) with letter grade (A/B/C/D/F).
-        /// Forces full pipeline (file-scores + hotspots) for maximum accuracy.
+        /// The score is included by default when no section flags are set.
         #[arg(long)]
         score: bool,
 
@@ -361,8 +362,7 @@ enum Command {
 
         /// Save a vital signs snapshot for trend tracking.
         /// Defaults to `.fallow/snapshots/{timestamp}.json` if no path is given.
-        /// Forces file-scores and hotspot computation for complete metrics.
-        /// Combine with --score to include the health score in the snapshot.
+        /// Forces file-scores, hotspot, and score computation for complete metrics.
         #[expect(
             clippy::option_option,
             reason = "clap pattern: None=not passed, Some(None)=flag only, Some(Some(path))=with value"
@@ -957,14 +957,13 @@ fn main() -> ExitCode {
                     quiet,
                     cli_format_was_explicit,
                 );
-                // --min-score implies --score
+                // --min-score and --save-snapshot imply --score
                 let score = score || min_score.is_some();
-                // --save-snapshot forces file_scores + hotspots for accuracy
                 let snapshot_requested = save_snapshot.is_some();
                 // No section flags = show all (including score). Any flag set = show only those.
-                // --save-snapshot is orthogonal (not a section flag).
+                // --save-snapshot is orthogonal (not a section flag) but forces score.
                 let any_section = complexity || file_scores || hotspots || targets || score;
-                let eff_score = if any_section { score } else { true };
+                let eff_score = if any_section { score } else { true } || snapshot_requested;
                 // Score needs full pipeline for accuracy
                 let force_full = snapshot_requested || eff_score;
                 let eff_file_scores = if any_section { file_scores } else { true } || force_full;
