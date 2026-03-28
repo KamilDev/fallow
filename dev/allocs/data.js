@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774723283814,
+  "lastUpdate": 1774723491843,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -3377,6 +3377,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15627,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534634,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5820,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "5b17d92e1b8378597aba50c279dca682a12d170e",
+          "message": "docs: document safety invariants for u32 bounds and interval merging",
+          "timestamp": "2026-03-28T19:43:20+01:00",
+          "tree_id": "dfebe92b9327f4e4a19dfaaa67ed89fb6b2f7272",
+          "url": "https://github.com/fallow-rs/fallow/commit/5b17d92e1b8378597aba50c279dca682a12d170e"
+        },
+        "date": 1774723490619,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3574252,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15657,
             "unit": "allocations"
           },
           {
