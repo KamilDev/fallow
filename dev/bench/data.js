@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774737799576,
+  "lastUpdate": 1774776181374,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Benchmarks": [
@@ -9695,6 +9695,102 @@ window.BENCHMARK_DATA = {
             "name": "dupe_detect_2x5000_identical",
             "value": 2505582,
             "range": "± 23841",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "0bf57c0b30c309ba5c716c6f74772e27b9331e55",
+          "message": "fix: gate entire sfc/astro/mdx test modules under Miri\n\nThe previous per-test gating only removed 11 parser-invoking tests but\nleft 83 regex/string tests that still take ~10s each under Miri,\nexceeding the 30-minute timeout. These modules exercise regex-based\nstring extraction with no unsafe code — no Miri-specific value.\n\nOnly suppress, css, and visitor/helpers tests run under Miri now (~87\ntests, ~15 minutes).",
+          "timestamp": "2026-03-29T11:19:02+02:00",
+          "tree_id": "9351ec1d4dc2a5ce9ed26db84c27faf8be0e2754",
+          "url": "https://github.com/fallow-rs/fallow/commit/0bf57c0b30c309ba5c716c6f74772e27b9331e55"
+        },
+        "date": 1774776180950,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_single_file",
+            "value": 44827,
+            "range": "± 300",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_10_files",
+            "value": 1603761,
+            "range": "± 16786",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_100_files",
+            "value": 2994105,
+            "range": "± 103244",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_1000_files",
+            "value": 15900871,
+            "range": "± 868437",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "resolve_re_export_chains",
+            "value": 104016,
+            "range": "± 1203",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache_round_trip",
+            "value": 2020,
+            "range": "± 16",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x500_identical",
+            "value": 206456,
+            "range": "± 4721",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x2000_identical",
+            "value": 912902,
+            "range": "± 11735",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_10x500_identical",
+            "value": 1726761,
+            "range": "± 44125",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_50x200_diverse",
+            "value": 512759,
+            "range": "± 14907",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_100x200_mixed",
+            "value": 4227608,
+            "range": "± 30038",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x5000_identical",
+            "value": 2527600,
+            "range": "± 10759",
             "unit": "ns/iter"
           }
         ]
