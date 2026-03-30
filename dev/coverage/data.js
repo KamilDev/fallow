@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774892006015,
+  "lastUpdate": 1774892089318,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -3648,6 +3648,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/0132ea69dc297e2a5eb2035964ce5f71fd4d0511"
         },
         "date": 1774892005511,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 90.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "68ae15d3b29e0ba9bbd7df8709728612056ebbe1",
+          "message": "fix: use #[allow] for pedantic-only lint suppressions",
+          "timestamp": "2026-03-30T19:33:51+02:00",
+          "tree_id": "82f6a752e43603d8589aedcb7e29ecae29456221",
+          "url": "https://github.com/fallow-rs/fallow/commit/68ae15d3b29e0ba9bbd7df8709728612056ebbe1"
+        },
+        "date": 1774892088787,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
