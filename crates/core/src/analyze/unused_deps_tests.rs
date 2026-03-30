@@ -369,6 +369,10 @@ fn make_pkg(deps: &[&str], dev_deps: &[&str], optional_deps: &[&str]) -> Package
 }
 
 /// Build a minimal graph where a single entry file imports given npm packages.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "test span values are trivially small"
+)]
 fn build_graph_with_npm_imports(
     npm_packages: &[(&str, bool)], // (package_name, is_type_only)
 ) -> (ModuleGraph, Vec<ResolvedModule>) {

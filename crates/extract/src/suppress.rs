@@ -9,6 +9,10 @@ use oxc_ast::ast::Comment;
 pub use fallow_types::suppress::{IssueKind, Suppression};
 
 /// Convert a byte offset to a 1-based line number.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "line count and source length are bounded by file size"
+)]
 fn byte_offset_to_line(source: &str, byte_offset: u32) -> u32 {
     let byte_offset = byte_offset as usize;
     let prefix = &source[..byte_offset.min(source.len())];
@@ -23,6 +27,10 @@ fn byte_offset_to_line(source: &str, byte_offset: u32) -> u32 {
 /// - `// fallow-ignore-next-line` — suppress all issues on the next line
 /// - `// fallow-ignore-next-line unused-export` — suppress specific issue type on the next line
 #[must_use]
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "source length is bounded by file size"
+)]
 pub fn parse_suppressions(comments: &[Comment], source: &str) -> Vec<Suppression> {
     let mut suppressions = Vec::new();
 
@@ -71,6 +79,10 @@ pub fn parse_suppressions(comments: &[Comment], source: &str) -> Vec<Suppression
 
 /// Parse suppressions from raw source text using simple string scanning.
 /// Used for SFC files where comment byte offsets don't correspond to the original file.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "line count is bounded by file size"
+)]
 pub fn parse_suppressions_from_source(source: &str) -> Vec<Suppression> {
     let mut suppressions = Vec::new();
 

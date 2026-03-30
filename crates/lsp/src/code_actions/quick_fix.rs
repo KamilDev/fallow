@@ -11,6 +11,10 @@ use crate::diagnostics::FIRST_LINE_RANGE;
 
 /// Build quick-fix code actions for unused exports (remove the `export` keyword).
 #[expect(clippy::disallowed_types)]
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "identifier/indent lengths are bounded by source size"
+)]
 pub fn build_remove_export_actions(
     results: &AnalysisResults,
     file_path: &Path,

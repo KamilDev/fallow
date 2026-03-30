@@ -215,6 +215,10 @@ struct FileAccum {
 }
 
 /// Parse `git log --numstat --format=format:%at` output.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "commit count per file is bounded by git history depth"
+)]
 fn parse_git_log(stdout: &str, root: &Path) -> FxHashMap<PathBuf, FileChurn> {
     let now_secs = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

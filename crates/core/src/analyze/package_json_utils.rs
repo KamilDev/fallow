@@ -4,6 +4,10 @@ use std::path::Path;
 ///
 /// Searches the raw file content for `"<package_name>"` followed by `:` on the
 /// same line. Skips JSONC comment lines. Returns 1 if not found (safe fallback).
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "line count in package.json is bounded by file size"
+)]
 pub fn find_dep_line_in_json(content: &str, package_name: &str) -> u32 {
     let needle = format!("\"{package_name}\"");
     let mut in_block_comment = false;

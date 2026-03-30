@@ -574,6 +574,10 @@ mod tests {
 
     // ── build_clone_group ────────────────────────────────────────
 
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "test span values are trivially small"
+    )]
     fn make_test_file_data(path: &str, source: &str, num_tokens: usize) -> FileData {
         use crate::duplicates::normalize::HashedToken;
         use crate::duplicates::tokenize::{FileTokens, SourceToken, TokenKind};

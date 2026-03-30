@@ -402,6 +402,10 @@ function increment() { count += 1; }
 }
 
 #[test]
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "test source lengths are trivially small"
+)]
 fn tokenize_vue_sfc_adjusts_span_offsets() {
     let vue_source = "<template><div/></template>\n<script>\nconst x = 1;\n</script>";
     let path = PathBuf::from("Test.vue");
@@ -3026,6 +3030,10 @@ fn strip_types_mixed_import_keeps_only_value_import() {
 // ── Span correctness ───────────────────────────────────────
 
 #[test]
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "test source lengths are trivially small"
+)]
 fn token_spans_are_within_source_bounds() {
     let source = "const x = 1 + 2;\nif (x > 0) { return x; }";
     let path = PathBuf::from("test.ts");
@@ -3245,6 +3253,10 @@ export async function fetchAndProcess(url, options = {}) {
     assert!(has_nullish, "Should have nullish coalescing operator");
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "test source lengths are trivially small"
+)]
 mod proptests {
     use super::*;
     use proptest::prelude::*;

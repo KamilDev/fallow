@@ -473,6 +473,10 @@ pub(super) fn print_sarif(results: &AnalysisResults, root: &Path, rules: &RulesC
     emit_json(&sarif, "SARIF")
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "line/col numbers are bounded by source size"
+)]
 pub(super) fn print_duplication_sarif(report: &DuplicationReport, root: &Path) -> ExitCode {
     let mut sarif_results = Vec::new();
 
@@ -1354,6 +1358,10 @@ mod tests {
     // ── Duplication SARIF ──
 
     #[test]
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "test line/col values are trivially small"
+    )]
     fn duplication_sarif_structure() {
         use fallow_core::duplicates::*;
 

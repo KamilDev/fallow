@@ -201,6 +201,10 @@ mod tests {
     use oxc_span::Span;
     use std::path::PathBuf;
 
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "test file counts are trivially small"
+    )]
     fn build_graph(file_specs: &[(&str, bool)]) -> ModuleGraph {
         let files: Vec<DiscoveredFile> = file_specs
             .iter()

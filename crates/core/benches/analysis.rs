@@ -176,6 +176,10 @@ fn bench_full_pipeline_1000(c: &mut Criterion) {
     let _ = std::fs::remove_dir_all(&temp_dir);
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "bench file/span counts are trivially small"
+)]
 fn bench_resolve_re_export_chains(c: &mut Criterion) {
     use fallow_core::discover::{DiscoveredFile, EntryPoint, EntryPointSource, FileId};
     use fallow_core::extract::{ExportInfo, ExportName, ImportInfo, ImportedName, ReExportInfo};
@@ -592,6 +596,10 @@ fn make_hashed_tokens(hashes: &[u64]) -> Vec<fallow_core::duplicates::normalize:
         .collect()
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "bench span values are trivially small"
+)]
 fn make_file_tokens_for(count: usize) -> fallow_core::duplicates::tokenize::FileTokens {
     use fallow_core::duplicates::tokenize::{FileTokens, SourceToken, TokenKind};
     use oxc_span::Span;

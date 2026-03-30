@@ -53,6 +53,10 @@ fn tokenize_file_inner(path: &Path, source: &str, strip_types: bool) -> FileToke
 }
 
 /// Tokenize Vue/Svelte SFC `<script>` blocks.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "byte offsets are bounded by source size"
+)]
 fn tokenize_sfc(source: &str, strip_types: bool) -> FileTokens {
     let scripts = crate::extract::extract_sfc_scripts(source);
     let mut all_tokens = Vec::new();
@@ -85,6 +89,10 @@ fn tokenize_sfc(source: &str, strip_types: bool) -> FileTokens {
 }
 
 /// Tokenize Astro frontmatter between `---` delimiters.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "byte offsets are bounded by source size"
+)]
 fn tokenize_astro(
     source: &str,
     strip_types: bool,

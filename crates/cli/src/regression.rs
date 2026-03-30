@@ -45,6 +45,10 @@ impl Tolerance {
     }
 
     /// Check whether the delta exceeds this tolerance.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "percentage of a count is bounded by the count itself"
+    )]
     fn exceeded(&self, baseline_total: usize, current_total: usize) -> bool {
         if current_total <= baseline_total {
             return false;

@@ -18,6 +18,10 @@ fn make_hashed_tokens(hashes: &[u64]) -> Vec<HashedToken> {
         .collect()
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "test span values are trivially small"
+)]
 fn make_source_tokens(count: usize) -> Vec<SourceToken> {
     (0..count)
         .map(|i| SourceToken {

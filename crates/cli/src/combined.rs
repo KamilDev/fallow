@@ -249,6 +249,10 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
 }
 
 /// Print combined JSON output wrapping check, dupes, and health results.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "elapsed milliseconds won't exceed u64::MAX"
+)]
 fn print_combined_json(
     check: Option<&CheckResult>,
     dupes: Option<&DupesResult>,

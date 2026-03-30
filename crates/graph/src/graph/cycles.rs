@@ -21,6 +21,10 @@ impl ModuleGraph {
     /// cycle sorted by path for deterministic output.
     #[must_use]
     #[expect(clippy::excessive_nesting)]
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "file count is bounded by project size, well under u32::MAX"
+    )]
     pub fn find_cycles(&self) -> Vec<Vec<FileId>> {
         let n = self.modules.len();
         if n == 0 {
@@ -140,6 +144,10 @@ impl ModuleGraph {
     }
 
     /// Enumerate individual elementary cycles from SCCs and return sorted results.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "file count is bounded by project size, well under u32::MAX"
+    )]
     fn enumerate_cycles_from_sccs(
         &self,
         sccs: &[Vec<FileId>],
@@ -224,6 +232,10 @@ struct SuccessorMap<'a> {
 }
 
 /// Record a cycle in canonical form if not already seen.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "file count is bounded by project size, well under u32::MAX"
+)]
 fn try_record_cycle(
     path: &[usize],
     modules: &[ModuleNode],
@@ -369,6 +381,10 @@ mod tests {
     };
 
     /// Helper: build a graph from files+edges, no entry points needed for cycle detection.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "test file counts are trivially small"
+    )]
     fn build_cycle_graph(file_count: usize, edges_spec: &[(u32, u32)]) -> ModuleGraph {
         let files: Vec<DiscoveredFile> = (0..file_count)
             .map(|i| DiscoveredFile {
@@ -591,6 +607,10 @@ mod tests {
     ///
     /// `edges_spec` is a list of (source, target) pairs (0-indexed).
     /// Returns (modules, all_succs, succ_ranges) suitable for constructing a `SuccessorMap`.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "test file counts are trivially small"
+    )]
     fn build_test_succs(
         file_count: usize,
         edges_spec: &[(usize, usize)],

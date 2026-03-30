@@ -61,6 +61,10 @@ pub struct ModuleInfo {
 /// assert_eq!(offsets, vec![0, 4, 8]);
 /// ```
 #[must_use]
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "source files are practically < 4GB"
+)]
 pub fn compute_line_offsets(source: &str) -> Vec<u32> {
     let mut offsets = vec![0u32];
     for (i, byte) in source.bytes().enumerate() {
@@ -91,6 +95,10 @@ pub fn compute_line_offsets(source: &str) -> Vec<u32> {
 /// assert_eq!(byte_offset_to_line_col(&offsets, 9), (3, 1)); // 'h' on line 3
 /// ```
 #[must_use]
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "line count is bounded by source size"
+)]
 pub fn byte_offset_to_line_col(line_offsets: &[u32], byte_offset: u32) -> (u32, u32) {
     // Binary search: find the last line whose start is <= byte_offset
     let line_idx = match line_offsets.binary_search(&byte_offset) {

@@ -497,6 +497,10 @@ pub(super) fn print_health_codeclimate(report: &HealthReport, root: &Path) -> Ex
 
 /// Build CodeClimate JSON array from duplication analysis results.
 #[must_use]
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "line numbers are bounded by source size"
+)]
 pub fn build_duplication_codeclimate(report: &DuplicationReport, root: &Path) -> serde_json::Value {
     let mut issues = Vec::new();
 

@@ -5,6 +5,10 @@
 ///
 /// Returns `sa` where `sa[i]` is the starting position of the i-th
 /// lexicographically smallest suffix in `text`.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "ranks are bounded by text length which fits in usize"
+)]
 pub(super) fn build_suffix_array(text: &[i64]) -> Vec<usize> {
     let n = text.len();
     if n == 0 {

@@ -22,6 +22,10 @@ pub(super) struct FileScoreOutput {
 /// Aggregate complexity totals from a parsed module.
 ///
 /// Returns `(total_cyclomatic, total_cognitive, function_count, lines)`.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "line count is bounded by source file size"
+)]
 pub(super) fn aggregate_complexity(
     module: &fallow_core::extract::ModuleInfo,
 ) -> (u32, u32, usize, u32) {

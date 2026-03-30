@@ -39,6 +39,10 @@ pub struct AnalysisCounts {
 }
 
 /// Compute vital signs from available health data.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "percentile indices, dep counts, and hotspot counts are bounded by project size"
+)]
 pub fn compute_vital_signs(input: &VitalSignsInput<'_>) -> VitalSigns {
     // Cyclomatic complexity: always available from parsed modules
     let mut all_cyclomatic: Vec<u16> = input
@@ -649,6 +653,10 @@ mod tests {
         }
     }
 
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "test values are trivially small"
+    )]
     fn make_modules() -> Vec<fallow_core::extract::ModuleInfo> {
         // Cyclomatic values: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20
         (0..10)

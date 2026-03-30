@@ -67,6 +67,10 @@ fn is_allowed_hidden(entry: &ignore::DirEntry) -> bool {
 }
 
 /// Discover all source files in the project.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "file count is bounded by project size, well under u32::MAX"
+)]
 pub fn discover_files(config: &ResolvedConfig) -> Vec<DiscoveredFile> {
     let _span = tracing::info_span!("discover_files").entered();
 
@@ -490,6 +494,10 @@ mod tests {
         }
 
         #[test]
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "test file counts are trivially small"
+        )]
         fn file_ids_are_sequential_after_sorting() {
             let dir = tempfile::tempdir().expect("create temp dir");
             let src = dir.path().join("src");

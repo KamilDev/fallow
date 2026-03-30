@@ -137,6 +137,10 @@ pub fn find_duplicates(
 }
 
 /// Filter out clone instances that are suppressed by line-level comments.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "line numbers are bounded by source size"
+)]
 fn apply_line_suppressions(
     report: &mut DuplicationReport,
     suppressions_by_file: &FxHashMap<PathBuf, Vec<Suppression>>,

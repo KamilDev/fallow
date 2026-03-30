@@ -25,6 +25,10 @@ fn make_hashed_tokens(hashes: &[u64]) -> Vec<HashedToken> {
 
 /// Build a `Vec<SourceToken>` with synthetic spans that won't panic during
 /// fragment extraction. Each token occupies 3 bytes in the source.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "test span values are trivially small"
+)]
 fn make_source_tokens(count: usize) -> Vec<SourceToken> {
     (0..count)
         .map(|i| SourceToken {

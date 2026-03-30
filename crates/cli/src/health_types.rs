@@ -101,6 +101,10 @@ pub struct HealthScorePenalties {
 
 /// Map a numeric score (0–100) to a letter grade.
 #[must_use]
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "score is 0-100, fits in u32"
+)]
 pub const fn letter_grade(score: f64) -> &'static str {
     // Truncate to u32 so that 84.9 maps to B and 85.0 maps to A —
     // fractional digits don't affect the grade bucket.

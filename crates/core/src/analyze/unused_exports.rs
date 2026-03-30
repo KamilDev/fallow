@@ -399,6 +399,10 @@ mod tests {
     use std::path::PathBuf;
 
     /// Build a minimal ModuleGraph via the build() constructor.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "test file counts are trivially small"
+    )]
     fn build_graph(file_specs: &[(&str, bool)]) -> ModuleGraph {
         let files: Vec<DiscoveredFile> = file_specs
             .iter()

@@ -46,6 +46,10 @@ struct DistributionThresholds {
 }
 
 /// Compute percentile-based thresholds from the file score distribution.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "percentile values are bounded by fan-in/fan-out counts"
+)]
 fn compute_thresholds(file_scores: &[FileHealthScore]) -> DistributionThresholds {
     if file_scores.is_empty() {
         return DistributionThresholds {
@@ -72,6 +76,10 @@ fn compute_thresholds(file_scores: &[FileHealthScore]) -> DistributionThresholds
 }
 
 /// Compute a percentile value from a sorted slice of usize values.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "index from percentile of slice length is bounded by slice length"
+)]
 fn percentile_usize(sorted: &[usize], p: f64) -> f64 {
     if sorted.is_empty() {
         return 0.0;
@@ -118,6 +126,10 @@ fn compute_target_priority(
 /// Files matching no rule are skipped.
 ///
 /// Targets are sorted by efficiency (priority / effort) descending to surface quick wins first.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "f64 percentile and ratio values are bounded by collection sizes"
+)]
 pub(super) fn compute_refactoring_targets(
     file_scores: &[FileHealthScore],
     aux: &TargetAuxData,
@@ -297,6 +309,10 @@ pub(super) fn compute_refactoring_targets(
 /// Try to match a file against refactoring rules in priority order.
 ///
 /// Returns the first matching `(category, recommendation)`, or `None` if no rule matches.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "threshold values and export counts are bounded by project size"
+)]
 fn try_match_rules(
     score: &FileHealthScore,
     hotspot: Option<&HotspotEntry>,
@@ -417,6 +433,10 @@ const fn confidence_for_category(category: &RecommendationCategory) -> Confidenc
 /// Compute effort estimate based on file size, function count, and fan-in.
 ///
 /// Uses adaptive thresholds for fan-in.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "percentile threshold values are bounded by project size"
+)]
 fn compute_effort_estimate(
     score: &FileHealthScore,
     thresholds: &DistributionThresholds,

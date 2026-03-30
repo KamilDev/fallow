@@ -73,6 +73,10 @@ fn check_unused_file(results: &AnalysisResults, file_path: &Path) -> Option<Hove
 }
 
 /// Check if the position is on an unused export or type.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "identifier lengths are bounded by source size"
+)]
 fn check_unused_export(
     results: &AnalysisResults,
     file_path: &Path,
@@ -123,6 +127,10 @@ fn check_unused_export(
 }
 
 /// Check if the position is on a used export and show reference information.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "identifier lengths are bounded by source size"
+)]
 fn check_used_export(
     results: &AnalysisResults,
     file_path: &Path,
@@ -203,6 +211,10 @@ fn check_used_export(
 }
 
 /// Check if the position is on an unused enum or class member.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "member name lengths are bounded by source size"
+)]
 fn check_unused_member(
     results: &AnalysisResults,
     file_path: &Path,
@@ -253,6 +265,10 @@ fn check_unused_member(
 }
 
 /// Check if the position is on an unresolved import.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "specifier lengths are bounded by source size"
+)]
 fn check_unresolved_import(
     results: &AnalysisResults,
     file_path: &Path,
@@ -300,6 +316,10 @@ fn check_unresolved_import(
 }
 
 /// Check if the position overlaps with a code duplication instance.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "line/col numbers are bounded by source size"
+)]
 fn check_duplication(
     duplication: &DuplicationReport,
     file_path: &Path,
@@ -443,6 +463,10 @@ mod tests {
     }
 
     #[test]
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "test string lengths are trivially small"
+    )]
     fn hover_on_unused_export() {
         let root = test_root();
         let path = root.join("src/utils.ts");

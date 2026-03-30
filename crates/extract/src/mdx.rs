@@ -23,6 +23,10 @@ use fallow_types::discover::FileId;
 /// NOTE: CSS/SCSS `@apply` is handled in `parse_css_to_module()`, not here.
 /// MDX import/export extraction only handles JS/TS `import`/`export` statements.
 #[must_use]
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "brace counts per line are bounded by line length"
+)]
 pub fn extract_mdx_statements(source: &str) -> String {
     let mut statements = Vec::new();
     let mut in_multiline = false;

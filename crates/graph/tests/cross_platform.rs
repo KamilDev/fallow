@@ -651,6 +651,10 @@ fn pnpm_path_with_peer_deps_suffix() {
 // ---------------------------------------------------------------------------
 
 #[test]
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "test file counts are trivially small"
+)]
 fn file_id_assignment_is_deterministic_by_path_sort() {
     let mut files = [
         DiscoveredFile {
@@ -684,6 +688,10 @@ fn file_id_assignment_is_deterministic_by_path_sort() {
 }
 
 #[test]
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "test file counts are trivially small"
+)]
 fn file_id_assignment_stable_regardless_of_size() {
     // Change sizes but keep paths the same — IDs should be identical
     let make_files = |sizes: [u64; 3]| {

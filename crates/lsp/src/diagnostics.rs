@@ -53,6 +53,10 @@ pub fn build_diagnostics(
 
 // ── Diagnostic builders per issue category ────────────────────────────────────
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "identifier lengths are bounded by source size"
+)]
 fn push_export_diagnostics(map: &mut FxHashMap<Url, Vec<Diagnostic>>, results: &AnalysisResults) {
     for (exports, code, anchor, msg_prefix) in [
         (
@@ -112,6 +116,10 @@ fn push_file_diagnostics(map: &mut FxHashMap<Url, Vec<Diagnostic>>, results: &An
     }
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "specifier lengths are bounded by source size"
+)]
 fn push_import_diagnostics(map: &mut FxHashMap<Url, Vec<Diagnostic>>, results: &AnalysisResults) {
     for import in &results.unresolved_imports {
         if let Ok(uri) = Url::from_file_path(&import.path) {
@@ -256,6 +264,10 @@ fn push_dep_diagnostics(
     }
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "member name lengths are bounded by source size"
+)]
 fn push_member_diagnostics(map: &mut FxHashMap<Url, Vec<Diagnostic>>, results: &AnalysisResults) {
     for (members, code, anchor, kind_label) in [
         (
@@ -301,6 +313,10 @@ fn push_member_diagnostics(map: &mut FxHashMap<Url, Vec<Diagnostic>>, results: &
     }
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "export name lengths are bounded by source size"
+)]
 fn push_duplicate_export_diagnostics(
     map: &mut FxHashMap<Url, Vec<Diagnostic>>,
     results: &AnalysisResults,
@@ -362,6 +378,10 @@ fn push_duplicate_export_diagnostics(
     }
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "line/col numbers are bounded by source size"
+)]
 fn push_duplication_diagnostics(
     map: &mut FxHashMap<Url, Vec<Diagnostic>>,
     duplication: &DuplicationReport,
@@ -557,6 +577,10 @@ mod tests {
     }
 
     #[test]
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "test string lengths are trivially small"
+    )]
     fn unused_export_produces_hint_diagnostic() {
         let root = test_root();
         let mut results = AnalysisResults::default();
@@ -649,6 +673,10 @@ mod tests {
     }
 
     #[test]
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "test string lengths are trivially small"
+    )]
     fn unresolved_import_produces_error_diagnostic() {
         let root = test_root();
         let mut results = AnalysisResults::default();
@@ -755,6 +783,10 @@ mod tests {
     }
 
     #[test]
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "test string lengths are trivially small"
+    )]
     fn unused_enum_member_produces_hint() {
         let root = test_root();
         let mut results = AnalysisResults::default();
@@ -816,6 +848,10 @@ mod tests {
     }
 
     #[test]
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "test string lengths are trivially small"
+    )]
     fn duplicate_export_produces_warning_with_related_files() {
         let root = test_root();
         let utils_path = root.join("src/utils.ts");
