@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774905767004,
+  "lastUpdate": 1774907223371,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -4169,6 +4169,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15629,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534576,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5819,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "1c685b1a3e1aad0cd10adacd136d2898f3541109",
+          "message": "test: improve health scoring coverage",
+          "timestamp": "2026-03-30T23:44:02+02:00",
+          "tree_id": "ca18e35fbe67e69a52d9640c00143c9cd37f2033",
+          "url": "https://github.com/fallow-rs/fallow/commit/1c685b1a3e1aad0cd10adacd136d2898f3541109"
+        },
+        "date": 1774907222274,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3557026,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15631,
             "unit": "allocations"
           },
           {
