@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774888984021,
+  "lastUpdate": 1774890411600,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -3905,6 +3905,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15645,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534576,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5819,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "7ad926e8cc7385fd5ecda9dbaf37fb02d7c0f825",
+          "message": "refactor: annotate intentional usize-to-u32 casts with expect",
+          "timestamp": "2026-03-30T19:02:37+02:00",
+          "tree_id": "51f09cc2feef4679b0cf4ef0843bbd4f03b30fae",
+          "url": "https://github.com/fallow-rs/fallow/commit/7ad926e8cc7385fd5ecda9dbaf37fb02d7c0f825"
+        },
+        "date": 1774890410450,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3561370,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15637,
             "unit": "allocations"
           },
           {
