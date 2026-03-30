@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774892089318,
+  "lastUpdate": 1774904319347,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -3677,6 +3677,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/68ae15d3b29e0ba9bbd7df8709728612056ebbe1"
         },
         "date": 1774892088787,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 90.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "c833d799e938aff7f1cb698a6cc126eeaf5a10de",
+          "message": "fix: suppress SvelteKit virtual modules and generated types\n\nFix two false positive categories in SvelteKit projects:\n\n1. Virtual module prefixes like `$app/` failed to match extracted\n   package names like `$app` because `starts_with(\"$app/\")` requires\n   a trailing slash. Now also checks `prefix.strip_suffix('/') == name`.\n   This also fixes the same latent bug for Docusaurus prefixes.\n\n2. SvelteKit generates `./$types` imports in route files at build time.\n   These are relative imports to files that don't exist during static\n   analysis. Added `generated_import_patterns()` to the Plugin trait\n   so frameworks can declare build-time generated import suffixes that\n   should be suppressed from unresolved import detection.\n\nCloses fallow-rs/fallow#34",
+          "timestamp": "2026-03-30T22:57:26+02:00",
+          "tree_id": "8501feee7f9e4f36cfc71592fe95cf264b6fa55e",
+          "url": "https://github.com/fallow-rs/fallow/commit/c833d799e938aff7f1cb698a6cc126eeaf5a10de"
+        },
+        "date": 1774904318857,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
