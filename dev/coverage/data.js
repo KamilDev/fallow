@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774866202165,
+  "lastUpdate": 1774887372269,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -3532,6 +3532,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/89bada15370c22a3d3bc3fba3d5eb7619b4bf30e"
         },
         "date": 1774866201514,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 90.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "58931ffd8d01f03136e83c6a891ec50141ae0b05",
+          "message": "refactor: replace redundant closures with method references",
+          "timestamp": "2026-03-30T18:15:04+02:00",
+          "tree_id": "463737bf7b4c80750cadc922cf320131c1050d5e",
+          "url": "https://github.com/fallow-rs/fallow/commit/58931ffd8d01f03136e83c6a891ec50141ae0b05"
+        },
+        "date": 1774887371122,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
