@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774866225315,
+  "lastUpdate": 1774887394306,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -3817,6 +3817,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15665,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534634,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5820,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "58931ffd8d01f03136e83c6a891ec50141ae0b05",
+          "message": "refactor: replace redundant closures with method references",
+          "timestamp": "2026-03-30T18:15:04+02:00",
+          "tree_id": "463737bf7b4c80750cadc922cf320131c1050d5e",
+          "url": "https://github.com/fallow-rs/fallow/commit/58931ffd8d01f03136e83c6a891ec50141ae0b05"
+        },
+        "date": 1774887393722,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3583114,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15673,
             "unit": "allocations"
           },
           {
