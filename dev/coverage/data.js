@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774776011878,
+  "lastUpdate": 1774854412540,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -3387,6 +3387,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/0bf57c0b30c309ba5c716c6f74772e27b9331e55"
         },
         "date": 1774776010831,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 91,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "a4f34290e24f2b304d16b1c6daaa73eec0f35ef3",
+          "message": "chore: track .claude/rules and .claude/agents in git\n\nThese are project-specific context files that benefit any contributor\nusing Claude Code. Rules scope crate-level guidance, agents define\ncustom reviewer/panel configurations.",
+          "timestamp": "2026-03-30T09:05:40+02:00",
+          "tree_id": "9976a4ecda22406010925f1717902f4866f102d6",
+          "url": "https://github.com/fallow-rs/fallow/commit/a4f34290e24f2b304d16b1c6daaa73eec0f35ef3"
+        },
+        "date": 1774854411866,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
