@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774889074460,
+  "lastUpdate": 1774890494531,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -2000,6 +2000,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "Binary Size (fallow)",
             "value": 123548472,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "7ad926e8cc7385fd5ecda9dbaf37fb02d7c0f825",
+          "message": "refactor: annotate intentional usize-to-u32 casts with expect",
+          "timestamp": "2026-03-30T19:02:37+02:00",
+          "tree_id": "51f09cc2feef4679b0cf4ef0843bbd4f03b30fae",
+          "url": "https://github.com/fallow-rs/fallow/commit/7ad926e8cc7385fd5ecda9dbaf37fb02d7c0f825"
+        },
+        "date": 1774890493735,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 123548528,
             "unit": "bytes"
           }
         ]
