@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774887511978,
+  "lastUpdate": 1774889074460,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -1971,6 +1971,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "Binary Size (fallow)",
             "value": 123797192,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "7baa31f79daa4dd233d3c9c22c01b5fbe4d63d4b",
+          "message": "refactor: extract helpers from long functions\n\nExtract shared helper functions from overly long functions flagged by\nclippy::too_many_lines (>100 lines threshold):\n\n- core/lib.rs: Extract analyze_all_scripts() and discover_all_entry_points()\n  from both analyze_with_parse_result (177→~120 lines) and analyze_full\n  (212→~150 lines), eliminating duplicated script analysis and entry point\n  discovery code between the two pipeline functions.\n\n- core/plugins/jest.rs: Extract extract_jest_setup_files() and\n  extract_jest_dependencies() from resolve_config (126→~25 lines),\n  splitting setup file extraction from dependency extraction.\n\n- core/duplicates/tokenize/mod.rs: Extract tokenize_sfc(), tokenize_astro(),\n  tokenize_mdx(), tokenize_js_ts(), and empty_tokens() from\n  tokenize_file_inner (109→~15 lines), one helper per file type.\n\n- graph/cycles.rs: Extract enumerate_cycles_from_sccs() from find_cycles\n  (128→~100 lines), separating Tarjan SCC detection from cycle enumeration.\n\n- cli/main.rs: Extract dispatch_bare_command(), dispatch_subcommand(),\n  and dispatch_health() from main (329→~80 lines), splitting CLI argument\n  validation from command dispatch.",
+          "timestamp": "2026-03-30T18:39:15+02:00",
+          "tree_id": "a5ceeee583657976e5b726f34c7b4af5b05d1323",
+          "url": "https://github.com/fallow-rs/fallow/commit/7baa31f79daa4dd233d3c9c22c01b5fbe4d63d4b"
+        },
+        "date": 1774889073299,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 123548472,
             "unit": "bytes"
           }
         ]
