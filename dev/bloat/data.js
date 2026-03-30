@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774904640661,
+  "lastUpdate": 1774905860521,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -2082,6 +2082,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/2d9f5541c611336bf2f1a649cdafbd3949870c4a"
         },
         "date": 1774904640215,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 123620624,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "5b05cd6b6dbb694cbf6c02539702c734771bced3",
+          "message": "docs: add missing # Panics sections to public functions",
+          "timestamp": "2026-03-30T23:21:23+02:00",
+          "tree_id": "77772126b5dbfa3751c44a83c961b9cb30ee8150",
+          "url": "https://github.com/fallow-rs/fallow/commit/5b05cd6b6dbb694cbf6c02539702c734771bced3"
+        },
+        "date": 1774905859896,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
