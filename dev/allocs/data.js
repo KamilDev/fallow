@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774890411600,
+  "lastUpdate": 1774892032573,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -3949,6 +3949,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15637,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534576,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5819,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "0132ea69dc297e2a5eb2035964ce5f71fd4d0511",
+          "message": "refactor: use #[expect] instead of #[allow] for wildcard import suppressions",
+          "timestamp": "2026-03-30T19:32:29+02:00",
+          "tree_id": "966fe63028a185173e247d82df72167afb6cf230",
+          "url": "https://github.com/fallow-rs/fallow/commit/0132ea69dc297e2a5eb2035964ce5f71fd4d0511"
+        },
+        "date": 1774892031905,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3567074,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15647,
             "unit": "allocations"
           },
           {
