@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774905752813,
+  "lastUpdate": 1774907202051,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -3769,6 +3769,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "Code Coverage",
             "value": 90.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "1c685b1a3e1aad0cd10adacd136d2898f3541109",
+          "message": "test: improve health scoring coverage",
+          "timestamp": "2026-03-30T23:44:02+02:00",
+          "tree_id": "ca18e35fbe67e69a52d9640c00143c9cd37f2033",
+          "url": "https://github.com/fallow-rs/fallow/commit/1c685b1a3e1aad0cd10adacd136d2898f3541109"
+        },
+        "date": 1774907200970,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 92.5,
             "unit": "%"
           }
         ]
