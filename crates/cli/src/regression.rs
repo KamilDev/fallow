@@ -126,7 +126,7 @@ pub struct CheckCounts {
 }
 
 impl CheckCounts {
-    pub fn from_results(results: &AnalysisResults) -> Self {
+    pub const fn from_results(results: &AnalysisResults) -> Self {
         Self {
             total_issues: results.total_issues(),
             unused_files: results.unused_files.len(),
@@ -147,7 +147,7 @@ impl CheckCounts {
     }
 
     /// Convert from config-embedded baseline.
-    pub fn from_config_baseline(b: &fallow_config::RegressionBaseline) -> Self {
+    pub const fn from_config_baseline(b: &fallow_config::RegressionBaseline) -> Self {
         Self {
             total_issues: b.total_issues,
             unused_files: b.unused_files,
@@ -168,7 +168,7 @@ impl CheckCounts {
     }
 
     /// Convert to config-embeddable baseline.
-    pub fn to_config_baseline(&self) -> fallow_config::RegressionBaseline {
+    pub const fn to_config_baseline(&self) -> fallow_config::RegressionBaseline {
         fallow_config::RegressionBaseline {
             total_issues: self.total_issues,
             unused_files: self.unused_files,

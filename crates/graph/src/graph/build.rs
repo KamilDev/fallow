@@ -470,7 +470,7 @@ fn narrow_css_module_references(
 }
 
 /// Determine the `ReferenceKind` for an imported name.
-fn reference_kind_for(imported_name: &ImportedName) -> ReferenceKind {
+const fn reference_kind_for(imported_name: &ImportedName) -> ReferenceKind {
     match imported_name {
         ImportedName::Named(_) => ReferenceKind::NamedImport,
         ImportedName::Default => ReferenceKind::DefaultImport,

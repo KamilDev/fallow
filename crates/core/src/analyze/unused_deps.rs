@@ -80,7 +80,7 @@ pub fn collect_unused_for_category(
 }
 
 /// Category configs for the three dependency types.
-fn prod_category() -> DepCategoryConfig {
+const fn prod_category() -> DepCategoryConfig {
     DepCategoryConfig {
         location: DependencyLocation::Dependencies,
         check_implicit: true,
@@ -89,7 +89,7 @@ fn prod_category() -> DepCategoryConfig {
     }
 }
 
-fn dev_category() -> DepCategoryConfig {
+const fn dev_category() -> DepCategoryConfig {
     DepCategoryConfig {
         location: DependencyLocation::DevDependencies,
         check_implicit: false,
@@ -98,7 +98,7 @@ fn dev_category() -> DepCategoryConfig {
     }
 }
 
-fn optional_category() -> DepCategoryConfig {
+const fn optional_category() -> DepCategoryConfig {
     DepCategoryConfig {
         location: DependencyLocation::OptionalDependencies,
         check_implicit: true,

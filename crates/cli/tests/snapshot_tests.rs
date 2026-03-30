@@ -1777,7 +1777,7 @@ fn sample_health_report(root: &Path) -> HealthReport {
 }
 
 /// Build an empty health report (no findings).
-fn empty_health_report() -> HealthReport {
+const fn empty_health_report() -> HealthReport {
     HealthReport {
         findings: vec![],
         summary: HealthSummary {

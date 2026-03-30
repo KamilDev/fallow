@@ -43,7 +43,7 @@ pub fn split_dir_filename(path: &str) -> (&str, &str) {
 }
 
 /// Return `"s"` for plural or `""` for singular.
-pub fn plural(n: usize) -> &'static str {
+pub const fn plural(n: usize) -> &'static str {
     if n == 1 { "" } else { "s" }
 }
 

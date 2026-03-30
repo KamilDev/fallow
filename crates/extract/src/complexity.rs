@@ -42,7 +42,7 @@ pub struct ComplexityVisitor {
 }
 
 impl ComplexityVisitor {
-    pub fn new(line_offsets: Vec<u32>) -> Self {
+    pub const fn new(line_offsets: Vec<u32>) -> Self {
         Self {
             stack: Vec::new(),
             results: Vec::new(),
@@ -148,7 +148,7 @@ impl ComplexityVisitor {
 
     /// Check if a node is the direct child of a `LogicalExpression`.
     /// Used to avoid resetting the logical operator tracker in the middle of a chain.
-    fn is_nested_logical(expr: &Expression<'_>) -> bool {
+    const fn is_nested_logical(expr: &Expression<'_>) -> bool {
         matches!(expr, Expression::LogicalExpression(_))
     }
 }

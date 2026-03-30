@@ -95,7 +95,7 @@ pub(super) struct CanonicalFallback<'a> {
 }
 
 impl<'a> CanonicalFallback<'a> {
-    pub fn new(files: &'a [fallow_types::discover::DiscoveredFile]) -> Self {
+    pub const fn new(files: &'a [fallow_types::discover::DiscoveredFile]) -> Self {
         Self {
             files,
             map: std::sync::OnceLock::new(),
