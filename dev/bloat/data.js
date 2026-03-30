@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774890494531,
+  "lastUpdate": 1774892219661,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -2024,6 +2024,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/7ad926e8cc7385fd5ecda9dbaf37fb02d7c0f825"
         },
         "date": 1774890493735,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 123548528,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "68ae15d3b29e0ba9bbd7df8709728612056ebbe1",
+          "message": "fix: use #[allow] for pedantic-only lint suppressions",
+          "timestamp": "2026-03-30T19:33:51+02:00",
+          "tree_id": "82f6a752e43603d8589aedcb7e29ecae29456221",
+          "url": "https://github.com/fallow-rs/fallow/commit/68ae15d3b29e0ba9bbd7df8709728612056ebbe1"
+        },
+        "date": 1774892218495,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
