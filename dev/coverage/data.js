@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774888952579,
+  "lastUpdate": 1774890389788,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -3590,6 +3590,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/7baa31f79daa4dd233d3c9c22c01b5fbe4d63d4b"
         },
         "date": 1774888952116,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 90.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "7ad926e8cc7385fd5ecda9dbaf37fb02d7c0f825",
+          "message": "refactor: annotate intentional usize-to-u32 casts with expect",
+          "timestamp": "2026-03-30T19:02:37+02:00",
+          "tree_id": "51f09cc2feef4679b0cf4ef0843bbd4f03b30fae",
+          "url": "https://github.com/fallow-rs/fallow/commit/7ad926e8cc7385fd5ecda9dbaf37fb02d7c0f825"
+        },
+        "date": 1774890388653,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
