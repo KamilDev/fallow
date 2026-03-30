@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774858213873,
+  "lastUpdate": 1774858327548,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -3474,6 +3474,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/15e03ad0020a3f6844ce1796779f289e44236b28"
         },
         "date": 1774858212711,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 90.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "1b89cd86611bd85a1c0ebdef7678f56ffd3f95e1",
+          "message": "docs: mark trend reporting as shipped in roadmap",
+          "timestamp": "2026-03-30T10:11:11+02:00",
+          "tree_id": "3d3ac6a2aa14517092a8386a14807c3ede68cf60",
+          "url": "https://github.com/fallow-rs/fallow/commit/1b89cd86611bd85a1c0ebdef7678f56ffd3f95e1"
+        },
+        "date": 1774858327104,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
