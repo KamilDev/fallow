@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774890389788,
+  "lastUpdate": 1774892006015,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -3619,6 +3619,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/7ad926e8cc7385fd5ecda9dbaf37fb02d7c0f825"
         },
         "date": 1774890388653,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 90.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "0132ea69dc297e2a5eb2035964ce5f71fd4d0511",
+          "message": "refactor: use #[expect] instead of #[allow] for wildcard import suppressions",
+          "timestamp": "2026-03-30T19:32:29+02:00",
+          "tree_id": "966fe63028a185173e247d82df72167afb6cf230",
+          "url": "https://github.com/fallow-rs/fallow/commit/0132ea69dc297e2a5eb2035964ce5f71fd4d0511"
+        },
+        "date": 1774892005511,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
