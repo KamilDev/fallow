@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774892115825,
+  "lastUpdate": 1774904345464,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -4037,6 +4037,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15667,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534576,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5819,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "c833d799e938aff7f1cb698a6cc126eeaf5a10de",
+          "message": "fix: suppress SvelteKit virtual modules and generated types\n\nFix two false positive categories in SvelteKit projects:\n\n1. Virtual module prefixes like `$app/` failed to match extracted\n   package names like `$app` because `starts_with(\"$app/\")` requires\n   a trailing slash. Now also checks `prefix.strip_suffix('/') == name`.\n   This also fixes the same latent bug for Docusaurus prefixes.\n\n2. SvelteKit generates `./$types` imports in route files at build time.\n   These are relative imports to files that don't exist during static\n   analysis. Added `generated_import_patterns()` to the Plugin trait\n   so frameworks can declare build-time generated import suffixes that\n   should be suppressed from unresolved import detection.\n\nCloses fallow-rs/fallow#34",
+          "timestamp": "2026-03-30T22:57:26+02:00",
+          "tree_id": "8501feee7f9e4f36cfc71592fe95cf264b6fa55e",
+          "url": "https://github.com/fallow-rs/fallow/commit/c833d799e938aff7f1cb698a6cc126eeaf5a10de"
+        },
+        "date": 1774904344451,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3576546,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15663,
             "unit": "allocations"
           },
           {
