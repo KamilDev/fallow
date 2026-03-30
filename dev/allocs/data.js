@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774904473183,
+  "lastUpdate": 1774905767004,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -4125,6 +4125,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15633,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534576,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5819,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "5b05cd6b6dbb694cbf6c02539702c734771bced3",
+          "message": "docs: add missing # Panics sections to public functions",
+          "timestamp": "2026-03-30T23:21:23+02:00",
+          "tree_id": "77772126b5dbfa3751c44a83c961b9cb30ee8150",
+          "url": "https://github.com/fallow-rs/fallow/commit/5b05cd6b6dbb694cbf6c02539702c734771bced3"
+        },
+        "date": 1774905766260,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3557498,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15629,
             "unit": "allocations"
           },
           {
