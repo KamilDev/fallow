@@ -1,5 +1,8 @@
-// CLI binary legitimately prints to stdout/stderr
-#![expect(clippy::print_stdout, clippy::print_stderr)]
+#![expect(
+    clippy::print_stdout,
+    clippy::print_stderr,
+    reason = "CLI binary produces intentional terminal output"
+)]
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -485,7 +488,7 @@ fn quiet_from_env() -> bool {
 
 // ── Config loading ───────────────────────────────────────────────
 
-#[expect(clippy::ref_option)] // &Option matches clap's field type
+#[expect(clippy::ref_option, reason = "&Option matches clap's field type")]
 fn load_config(
     root: &std::path::Path,
     config_path: &Option<PathBuf>,
@@ -805,7 +808,10 @@ fn main() -> ExitCode {
     }
 }
 
-#[expect(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "CLI dispatch forwards many flags"
+)]
 fn dispatch_bare_command(
     cli: &Cli,
     root: &std::path::Path,
@@ -856,7 +862,10 @@ fn dispatch_bare_command(
     })
 }
 
-#[expect(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "CLI dispatch forwards many flags"
+)]
 fn dispatch_subcommand(
     command: Command,
     cli: &Cli,
@@ -1070,7 +1079,10 @@ fn dispatch_subcommand(
     }
 }
 
-#[expect(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "CLI dispatch forwards many flags"
+)]
 fn dispatch_health(
     cli: &Cli,
     root: &std::path::Path,

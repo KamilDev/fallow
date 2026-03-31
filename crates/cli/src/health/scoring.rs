@@ -113,8 +113,10 @@ pub(super) fn compute_maintainability_index(
     fan_out: usize,
 ) -> f64 {
     let fan_out_penalty = ((fan_out as f64).ln_1p() * 4.0).min(15.0);
-    // Keep the formula readable — it matches the documented specification.
-    #[expect(clippy::suboptimal_flops)]
+    #[expect(
+        clippy::suboptimal_flops,
+        reason = "formula matches documented specification"
+    )]
     let score = 100.0 - (complexity_density * 30.0) - (dead_code_ratio * 20.0) - fan_out_penalty;
     score.clamp(0.0, 100.0)
 }

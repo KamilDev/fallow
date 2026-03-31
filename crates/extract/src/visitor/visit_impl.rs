@@ -378,7 +378,10 @@ impl<'a> Visit<'a> for ModuleInfoExtractor {
         walk::walk_new_expression(self, expr);
     }
 
-    #[expect(clippy::excessive_nesting)]
+    #[expect(
+        clippy::excessive_nesting,
+        reason = "CJS export pattern matching requires deep nesting"
+    )]
     fn visit_assignment_expression(&mut self, expr: &AssignmentExpression<'a>) {
         // Detect module.exports = ... and exports.foo = ...
         if let AssignmentTarget::StaticMemberExpression(member) = &expr.left {

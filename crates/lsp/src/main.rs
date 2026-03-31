@@ -196,7 +196,10 @@ impl LanguageServer for FallowLspServer {
             .remove(&params.text_document.uri);
     }
 
-    #[expect(clippy::significant_drop_tightening)]
+    #[expect(
+        clippy::significant_drop_tightening,
+        reason = "RwLock guard scope is intentional"
+    )]
     async fn code_action(&self, params: CodeActionParams) -> Result<Option<CodeActionResponse>> {
         let results = self.results.read().await;
         let Some(results) = results.as_ref() else {
@@ -244,7 +247,10 @@ impl LanguageServer for FallowLspServer {
         }
     }
 
-    #[expect(clippy::significant_drop_tightening)]
+    #[expect(
+        clippy::significant_drop_tightening,
+        reason = "RwLock guard scope is intentional"
+    )]
     async fn code_lens(&self, params: CodeLensParams) -> Result<Option<Vec<CodeLens>>> {
         let results = self.results.read().await;
         let Some(results) = results.as_ref() else {
@@ -264,7 +270,10 @@ impl LanguageServer for FallowLspServer {
         }
     }
 
-    #[expect(clippy::significant_drop_tightening)]
+    #[expect(
+        clippy::significant_drop_tightening,
+        reason = "RwLock guard scope is intentional"
+    )]
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
         let results = self.results.read().await;
         let Some(results) = results.as_ref() else {
@@ -420,7 +429,10 @@ impl FallowLspServer {
         }
     }
 
-    #[expect(clippy::significant_drop_tightening)]
+    #[expect(
+        clippy::significant_drop_tightening,
+        reason = "RwLock guard scope is intentional"
+    )]
     async fn publish_collected_diagnostics(
         &self,
         diagnostics_by_file: FxHashMap<Url, Vec<Diagnostic>>,

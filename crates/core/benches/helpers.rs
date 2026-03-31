@@ -95,7 +95,7 @@ export const helper{i} = () => value{i} + 1;
 ///
 /// Panics if temporary directory creation or file writes fail.
 #[must_use]
-#[allow(dead_code)] // Used by large_analysis bench target
+#[allow(dead_code, reason = "only used by large_analysis bench target")]
 pub fn create_dupe_project(
     name: &str,
     file_count: usize,

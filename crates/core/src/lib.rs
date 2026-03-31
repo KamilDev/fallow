@@ -266,7 +266,10 @@ pub fn analyze_with_parse_result(
     })
 }
 
-#[expect(clippy::unnecessary_wraps)] // Result kept for future error handling
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "Result kept for future error handling"
+)]
 fn analyze_full(
     config: &ResolvedConfig,
     retain: bool,

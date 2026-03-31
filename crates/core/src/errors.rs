@@ -2,7 +2,10 @@ use std::path::PathBuf;
 
 /// The underlying error kind, describing what went wrong.
 #[derive(Debug)]
-#[expect(clippy::enum_variant_names)]
+#[expect(
+    clippy::enum_variant_names,
+    reason = "Error suffix is intentional for error variants"
+)]
 pub(crate) enum FallowErrorKind {
     /// Failed to read a source file.
     FileReadError {

@@ -1,4 +1,8 @@
-#![expect(clippy::print_stdout, clippy::print_stderr)]
+#![expect(
+    clippy::print_stdout,
+    clippy::print_stderr,
+    reason = "CLI binary produces intentional terminal output"
+)]
 
 /// Metric and rule definitions for explainable CLI output.
 pub mod explain;

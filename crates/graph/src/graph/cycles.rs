@@ -24,7 +24,10 @@ impl ModuleGraph {
     ///
     /// Panics if the internal file-to-path lookup is inconsistent with the module list.
     #[must_use]
-    #[expect(clippy::excessive_nesting)]
+    #[expect(
+        clippy::excessive_nesting,
+        reason = "Tarjan's SCC requires deep nesting"
+    )]
     #[expect(
         clippy::cast_possible_truncation,
         reason = "file count is bounded by project size, well under u32::MAX"

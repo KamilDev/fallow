@@ -222,7 +222,10 @@ pub struct MemberAccess {
     pub member: String,
 }
 
-#[expect(clippy::trivially_copy_pass_by_ref)] // serde serialize_with requires &T
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde serialize_with requires &T"
+)]
 fn serialize_span<S: serde::Serializer>(span: &Span, serializer: S) -> Result<S::Ok, S::Error> {
     use serde::ser::SerializeMap;
     let mut map = serializer.serialize_map(Some(2))?;

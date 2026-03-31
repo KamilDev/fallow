@@ -32,7 +32,10 @@ fn main() {
     // ── Print parseable stats ──────────────────────────────────────────
     // These keys are read by scripts/alloc-check.sh and stored in
     // alloc-baseline.json.
-    #[allow(clippy::print_stdout)]
+    #[expect(
+        clippy::print_stdout,
+        reason = "intentional bench output for alloc-check.sh"
+    )]
     {
         println!("alloc_total_bytes: {}", stats.total_bytes);
         println!("alloc_total_blocks: {}", stats.total_blocks);

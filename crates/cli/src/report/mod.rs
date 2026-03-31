@@ -281,27 +281,56 @@ pub fn print_performance(timings: &PipelineTimings, format: &OutputFormat) {
 }
 
 // Re-exported for snapshot testing via the lib target.
-// Uses #[allow] instead of #[expect] because unused_imports is target-dependent
-// (used in lib target, unused in bin target — #[expect] would be unfulfilled in one).
-#[allow(unused_imports)]
+// Uses #[allow] because unused_imports is target-dependent (used in lib, unused in bin).
+#[allow(
+    unused_imports,
+    reason = "target-dependent: used in lib, unused in bin"
+)]
 pub use codeclimate::build_codeclimate;
-#[allow(unused_imports)]
+#[allow(
+    unused_imports,
+    reason = "target-dependent: used in lib, unused in bin"
+)]
 pub use codeclimate::build_duplication_codeclimate;
-#[allow(unused_imports)]
+#[allow(
+    unused_imports,
+    reason = "target-dependent: used in lib, unused in bin"
+)]
 pub use codeclimate::build_health_codeclimate;
-#[allow(unused_imports)]
+#[allow(
+    unused_imports,
+    reason = "target-dependent: used in lib, unused in bin"
+)]
 pub use compact::build_compact_lines;
-#[allow(unused_imports)]
+#[allow(
+    unused_imports,
+    reason = "target-dependent: used in lib, unused in bin"
+)]
 pub use json::build_json;
-#[allow(unused_imports)]
+#[allow(
+    unused_imports,
+    reason = "target-dependent: used in lib, unused in bin"
+)]
 pub use markdown::build_duplication_markdown;
-#[allow(unused_imports)]
+#[allow(
+    unused_imports,
+    reason = "target-dependent: used in lib, unused in bin"
+)]
 pub use markdown::build_health_markdown;
-#[allow(unused_imports)]
+#[allow(
+    unused_imports,
+    reason = "target-dependent: used in lib, unused in bin"
+)]
 pub use markdown::build_markdown;
-#[allow(unused_imports)]
+#[allow(
+    unused_imports,
+    reason = "target-dependent: used in lib, unused in bin"
+)]
 pub use sarif::build_health_sarif;
-#[allow(unused_imports)]
+#[allow(
+    unused_imports,
+    reason = "target-dependent: used in lib, unused in bin"
+)]
 pub use sarif::build_sarif;
 
 #[cfg(test)]

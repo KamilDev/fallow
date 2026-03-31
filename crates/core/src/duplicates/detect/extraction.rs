@@ -34,7 +34,10 @@ pub(super) fn extract_clone_groups(
     let mut stack: Vec<(usize, usize)> = Vec::new();
     let mut groups: Vec<RawGroup> = Vec::new();
 
-    #[expect(clippy::needless_range_loop)] // `i` is used as a value, not just as an index
+    #[expect(
+        clippy::needless_range_loop,
+        reason = "i is used as a value, not just as an index"
+    )]
     for i in 1..=n {
         let cur_lcp = if i < n { lcp[i] } else { 0 };
         let mut start = i;

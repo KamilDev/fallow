@@ -31,7 +31,10 @@ impl<'a> From<&'a super::scoring::FileScoreOutput> for TargetAuxData<'a> {
 /// Replaces hardcoded constants (fan_in=20, fan_out=30) with percentile-based
 /// values that adapt to the codebase size. Floors prevent degenerate thresholds
 /// in small projects.
-#[expect(clippy::struct_field_names)]
+#[expect(
+    clippy::struct_field_names,
+    reason = "fan_in/fan_out prefix clarifies the metric"
+)]
 struct DistributionThresholds {
     /// Fan-in saturation point for priority formula (p95, floor 5).
     fan_in_p95: f64,
@@ -108,8 +111,10 @@ fn compute_target_priority(
     let fan_out_norm = (score.fan_out as f64 / thresholds.fan_out_p95).min(1.0);
     let hotspot_boost = hotspot_score.map_or(0.0, |s| s / 100.0);
 
-    // Keep the formula readable — it matches the documented specification.
-    #[expect(clippy::suboptimal_flops)]
+    #[expect(
+        clippy::suboptimal_flops,
+        reason = "formula matches documented specification"
+    )]
     let priority = density_norm * 30.0
         + hotspot_boost * 25.0
         + score.dead_code_ratio * 20.0

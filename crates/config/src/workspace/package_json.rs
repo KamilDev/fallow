@@ -3,7 +3,10 @@ use serde::{Deserialize, Serialize};
 /// Type alias for standard `HashMap` used in serde-deserialized structs.
 /// `rustc-hash` v2 does not have a `serde` feature, so fields deserialized
 /// from JSON must use `std::collections::HashMap`.
-#[expect(clippy::disallowed_types)]
+#[expect(
+    clippy::disallowed_types,
+    reason = "rustc-hash v2 lacks serde feature — JSON deserialization needs std HashMap"
+)]
 type StdHashMap<K, V> = std::collections::HashMap<K, V>;
 
 /// Parsed package.json with fields relevant to fallow.

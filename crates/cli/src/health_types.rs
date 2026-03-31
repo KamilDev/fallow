@@ -466,7 +466,10 @@ pub struct HotspotSummary {
 /// Derived from the project's metric distribution (percentile-based with floors).
 /// Exposed in JSON output so consumers can interpret scores in context.
 #[derive(Debug, Clone, serde::Serialize)]
-#[allow(clippy::struct_field_names)] // triggered in bin but not lib — #[expect] would fail in lib
+#[allow(
+    clippy::struct_field_names,
+    reason = "triggered in bin but not lib — #[expect] would be unfulfilled in lib"
+)]
 pub struct TargetThresholds {
     /// Fan-in saturation point for priority formula (p95, floor 5).
     pub fan_in_p95: f64,

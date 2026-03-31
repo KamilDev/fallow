@@ -115,7 +115,10 @@ pub fn run_migrate(root: &Path, use_toml: bool, dry_run: bool, from: Option<&Pat
 }
 
 /// Auto-detect and migrate from knip and/or jscpd configs in the given root.
-#[expect(clippy::case_sensitive_file_extension_comparisons)] // JS/TS extensions are always lowercase
+#[expect(
+    clippy::case_sensitive_file_extension_comparisons,
+    reason = "JS/TS extensions are always lowercase"
+)]
 fn migrate_auto_detect(root: &Path) -> Result<MigrationResult, String> {
     let mut config = serde_json::Map::new();
     let mut warnings = Vec::new();
@@ -192,7 +195,10 @@ fn migrate_auto_detect(root: &Path) -> Result<MigrationResult, String> {
 }
 
 /// Migrate from a specific config file.
-#[expect(clippy::case_sensitive_file_extension_comparisons)] // JS/TS extensions are always lowercase
+#[expect(
+    clippy::case_sensitive_file_extension_comparisons,
+    reason = "JS/TS extensions are always lowercase"
+)]
 fn migrate_from_file(path: &Path) -> Result<MigrationResult, String> {
     if !path.exists() {
         return Err(format!("config file not found: {}", path.display()));

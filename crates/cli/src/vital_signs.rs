@@ -577,7 +577,10 @@ pub fn compute_trend(
 }
 
 /// Build a single trend metric.
-#[expect(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "metric builder needs all parameters"
+)]
 fn make_metric(
     name: &'static str,
     label: &'static str,

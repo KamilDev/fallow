@@ -143,7 +143,7 @@ async fn run_fallow_stderr_is_trimmed_in_error_message() {
 
 // Combined into a single test to avoid env var races when tests run in parallel.
 #[test]
-#[expect(unsafe_code)]
+#[expect(unsafe_code, reason = "env var mutation requires unsafe")]
 fn resolve_binary_behavior() {
     // 1. Without FALLOW_BIN, defaults to "fallow" or a sibling path
     // SAFETY: test-only, sequential env access within this single test function

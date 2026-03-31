@@ -86,7 +86,7 @@ fn make_mixed_files(n_identical: usize, n_diverse: usize, tokens_per_file: usize
     data
 }
 
-#[expect(clippy::print_stderr)]
+#[expect(clippy::print_stderr, reason = "intentional profiling output")]
 fn profile_scenario(name: &str, data: &DupeInput, runs: usize) {
     let total_tokens: usize = data.iter().map(|(_, h, _)| h.len()).sum();
     let n_files = data.len();

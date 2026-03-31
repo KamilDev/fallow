@@ -13,7 +13,10 @@ pub mod ci;
 mod resolve;
 mod shell;
 
-#[expect(clippy::disallowed_types)]
+#[expect(
+    clippy::disallowed_types,
+    reason = "package.json scripts are deserialized as std HashMap"
+)]
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -54,7 +57,11 @@ pub struct ScriptCommand {
 /// In production mode, dev/test/lint scripts are excluded since they only affect
 /// devDependency usage, not the production dependency graph.
 #[must_use]
-#[expect(clippy::implicit_hasher, clippy::disallowed_types)]
+#[expect(
+    clippy::implicit_hasher,
+    clippy::disallowed_types,
+    reason = "API matches serde-deserialized HashMap from package.json"
+)]
 pub fn filter_production_scripts(scripts: &HashMap<String, String>) -> HashMap<String, String> {
     scripts
         .iter()
@@ -92,7 +99,11 @@ fn is_production_script(name: &str) -> bool {
 /// For each script value, parses shell commands, extracts binary names (mapped to
 /// package names), `--config` file paths, and positional file path arguments.
 #[must_use]
-#[expect(clippy::implicit_hasher, clippy::disallowed_types)]
+#[expect(
+    clippy::implicit_hasher,
+    clippy::disallowed_types,
+    reason = "API matches serde-deserialized HashMap from package.json"
+)]
 pub fn analyze_scripts(scripts: &HashMap<String, String>, root: &Path) -> ScriptAnalysis {
     let mut result = ScriptAnalysis::default();
 
@@ -316,7 +327,10 @@ fn is_builtin_command(cmd: &str) -> bool {
 }
 
 #[cfg(test)]
-#[expect(clippy::disallowed_types)]
+#[expect(
+    clippy::disallowed_types,
+    reason = "test assertions use std HashMap for readability"
+)]
 mod tests {
     use super::*;
 

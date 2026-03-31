@@ -1,4 +1,7 @@
-#[expect(clippy::disallowed_types)]
+#[expect(
+    clippy::disallowed_types,
+    reason = "serde JSON deserialization produces std HashMap"
+)]
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -10,7 +13,10 @@ use fallow_core::results::AnalysisResults;
 use crate::diagnostics::FIRST_LINE_RANGE;
 
 /// Build quick-fix code actions for unused exports (remove the `export` keyword).
-#[expect(clippy::disallowed_types)]
+#[expect(
+    clippy::disallowed_types,
+    reason = "serde JSON deserialization produces std HashMap"
+)]
 #[expect(
     clippy::cast_possible_truncation,
     reason = "identifier/indent lengths are bounded by source size"

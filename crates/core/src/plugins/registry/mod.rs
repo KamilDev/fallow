@@ -1,5 +1,8 @@
 //! Plugin registry: discovers active plugins, collects patterns, parses configs.
-#![expect(clippy::excessive_nesting)]
+#![expect(
+    clippy::excessive_nesting,
+    reason = "plugin config parsing requires deep AST matching"
+)]
 
 use rustc_hash::FxHashSet;
 use std::path::{Path, PathBuf};
@@ -418,5 +421,8 @@ impl Default for PluginRegistry {
 }
 
 #[cfg(test)]
-#[expect(clippy::disallowed_types)]
+#[expect(
+    clippy::disallowed_types,
+    reason = "test assertions use std HashMap for readability"
+)]
 mod tests;
