@@ -9,15 +9,19 @@ paths:
 
 ## Clippy configuration
 - Lint groups: `all`, `pedantic`, `nursery`, `cargo` (priority -1) with strategic allow-list
-- Restriction lints including `excessive_nesting` (threshold 7 in `.clippy.toml`); see `[workspace.lints.clippy]` in `Cargo.toml` for the full list
-- Compiler lints: `unsafe_op_in_unsafe_fn`, `unused_unsafe`, `non_ascii_idents`
-- All suppressions use `#[expect(clippy::...)]` — warns when unnecessary, preventing dead annotations
+- Restriction lints including `excessive_nesting` (threshold 7 in `.clippy.toml`), `allow_attributes_without_reason`, `unimplemented`; see `[workspace.lints.clippy]` in `Cargo.toml` for the full list
+- Compiler lints: `unsafe_op_in_unsafe_fn`, `unused_unsafe`, `non_ascii_idents`, `tail_expr_drop_order`
+- All suppressions use `#[expect(clippy::..., reason = "...")]` — warns when unnecessary, preventing dead annotations. Every `#[allow]` and `#[expect]` must include a `reason` attribute. Use `#[allow]` only for pedantic-only or target-dependent lints where `#[expect]` would be unfulfilled.
 
 ## Size assertions
 `ModuleNode` (96 bytes), `ModuleInfo` (256 bytes), `ExportInfo`/`ImportInfo` (88 bytes), `Edge` (32 bytes) — prevents accidental struct bloat.
 
-## Dev profile
-`debug = false` for faster builds. Selective `opt-level` for proc-macro crates (`serde_derive`, `clap_derive`) and snapshot test deps (`insta`, `similar`).
+## Formatting
+`.rustfmt.toml` with `style_edition = "2024"`.
+
+## Build profiles
+- **Dev**: `debug = false` for faster builds. Selective `opt-level` for proc-macro crates (`serde_derive`, `clap_derive`) and snapshot test deps (`insta`, `similar`).
+- **Release**: `lto = true`, `codegen-units = 1`, `strip = "symbols"`, `panic = "abort"` (no unwind tables — smaller binary).
 
 ## Cross-platform test paths
 CI runs on Linux, macOS, and Windows. Tests that assert on file paths MUST normalize separators:
