@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774965856143,
+  "lastUpdate": 1774966161515,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -2227,6 +2227,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/4d15817e9d6c067b2e0fd342b1b47bf74a746108"
         },
         "date": 1774965855345,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 117024264,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "7731c196c1322b31490ed48a9d0e032cf33214b9",
+          "message": "docs: update code-quality rules with new lints and release profile",
+          "timestamp": "2026-03-31T16:05:34+02:00",
+          "tree_id": "909335bfad8746d10ca22c4aee299f45b27f9828",
+          "url": "https://github.com/fallow-rs/fallow/commit/7731c196c1322b31490ed48a9d0e032cf33214b9"
+        },
+        "date": 1774966160319,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
