@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774957560212,
+  "lastUpdate": 1774964523263,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -3822,6 +3822,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/c088431e58f091651ba53737a4e90e0fcad2a8cd"
         },
         "date": 1774957559759,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 92.5,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "fc332b882823f92743ffdf6074f719a747313aae",
+          "message": "fix: `--format badge` auto-enables `--score`\n\nPreviously `fallow health --complexity --format badge` would error\nbecause score computation wasn't triggered when explicit section flags\nwere passed. Badge format now implies --score, matching the behavior\nof --min-score, --trend, and --save-snapshot.",
+          "timestamp": "2026-03-31T15:41:00+02:00",
+          "tree_id": "73c8c8eac6365930066d5901ec75ca703aacd561",
+          "url": "https://github.com/fallow-rs/fallow/commit/fc332b882823f92743ffdf6074f719a747313aae"
+        },
+        "date": 1774964522737,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
