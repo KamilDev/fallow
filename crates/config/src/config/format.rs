@@ -16,6 +16,8 @@ pub enum OutputFormat {
     Markdown,
     /// `CodeClimate` JSON for GitLab Code Quality.
     CodeClimate,
+    /// Shields.io-compatible SVG badge (health command only).
+    Badge,
 }
 
 #[cfg(test)]

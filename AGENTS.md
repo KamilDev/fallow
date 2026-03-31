@@ -41,7 +41,7 @@ This allows agents to parse errors the same way they parse normal output.
 
 | Variable | Description |
 |----------|-------------|
-| `FALLOW_FORMAT` | Default output format (`json`, `human`, `sarif`, `compact`, `markdown`, `codeclimate`). CLI `--format` flag overrides this. |
+| `FALLOW_FORMAT` | Default output format (`json`, `human`, `sarif`, `compact`, `markdown`, `codeclimate`, `badge`). CLI `--format` flag overrides this. |
 | `FALLOW_QUIET` | Set to `1` or `true` to suppress progress output. CLI `--quiet` flag overrides this. |
 | `FALLOW_BIN` | Path to fallow binary (used by the `fallow-mcp` server). |
 
@@ -55,7 +55,7 @@ These flags work with any subcommand:
 |------|-------------|
 | `--root <PATH>` / `-r` | Project root directory (default: cwd) |
 | `--config <PATH>` / `-c` | Path to config file (.fallowrc.json / fallow.toml) |
-| `--format <FMT>` / `-f` | Output format: human, json, sarif, compact, markdown, codeclimate |
+| `--format <FMT>` / `-f` | Output format: human, json, sarif, compact, markdown, codeclimate, badge (health only) |
 | `--quiet` / `-q` | Suppress progress and timing on stderr |
 | `--production` | Exclude test/story/dev files |
 | `--workspace <NAME>` / `-w` | Scope to a workspace package |
@@ -174,7 +174,7 @@ fallow health --format json --quiet --targets
 - `--min-commits <N>` -- minimum commits for a file to appear in hotspot ranking (default: 3)
 - `--save-snapshot [PATH]` -- save vital signs snapshot for trend tracking. Defaults to `.fallow/snapshots/<timestamp>.json`. Forces file-scores + hotspot computation.
 - `--trend` -- compare current metrics against the most recent saved snapshot. Shows per-metric deltas with directional indicators (improving/declining/stable). Implies `--score`. Reads from `.fallow/snapshots/`. JSON output includes a `health_trend` object with `compared_to`, `metrics` array, `snapshots_loaded`, and `overall_direction`.
-- `--format human|json|compact|markdown|sarif` -- output format (default: human)
+- `--format human|json|compact|markdown|sarif|badge` -- output format (default: human). `badge` outputs a shields.io-compatible SVG.
 
 **Exit codes:** 0 = no functions exceed thresholds, 1 = findings exist.
 

@@ -1,3 +1,4 @@
+mod badge;
 mod codeclimate;
 mod compact;
 mod human;
@@ -153,6 +154,10 @@ pub fn print_results(
             ExitCode::SUCCESS
         }
         OutputFormat::CodeClimate => codeclimate::print_codeclimate(results, ctx.root, ctx.rules),
+        OutputFormat::Badge => {
+            eprintln!("Error: badge format is only supported for the health command");
+            ExitCode::from(2)
+        }
     }
 }
 
@@ -181,6 +186,10 @@ pub fn print_duplication_report(
             ExitCode::SUCCESS
         }
         OutputFormat::CodeClimate => codeclimate::print_duplication_codeclimate(report, ctx.root),
+        OutputFormat::Badge => {
+            eprintln!("Error: badge format is only supported for the health command");
+            ExitCode::from(2)
+        }
     }
 }
 
@@ -209,6 +218,7 @@ pub fn print_health_report(
         OutputFormat::Sarif => sarif::print_health_sarif(report, ctx.root),
         OutputFormat::Json => json::print_health_json(report, ctx.root, ctx.elapsed, ctx.explain),
         OutputFormat::CodeClimate => codeclimate::print_health_codeclimate(report, ctx.root),
+        OutputFormat::Badge => badge::print_health_badge(report),
     }
 }
 

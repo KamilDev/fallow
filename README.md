@@ -120,6 +120,7 @@ fallow:
 - `--format codeclimate` -- GitLab Code Quality inline MR annotations
 - `--format annotations` -- GitHub Actions inline PR annotations (no Action required)
 - `--format json` / `--format markdown` -- for custom workflows (JSON includes machine-actionable `actions` per issue)
+- `--format badge` -- shields.io-compatible SVG health badge (`fallow health --format badge > badge.svg`)
 
 Both the GitHub Action and GitLab CI template auto-detect your package manager (npm/pnpm/yarn) from lock files, so install/uninstall commands in review comments match your project.
 
