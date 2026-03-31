@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774964630482,
+  "lastUpdate": 1774965703217,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -3880,6 +3880,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/dba526fc5a78f4b5d79e2992d3c6073304a0ab3c"
         },
         "date": 1774964629716,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 92.5,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "4d15817e9d6c067b2e0fd342b1b47bf74a746108",
+          "message": "perf: use panic=abort in release profile for smaller binary",
+          "timestamp": "2026-03-31T16:00:37+02:00",
+          "tree_id": "8f80ecfb95955a00e05ef0e68cdda51f35182574",
+          "url": "https://github.com/fallow-rs/fallow/commit/4d15817e9d6c067b2e0fd342b1b47bf74a746108"
+        },
+        "date": 1774965702703,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
