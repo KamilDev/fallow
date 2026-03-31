@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774957589288,
+  "lastUpdate": 1774964556055,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -4257,6 +4257,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15655,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534576,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5819,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "fc332b882823f92743ffdf6074f719a747313aae",
+          "message": "fix: `--format badge` auto-enables `--score`\n\nPreviously `fallow health --complexity --format badge` would error\nbecause score computation wasn't triggered when explicit section flags\nwere passed. Badge format now implies --score, matching the behavior\nof --min-score, --trend, and --save-snapshot.",
+          "timestamp": "2026-03-31T15:41:00+02:00",
+          "tree_id": "73c8c8eac6365930066d5901ec75ca703aacd561",
+          "url": "https://github.com/fallow-rs/fallow/commit/fc332b882823f92743ffdf6074f719a747313aae"
+        },
+        "date": 1774964555585,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3580418,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15671,
             "unit": "allocations"
           },
           {
