@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774965728542,
+  "lastUpdate": 1774966032232,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -4389,6 +4389,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15631,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534576,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5819,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "7731c196c1322b31490ed48a9d0e032cf33214b9",
+          "message": "docs: update code-quality rules with new lints and release profile",
+          "timestamp": "2026-03-31T16:05:34+02:00",
+          "tree_id": "909335bfad8746d10ca22c4aee299f45b27f9828",
+          "url": "https://github.com/fallow-rs/fallow/commit/7731c196c1322b31490ed48a9d0e032cf33214b9"
+        },
+        "date": 1774966031437,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3562522,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15637,
             "unit": "allocations"
           },
           {
