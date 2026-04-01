@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775030203785,
+  "lastUpdate": 1775045441263,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -4059,6 +4059,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "Code Coverage",
             "value": 91.7,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "63a613f3c4e56ccf6c2a06eb2d18f7c2400c2343",
+          "message": "fix: coverage CI fails because cargo-llvm-cov uses different target dir\n\nThe MCP e2e tests look for the fallow binary at target/debug/fallow,\nbut cargo-llvm-cov redirects output to target/llvm-cov-target. Build\nthe CLI binary separately and pass FALLOW_BIN to the coverage run.",
+          "timestamp": "2026-04-01T14:08:49+02:00",
+          "tree_id": "20a126f4163ffed6d71cf2327285951889adf04f",
+          "url": "https://github.com/fallow-rs/fallow/commit/63a613f3c4e56ccf6c2a06eb2d18f7c2400c2343"
+        },
+        "date": 1775045440068,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 94.4,
             "unit": "%"
           }
         ]
