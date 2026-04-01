@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775054444150,
+  "lastUpdate": 1775055166835,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -4917,6 +4917,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15877,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534576,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5819,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "4f9e625584f2862f514254cf0f46b9a25a261010",
+          "message": "feat: add boundary violations to GitHub Action, GitLab CI, and MCP server\n\nWire boundary violations through the remaining integration points:\n\n- GitHub Action: summary table row + detail section, review comments\n  with zone info and docs link, annotations with file/line/col\n- GitLab CI: summary table row + detail section, combined summary count\n- MCP server: boundary-violations added to ISSUE_TYPE_FLAGS, params\n  doc comment, and tool description\n- All test fixtures and inline test JSON updated with boundary_violations field",
+          "timestamp": "2026-04-01T16:51:16+02:00",
+          "tree_id": "8e4371032dd30f94de850a9a8d9c6eee4d2759a8",
+          "url": "https://github.com/fallow-rs/fallow/commit/4f9e625584f2862f514254cf0f46b9a25a261010"
+        },
+        "date": 1775055165745,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3575018,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15849,
             "unit": "allocations"
           },
           {
