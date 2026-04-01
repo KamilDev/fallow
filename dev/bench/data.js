@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775057220324,
+  "lastUpdate": 1775063195373,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Benchmarks": [
@@ -12575,6 +12575,102 @@ window.BENCHMARK_DATA = {
             "name": "dupe_detect_2x5000_identical",
             "value": 2521922,
             "range": "± 30742",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "4b90f3d3bf2db776438471cc218b2f9b026f14cb",
+          "message": "refactor: rebrand descriptions from dead code finder to codebase analyzer\n\nFallow detects 15 issue types across 4 categories (unused code, code\nquality, correctness, architecture) — descriptions should reflect that.",
+          "timestamp": "2026-04-01T17:48:01+02:00",
+          "tree_id": "40dcef4a154b00d140ac85324a02eba3d9634b91",
+          "url": "https://github.com/fallow-rs/fallow/commit/4b90f3d3bf2db776438471cc218b2f9b026f14cb"
+        },
+        "date": 1775063194862,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_single_file",
+            "value": 44165,
+            "range": "± 1521",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_10_files",
+            "value": 1650418,
+            "range": "± 30426",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_100_files",
+            "value": 3012645,
+            "range": "± 28370",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_1000_files",
+            "value": 15585854,
+            "range": "± 652445",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "resolve_re_export_chains",
+            "value": 107120,
+            "range": "± 830",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache_round_trip",
+            "value": 1979,
+            "range": "± 6",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x500_identical",
+            "value": 202846,
+            "range": "± 15460",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x2000_identical",
+            "value": 905369,
+            "range": "± 11237",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_10x500_identical",
+            "value": 1700977,
+            "range": "± 18034",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_50x200_diverse",
+            "value": 520581,
+            "range": "± 11617",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_100x200_mixed",
+            "value": 4181076,
+            "range": "± 45528",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x5000_identical",
+            "value": 2530489,
+            "range": "± 8212",
             "unit": "ns/iter"
           }
         ]
