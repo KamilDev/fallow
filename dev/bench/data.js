@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775035423422,
+  "lastUpdate": 1775035902335,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Benchmarks": [
@@ -11903,6 +11903,102 @@ window.BENCHMARK_DATA = {
             "name": "dupe_detect_2x5000_identical",
             "value": 2524062,
             "range": "± 10768",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "debf8af9a797e5a6c21d7fb583ef42aa13f5d920",
+          "message": "test: add integration tests for audit, fix, schema, migrate, production, workspace\n\nCover the remaining untested CLI commands:\n- audit: verdict logic (pass/warn/fail), JSON structure, badge format rejection\n- fix: dry-run output, fixable items, non-TTY guard\n- schema/config-schema/plugin-schema: valid JSON output, key fields\n- migrate: dry-run JSONC/TOML output, missing config error\n- --production mode: accepted on check/health/dupes\n- --workspace scoping: limits output to named package\n- --regression-baseline round-trip: save and compare",
+          "timestamp": "2026-04-01T11:27:36+02:00",
+          "tree_id": "55012f41c329dc67fb4920a93b233bbfe86b9f1c",
+          "url": "https://github.com/fallow-rs/fallow/commit/debf8af9a797e5a6c21d7fb583ef42aa13f5d920"
+        },
+        "date": 1775035901830,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_single_file",
+            "value": 44432,
+            "range": "± 562",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_10_files",
+            "value": 1632677,
+            "range": "± 52249",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_100_files",
+            "value": 3007815,
+            "range": "± 99161",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_1000_files",
+            "value": 15862702,
+            "range": "± 422760",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "resolve_re_export_chains",
+            "value": 104094,
+            "range": "± 1395",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache_round_trip",
+            "value": 1971,
+            "range": "± 10",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x500_identical",
+            "value": 203753,
+            "range": "± 4795",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x2000_identical",
+            "value": 908599,
+            "range": "± 52778",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_10x500_identical",
+            "value": 1722531,
+            "range": "± 19430",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_50x200_diverse",
+            "value": 528269,
+            "range": "± 9020",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_100x200_mixed",
+            "value": 4257929,
+            "range": "± 55269",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x5000_identical",
+            "value": 2507999,
+            "range": "± 11605",
             "unit": "ns/iter"
           }
         ]
