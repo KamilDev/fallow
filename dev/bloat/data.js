@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775030352393,
+  "lastUpdate": 1775033952218,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -2377,6 +2377,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "Binary Size (fallow)",
             "value": 117410464,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "e6de2a325aa1df10c5d4d5f0eef381e378818f60",
+          "message": "chore: release v2.8.1",
+          "timestamp": "2026-04-01T10:55:18+02:00",
+          "tree_id": "2e004ff3896d48f0be60800286223642773f3bfb",
+          "url": "https://github.com/fallow-rs/fallow/commit/e6de2a325aa1df10c5d4d5f0eef381e378818f60"
+        },
+        "date": 1775033951553,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 117405944,
             "unit": "bytes"
           }
         ]
