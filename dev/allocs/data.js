@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775033830804,
+  "lastUpdate": 1775035271963,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -4653,6 +4653,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15655,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534576,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5819,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "d27615897a99cbfee3dac999f805e8d748823d17",
+          "message": "test: add integration tests for audit, fix, schema, migrate, production, workspace\n\nCover the remaining untested CLI commands:\n- audit: verdict logic (pass/warn/fail), JSON structure, badge format rejection\n- fix: dry-run output, fixable items, non-TTY guard\n- schema/config-schema/plugin-schema: valid JSON output, key fields\n- migrate: dry-run JSONC/TOML output, missing config error\n- --production mode: accepted on check/health/dupes\n- --workspace scoping: limits output to named package\n- --regression-baseline round-trip: save and compare",
+          "timestamp": "2026-04-01T11:19:42+02:00",
+          "tree_id": "c67c39d64676891aed52181ea67987e5b70bbb0d",
+          "url": "https://github.com/fallow-rs/fallow/commit/d27615897a99cbfee3dac999f805e8d748823d17"
+        },
+        "date": 1775035271428,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3574610,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15659,
             "unit": "allocations"
           },
           {
