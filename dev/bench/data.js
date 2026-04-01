@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775028356789,
+  "lastUpdate": 1775029666139,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Benchmarks": [
@@ -11519,6 +11519,102 @@ window.BENCHMARK_DATA = {
             "name": "dupe_detect_2x5000_identical",
             "value": 2525190,
             "range": "± 16773",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "c5be34d097e4ef85a85a2775624ca84ef802a44a",
+          "message": "feat: add `fallow audit` command for reviewing AI-generated code\n\nCombines dead-code + complexity + duplication scoped to changed files\nand returns a verdict (pass/warn/fail). Auto-detects the base branch\nif --base is not specified.\n\n- CLI: `fallow audit [--base <ref>]` with all 6 output formats\n- MCP: `audit` tool (8th tool, wraps CLI)\n- Global: `--base` alias for `--changed-since` on all commands\n- Verdict: pass (exit 0), warn (exit 0), fail (exit 1)\n- Hard error on failed git ref resolution (no silent fallback)\n- JSON envelope: verdict, summary, full sub-results with actions",
+          "timestamp": "2026-04-01T09:43:30+02:00",
+          "tree_id": "97932c571c38071a5ec0a56c711499bc9617fadc",
+          "url": "https://github.com/fallow-rs/fallow/commit/c5be34d097e4ef85a85a2775624ca84ef802a44a"
+        },
+        "date": 1775029665007,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_single_file",
+            "value": 44694,
+            "range": "± 793",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_10_files",
+            "value": 1638742,
+            "range": "± 102228",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_100_files",
+            "value": 3005629,
+            "range": "± 34748",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_1000_files",
+            "value": 15344309,
+            "range": "± 95121",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "resolve_re_export_chains",
+            "value": 99720,
+            "range": "± 1079",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache_round_trip",
+            "value": 1989,
+            "range": "± 6",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x500_identical",
+            "value": 203898,
+            "range": "± 7466",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x2000_identical",
+            "value": 905059,
+            "range": "± 13858",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_10x500_identical",
+            "value": 1703077,
+            "range": "± 19255",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_50x200_diverse",
+            "value": 513037,
+            "range": "± 28835",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_100x200_mixed",
+            "value": 4188701,
+            "range": "± 24341",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x5000_identical",
+            "value": 2513458,
+            "range": "± 31915",
             "unit": "ns/iter"
           }
         ]
