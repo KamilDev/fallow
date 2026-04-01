@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775063432314,
+  "lastUpdate": 1775067955460,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Benchmarks": [
@@ -12767,6 +12767,102 @@ window.BENCHMARK_DATA = {
             "name": "dupe_detect_2x5000_identical",
             "value": 2512425,
             "range": "± 20796",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "04cd592b8241667154ca6c799c8e456ec0382a44",
+          "message": "feat: add bulletproof architecture boundary preset\n\nAdd a fourth built-in preset for the Bulletproof React pattern:\napp → features → shared + server. The shared zone covers components,\nhooks, lib, utils, utilities, providers, shared, types, styles, i18n.\n\nMatches the dominant React/Next.js architecture where feature modules\nare isolated from each other and shared utilities form the base layer.\n\nIncludes 3 unit tests for zone expansion, rule correctness, and\nfile classification via resolved glob matchers.",
+          "timestamp": "2026-04-01T20:21:49+02:00",
+          "tree_id": "8ed76b2b34508f661d905110f1b6fdf0ce0a8e53",
+          "url": "https://github.com/fallow-rs/fallow/commit/04cd592b8241667154ca6c799c8e456ec0382a44"
+        },
+        "date": 1775067954191,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_single_file",
+            "value": 45160,
+            "range": "± 869",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_10_files",
+            "value": 1632315,
+            "range": "± 40251",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_100_files",
+            "value": 3004535,
+            "range": "± 68813",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_1000_files",
+            "value": 15748524,
+            "range": "± 184477",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "resolve_re_export_chains",
+            "value": 103721,
+            "range": "± 688",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache_round_trip",
+            "value": 2007,
+            "range": "± 8",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x500_identical",
+            "value": 215283,
+            "range": "± 5785",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x2000_identical",
+            "value": 913632,
+            "range": "± 13454",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_10x500_identical",
+            "value": 1698735,
+            "range": "± 45946",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_50x200_diverse",
+            "value": 514817,
+            "range": "± 15461",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_100x200_mixed",
+            "value": 4200942,
+            "range": "± 38474",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x5000_identical",
+            "value": 2520147,
+            "range": "± 76684",
             "unit": "ns/iter"
           }
         ]
