@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774940798480,
+  "lastUpdate": 1775027614673,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Conformance": [
@@ -304,6 +304,73 @@ window.BENCHMARK_DATA = {
           {
             "name": "Fallow Total",
             "value": 7393,
+            "unit": "issues"
+          },
+          {
+            "name": "Knip Total",
+            "value": 670,
+            "unit": "issues"
+          },
+          {
+            "name": "fastify Agreement",
+            "value": 3,
+            "unit": "%"
+          },
+          {
+            "name": "preact Agreement",
+            "value": 3.4,
+            "unit": "%"
+          },
+          {
+            "name": "query Agreement",
+            "value": 0,
+            "unit": "%"
+          },
+          {
+            "name": "svelte Agreement",
+            "value": 0.3,
+            "unit": "%"
+          },
+          {
+            "name": "zod Agreement",
+            "value": 9.1,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "committer": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "id": "636fe4f18d157410ed9f8ef8ff5d9257a0524a7b",
+          "message": "refactor: add 6 restriction lints from oxc\n\n- filetype_is_file: use !is_dir() to include symlinked source files\n- rest_pat_in_fully_bound_structs: catch redundant .. in patterns\n- pub_underscore_fields: catch accidentally public _-prefixed fields\n- non_zero_suggestions: suggest NonZero types\n- precedence_bits: catch bitwise precedence mistakes\n- map_with_unused_argument_over_ranges: prefer repeat/repeat_with",
+          "timestamp": "2026-03-31T14:30:34Z",
+          "url": "https://github.com/fallow-rs/fallow/commit/636fe4f18d157410ed9f8ef8ff5d9257a0524a7b"
+        },
+        "date": 1775027613528,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Agreement Rate",
+            "value": 1.8,
+            "unit": "%"
+          },
+          {
+            "name": "Agreed Issues",
+            "value": 147,
+            "unit": "issues"
+          },
+          {
+            "name": "Fallow Total",
+            "value": 7426,
             "unit": "issues"
           },
           {
