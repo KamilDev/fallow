@@ -71,7 +71,55 @@ fn run_init_config(root: &Path, use_toml: bool) -> ExitCode {
         }
         eprintln!("Created .fallowrc.json");
     }
+
+    ensure_gitignore(root);
+
     ExitCode::SUCCESS
+}
+
+/// Ensure `.fallow/` is listed in the project's `.gitignore`.
+///
+/// If `.gitignore` exists and already contains `.fallow` (with or without
+/// trailing slash), this is a no-op. Otherwise the entry is appended (or
+/// the file is created).
+fn ensure_gitignore(root: &Path) {
+    let gitignore_path = root.join(".gitignore");
+    let existing = std::fs::read_to_string(&gitignore_path).unwrap_or_default();
+
+    // Check if .fallow is already ignored (with or without trailing slash).
+    let already_ignored = existing.lines().any(|line| {
+        let trimmed = line.trim();
+        trimmed == ".fallow" || trimmed == ".fallow/"
+    });
+
+    if already_ignored {
+        return;
+    }
+
+    // Build the line to append.
+    let is_new = existing.is_empty();
+    let entry = if is_new {
+        // New file — no leading newline needed.
+        ".fallow/\n"
+    } else if existing.ends_with('\n') {
+        ".fallow/\n"
+    } else {
+        "\n.fallow/\n"
+    };
+
+    let mut contents = existing;
+    contents.push_str(entry);
+
+    if let Err(e) = std::fs::write(&gitignore_path, contents) {
+        eprintln!("Warning: Failed to update .gitignore: {e}");
+        return;
+    }
+
+    if is_new {
+        eprintln!("Created .gitignore with .fallow/ entry");
+    } else {
+        eprintln!("Added .fallow/ to .gitignore");
+    }
 }
 
 /// Detect the default branch name by querying git.
@@ -437,5 +485,67 @@ mod tests {
         assert_eq!(exit, ExitCode::from(2));
         // Hook file should NOT have been written
         assert!(!root.join(".git/hooks/pre-commit").exists());
+    }
+
+    // ── Gitignore tests ────────────────────────────────────────────
+
+    #[test]
+    fn init_creates_gitignore_with_fallow_entry() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        run_init(&config_opts(root, false));
+        let content = std::fs::read_to_string(root.join(".gitignore")).unwrap();
+        assert!(content.contains(".fallow/"));
+    }
+
+    #[test]
+    fn init_appends_to_existing_gitignore() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        std::fs::write(root.join(".gitignore"), "node_modules/\n").unwrap();
+        run_init(&config_opts(root, false));
+        let content = std::fs::read_to_string(root.join(".gitignore")).unwrap();
+        assert!(content.starts_with("node_modules/\n"));
+        assert!(content.contains(".fallow/"));
+    }
+
+    #[test]
+    fn init_does_not_duplicate_gitignore_entry() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        std::fs::write(root.join(".gitignore"), "node_modules/\n.fallow/\n").unwrap();
+        run_init(&config_opts(root, false));
+        let content = std::fs::read_to_string(root.join(".gitignore")).unwrap();
+        assert_eq!(content.matches(".fallow").count(), 1);
+    }
+
+    #[test]
+    fn init_recognizes_fallow_without_trailing_slash() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        std::fs::write(root.join(".gitignore"), ".fallow\n").unwrap();
+        run_init(&config_opts(root, false));
+        let content = std::fs::read_to_string(root.join(".gitignore")).unwrap();
+        // Should not add a duplicate — .fallow already covers the directory
+        assert_eq!(content.matches(".fallow").count(), 1);
+    }
+
+    #[test]
+    fn init_appends_newline_to_gitignore_without_trailing_newline() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        std::fs::write(root.join(".gitignore"), "node_modules/").unwrap();
+        run_init(&config_opts(root, false));
+        let content = std::fs::read_to_string(root.join(".gitignore")).unwrap();
+        assert_eq!(content, "node_modules/\n.fallow/\n");
+    }
+
+    #[test]
+    fn init_toml_also_updates_gitignore() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        run_init(&config_opts(root, true));
+        let content = std::fs::read_to_string(root.join(".gitignore")).unwrap();
+        assert!(content.contains(".fallow/"));
     }
 }
