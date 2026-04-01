@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775063195373,
+  "lastUpdate": 1775063432314,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Benchmarks": [
@@ -12671,6 +12671,102 @@ window.BENCHMARK_DATA = {
             "name": "dupe_detect_2x5000_identical",
             "value": 2530489,
             "range": "± 8212",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "a1e8cd1f56ec94ebbdcd36493f9e15de5f782f2c",
+          "message": "docs: align positioning guide with codebase analyzer branding\n\nAdd architecture boundary violations to all copy templates, elevator\npitch, and approved one-liners. Replace \"dead code\" with \"unused code\"\nin the Why section.",
+          "timestamp": "2026-04-01T19:03:43+02:00",
+          "tree_id": "54b5f730fbfa9880f964974be07045904d0a4724",
+          "url": "https://github.com/fallow-rs/fallow/commit/a1e8cd1f56ec94ebbdcd36493f9e15de5f782f2c"
+        },
+        "date": 1775063431217,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_single_file",
+            "value": 45283,
+            "range": "± 3204",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_10_files",
+            "value": 1661587,
+            "range": "± 34561",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_100_files",
+            "value": 3040655,
+            "range": "± 37530",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_1000_files",
+            "value": 15715977,
+            "range": "± 352821",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "resolve_re_export_chains",
+            "value": 107528,
+            "range": "± 983",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache_round_trip",
+            "value": 1980,
+            "range": "± 14",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x500_identical",
+            "value": 204169,
+            "range": "± 14815",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x2000_identical",
+            "value": 906969,
+            "range": "± 16154",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_10x500_identical",
+            "value": 1703101,
+            "range": "± 22748",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_50x200_diverse",
+            "value": 514024,
+            "range": "± 9386",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_100x200_mixed",
+            "value": 4202573,
+            "range": "± 180600",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x5000_identical",
+            "value": 2512425,
+            "range": "± 20796",
             "unit": "ns/iter"
           }
         ]
