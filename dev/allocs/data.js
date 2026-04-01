@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775057080499,
+  "lastUpdate": 1775063124117,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -5005,6 +5005,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15873,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534576,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5819,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "a1e8cd1f56ec94ebbdcd36493f9e15de5f782f2c",
+          "message": "docs: align positioning guide with codebase analyzer branding\n\nAdd architecture boundary violations to all copy templates, elevator\npitch, and approved one-liners. Replace \"dead code\" with \"unused code\"\nin the Why section.",
+          "timestamp": "2026-04-01T19:03:43+02:00",
+          "tree_id": "54b5f730fbfa9880f964974be07045904d0a4724",
+          "url": "https://github.com/fallow-rs/fallow/commit/a1e8cd1f56ec94ebbdcd36493f9e15de5f782f2c"
+        },
+        "date": 1775063122949,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3574546,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15851,
             "unit": "allocations"
           },
           {
