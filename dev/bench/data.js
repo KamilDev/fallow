@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775055336453,
+  "lastUpdate": 1775057220324,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Benchmarks": [
@@ -12479,6 +12479,102 @@ window.BENCHMARK_DATA = {
             "name": "dupe_detect_2x5000_identical",
             "value": 2023560,
             "range": "± 107152",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "0f07026ef5b61a78c5ad0acfd0eeddce042e289e",
+          "message": "fix: replace typo in boundary test and add pre-commit typos hook\n\nThe test used \"databse\" as an invalid zone name, which triggered the\ntypos CI check. Replaced with \"nonexistent\". Added typos to the Claude\npre-commit hook so agents can't commit code with typos.",
+          "timestamp": "2026-04-01T17:22:55+02:00",
+          "tree_id": "9e9b363cbd9aa51942b2343006b5a259122d79c7",
+          "url": "https://github.com/fallow-rs/fallow/commit/0f07026ef5b61a78c5ad0acfd0eeddce042e289e"
+        },
+        "date": 1775057219081,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_single_file",
+            "value": 45063,
+            "range": "± 1322",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_10_files",
+            "value": 1630402,
+            "range": "± 19219",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_100_files",
+            "value": 3004690,
+            "range": "± 27815",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_1000_files",
+            "value": 16021503,
+            "range": "± 290553",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "resolve_re_export_chains",
+            "value": 100947,
+            "range": "± 530",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache_round_trip",
+            "value": 1975,
+            "range": "± 4",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x500_identical",
+            "value": 204144,
+            "range": "± 1722",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x2000_identical",
+            "value": 908448,
+            "range": "± 6251",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_10x500_identical",
+            "value": 1707981,
+            "range": "± 41795",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_50x200_diverse",
+            "value": 515040,
+            "range": "± 28250",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_100x200_mixed",
+            "value": 4232965,
+            "range": "± 40593",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x5000_identical",
+            "value": 2521922,
+            "range": "± 30742",
             "unit": "ns/iter"
           }
         ]
