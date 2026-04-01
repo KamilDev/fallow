@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775035876073,
+  "lastUpdate": 1775038018018,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -2464,6 +2464,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "Binary Size (fallow)",
             "value": 117405944,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b1c2d04f6b27621c91d60e9c125d3772f368ed7e",
+          "message": "chore(deps): bump the oxc group across 1 directory with 7 updates (#35)\n\n* chore(deps): bump the oxc group with 7 updates\n\nBumps the oxc group with 7 updates:\n\n| Package | From | To |\n| --- | --- | --- |\n| [oxc_allocator](https://github.com/oxc-project/oxc) | `0.120.0` | `0.122.0` |\n| [oxc_ast](https://github.com/oxc-project/oxc) | `0.120.0` | `0.122.0` |\n| [oxc_ast_visit](https://github.com/oxc-project/oxc) | `0.120.0` | `0.122.0` |\n| [oxc_parser](https://github.com/oxc-project/oxc) | `0.120.0` | `0.122.0` |\n| [oxc_semantic](https://github.com/oxc-project/oxc) | `0.120.0` | `0.122.0` |\n| [oxc_span](https://github.com/oxc-project/oxc) | `0.120.0` | `0.122.0` |\n| [oxc_syntax](https://github.com/oxc-project/oxc) | `0.120.0` | `0.122.0` |\n\n\nUpdates `oxc_allocator` from 0.120.0 to 0.122.0\n- [Release notes](https://github.com/oxc-project/oxc/releases)\n- [Changelog](https://github.com/oxc-project/oxc/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/oxc-project/oxc/compare/crates_v0.120.0...crates_v0.122.0)\n\nUpdates `oxc_ast` from 0.120.0 to 0.122.0\n- [Release notes](https://github.com/oxc-project/oxc/releases)\n- [Changelog](https://github.com/oxc-project/oxc/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/oxc-project/oxc/compare/crates_v0.120.0...crates_v0.122.0)\n\nUpdates `oxc_ast_visit` from 0.120.0 to 0.122.0\n- [Release notes](https://github.com/oxc-project/oxc/releases)\n- [Changelog](https://github.com/oxc-project/oxc/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/oxc-project/oxc/compare/crates_v0.120.0...crates_v0.122.0)\n\nUpdates `oxc_parser` from 0.120.0 to 0.122.0\n- [Release notes](https://github.com/oxc-project/oxc/releases)\n- [Changelog](https://github.com/oxc-project/oxc/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/oxc-project/oxc/compare/crates_v0.120.0...crates_v0.122.0)\n\nUpdates `oxc_semantic` from 0.120.0 to 0.122.0\n- [Release notes](https://github.com/oxc-project/oxc/releases)\n- [Changelog](https://github.com/oxc-project/oxc/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/oxc-project/oxc/compare/crates_v0.120.0...crates_v0.122.0)\n\nUpdates `oxc_span` from 0.120.0 to 0.122.0\n- [Release notes](https://github.com/oxc-project/oxc/releases)\n- [Changelog](https://github.com/oxc-project/oxc/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/oxc-project/oxc/compare/crates_v0.120.0...crates_v0.122.0)\n\nUpdates `oxc_syntax` from 0.120.0 to 0.122.0\n- [Release notes](https://github.com/oxc-project/oxc/releases)\n- [Changelog](https://github.com/oxc-project/oxc/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/oxc-project/oxc/compare/crates_v0.120.0...crates_v0.122.0)\n\n---\nupdated-dependencies:\n- dependency-name: oxc_allocator\n  dependency-version: 0.122.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n  dependency-group: oxc\n- dependency-name: oxc_ast\n  dependency-version: 0.122.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n  dependency-group: oxc\n- dependency-name: oxc_ast_visit\n  dependency-version: 0.122.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n  dependency-group: oxc\n- dependency-name: oxc_parser\n  dependency-version: 0.122.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n  dependency-group: oxc\n- dependency-name: oxc_semantic\n  dependency-version: 0.122.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n  dependency-group: oxc\n- dependency-name: oxc_span\n  dependency-version: 0.122.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n  dependency-group: oxc\n- dependency-name: oxc_syntax\n  dependency-version: 0.122.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n  dependency-group: oxc\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* fix: append .exe to binary path on Windows for e2e tests\n\n* chore: fix rustfmt style in audit_tests\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Bart Waardenburg <bart@waardenburg.dev>",
+          "timestamp": "2026-04-01T12:03:29+02:00",
+          "tree_id": "20ccde1bd5fb17578d48fc0e2ac026c84f944fe5",
+          "url": "https://github.com/fallow-rs/fallow/commit/b1c2d04f6b27621c91d60e9c125d3772f368ed7e"
+        },
+        "date": 1775038016921,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 117425320,
             "unit": "bytes"
           }
         ]
