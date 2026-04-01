@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775063124117,
+  "lastUpdate": 1775067795957,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -5049,6 +5049,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15851,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534576,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5819,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "04cd592b8241667154ca6c799c8e456ec0382a44",
+          "message": "feat: add bulletproof architecture boundary preset\n\nAdd a fourth built-in preset for the Bulletproof React pattern:\napp → features → shared + server. The shared zone covers components,\nhooks, lib, utils, utilities, providers, shared, types, styles, i18n.\n\nMatches the dominant React/Next.js architecture where feature modules\nare isolated from each other and shared utilities form the base layer.\n\nIncludes 3 unit tests for zone expansion, rule correctness, and\nfile classification via resolved glob matchers.",
+          "timestamp": "2026-04-01T20:21:49+02:00",
+          "tree_id": "8ed76b2b34508f661d905110f1b6fdf0ce0a8e53",
+          "url": "https://github.com/fallow-rs/fallow/commit/04cd592b8241667154ca6c799c8e456ec0382a44"
+        },
+        "date": 1775067795413,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3575514,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15853,
             "unit": "allocations"
           },
           {
