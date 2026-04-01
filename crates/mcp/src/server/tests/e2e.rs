@@ -10,8 +10,11 @@ use rmcp::model::RawContent;
 
 use crate::tools::{build_analyze_args, build_health_args, build_project_info_args, run_fallow};
 
-/// Resolve the fallow binary from the workspace target dir.
+/// Resolve the fallow binary from `FALLOW_BIN`, or the workspace target dir.
 fn fallow_binary() -> String {
+    if let Ok(bin) = std::env::var("FALLOW_BIN") {
+        return bin;
+    }
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.pop(); // crates/
     path.pop(); // project root
