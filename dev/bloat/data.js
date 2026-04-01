@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775035391650,
+  "lastUpdate": 1775035876073,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -2430,6 +2430,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/d27615897a99cbfee3dac999f805e8d748823d17"
         },
         "date": 1775035390888,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 117405944,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "debf8af9a797e5a6c21d7fb583ef42aa13f5d920",
+          "message": "test: add integration tests for audit, fix, schema, migrate, production, workspace\n\nCover the remaining untested CLI commands:\n- audit: verdict logic (pass/warn/fail), JSON structure, badge format rejection\n- fix: dry-run output, fixable items, non-TTY guard\n- schema/config-schema/plugin-schema: valid JSON output, key fields\n- migrate: dry-run JSONC/TOML output, missing config error\n- --production mode: accepted on check/health/dupes\n- --workspace scoping: limits output to named package\n- --regression-baseline round-trip: save and compare",
+          "timestamp": "2026-04-01T11:27:36+02:00",
+          "tree_id": "55012f41c329dc67fb4920a93b233bbfe86b9f1c",
+          "url": "https://github.com/fallow-rs/fallow/commit/debf8af9a797e5a6c21d7fb583ef42aa13f5d920"
+        },
+        "date": 1775035875568,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
