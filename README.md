@@ -183,7 +183,7 @@ Works out of the box. When you need to customize, create `.fallowrc.json` or run
 }
 ```
 
-TOML also supported (`fallow init --toml`). Scaffold a pre-commit hook with `fallow init --hooks`. Migrating from knip or jscpd? Run `fallow migrate`.
+TOML also supported (`fallow init --toml`). The init command also adds `.fallow/` to your `.gitignore` (cache and local data). Scaffold a pre-commit hook with `fallow init --hooks`. Migrating from knip or jscpd? Run `fallow migrate`.
 
 See the [full configuration reference](https://docs.fallow.tools/configuration/overview) for all options.
 
