@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775038058712,
+  "lastUpdate": 1775045571138,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Benchmarks": [
@@ -12095,6 +12095,102 @@ window.BENCHMARK_DATA = {
             "name": "dupe_detect_2x5000_identical",
             "value": 2140853,
             "range": "± 15526",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "63a613f3c4e56ccf6c2a06eb2d18f7c2400c2343",
+          "message": "fix: coverage CI fails because cargo-llvm-cov uses different target dir\n\nThe MCP e2e tests look for the fallow binary at target/debug/fallow,\nbut cargo-llvm-cov redirects output to target/llvm-cov-target. Build\nthe CLI binary separately and pass FALLOW_BIN to the coverage run.",
+          "timestamp": "2026-04-01T14:08:49+02:00",
+          "tree_id": "20a126f4163ffed6d71cf2327285951889adf04f",
+          "url": "https://github.com/fallow-rs/fallow/commit/63a613f3c4e56ccf6c2a06eb2d18f7c2400c2343"
+        },
+        "date": 1775045570590,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_single_file",
+            "value": 44805,
+            "range": "± 1445",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_10_files",
+            "value": 1672407,
+            "range": "± 32043",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_100_files",
+            "value": 3108428,
+            "range": "± 44491",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_1000_files",
+            "value": 16209425,
+            "range": "± 283175",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "resolve_re_export_chains",
+            "value": 108267,
+            "range": "± 963",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache_round_trip",
+            "value": 2015,
+            "range": "± 35",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x500_identical",
+            "value": 217011,
+            "range": "± 8562",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x2000_identical",
+            "value": 947083,
+            "range": "± 17216",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_10x500_identical",
+            "value": 1766698,
+            "range": "± 22699",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_50x200_diverse",
+            "value": 527675,
+            "range": "± 4679",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_100x200_mixed",
+            "value": 4204121,
+            "range": "± 41209",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x5000_identical",
+            "value": 2643891,
+            "range": "± 99931",
             "unit": "ns/iter"
           }
         ]
