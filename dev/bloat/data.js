@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775045490785,
+  "lastUpdate": 1775050925192,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -2522,6 +2522,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "Binary Size (fallow)",
             "value": 117425320,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "89e9c6a876189baffd684cb2a770baa0eaf75fec",
+          "message": "feat: add architecture boundaries types and config (Phase 1)\n\nAdd the type and config foundation for architecture boundary\nenforcement. Zones define directory groupings, rules define which zones\nmay import from which using an allowlist model.\n\nNew issue type: BoundaryViolation (IssueKind discriminant 15)\nNew config section: boundaries { zones, rules }\nNew rule: boundary-violation (default: error)\n\nIncludes zone name validation at config load, pre-compiled glob\nmatchers, zone classification, import allowlist checking, regression\nbaseline support, and full rules integration (apply_rules,\nhas_error_severity_issues, promote_warns_to_errors).\n\nDetector (Phase 2), reporting (Phase 3), and MCP (Phase 4) follow in\nsubsequent commits.",
+          "timestamp": "2026-04-01T15:38:11+02:00",
+          "tree_id": "92d8d0cf7f33143fce191766692a545a18864d3b",
+          "url": "https://github.com/fallow-rs/fallow/commit/89e9c6a876189baffd684cb2a770baa0eaf75fec"
+        },
+        "date": 1775050924151,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 118062008,
             "unit": "bytes"
           }
         ]
