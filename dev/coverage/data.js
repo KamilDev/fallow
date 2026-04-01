@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775057065955,
+  "lastUpdate": 1775063032985,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -4228,6 +4228,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/0f07026ef5b61a78c5ad0acfd0eeddce042e289e"
         },
         "date": 1775057065118,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 94.4,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "4b90f3d3bf2db776438471cc218b2f9b026f14cb",
+          "message": "refactor: rebrand descriptions from dead code finder to codebase analyzer\n\nFallow detects 15 issue types across 4 categories (unused code, code\nquality, correctness, architecture) — descriptions should reflect that.",
+          "timestamp": "2026-04-01T17:48:01+02:00",
+          "tree_id": "40dcef4a154b00d140ac85324a02eba3d9634b91",
+          "url": "https://github.com/fallow-rs/fallow/commit/4b90f3d3bf2db776438471cc218b2f9b026f14cb"
+        },
+        "date": 1775063031790,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
