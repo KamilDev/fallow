@@ -292,13 +292,13 @@ allow = ["db"]
                 root: None,
             }],
             rules: vec![BoundaryRule {
-                from: "databse".to_string(),
+                from: "nonexistent".to_string(),
                 allow: vec!["ui".to_string()],
             }],
         };
         let errors = config.validate_zone_references();
         assert_eq!(errors.len(), 1);
-        assert_eq!(errors[0].1, "databse");
+        assert_eq!(errors[0].1, "nonexistent");
     }
 
     #[test]

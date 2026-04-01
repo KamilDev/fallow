@@ -6,8 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command' | grep -q '^git commit' && cargo fmt --all 2>/dev/null || true",
-            "statusMessage": "Formatting Rust code..."
+            "command": "if jq -r '.tool_input.command' | grep -q '^git commit'; then cargo fmt --all 2>/dev/null; typos; fi",
+            "statusMessage": "Pre-commit: formatting and typo check..."
           }
         ]
       }

@@ -32,6 +32,9 @@ CI runs on Linux, macOS, and Windows. Tests that assert on file paths MUST norma
 ## Disallowed types
 `HashMap` and `HashSet` from `std::collections` are forbidden (configured in `.clippy.toml`). Use `FxHashMap` / `FxHashSet` from `rustc_hash` — faster hashing, deterministic iteration order for test stability. New proc-macro dependencies must be added to `[profile.dev.package.*]` with `opt-level = 1` (see existing entries for `serde_derive`, `clap_derive`).
 
+## Typo checking
+CI runs `typos` (configured in `_typos.toml`). All code, comments, and test strings must pass `typos` before committing. When tests need intentionally invalid identifiers, use clearly synthetic names (e.g. `nonexistent`, `invalid_zone`) rather than misspellings of real words.
+
 ## CI hardening
 - `permissions: {}` deny-all baseline on all workflows
 - `git diff --exit-code` to catch uncommitted generated code
