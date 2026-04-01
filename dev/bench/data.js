@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775045571138,
+  "lastUpdate": 1775050993204,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Benchmarks": [
@@ -12191,6 +12191,102 @@ window.BENCHMARK_DATA = {
             "name": "dupe_detect_2x5000_identical",
             "value": 2643891,
             "range": "± 99931",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "89e9c6a876189baffd684cb2a770baa0eaf75fec",
+          "message": "feat: add architecture boundaries types and config (Phase 1)\n\nAdd the type and config foundation for architecture boundary\nenforcement. Zones define directory groupings, rules define which zones\nmay import from which using an allowlist model.\n\nNew issue type: BoundaryViolation (IssueKind discriminant 15)\nNew config section: boundaries { zones, rules }\nNew rule: boundary-violation (default: error)\n\nIncludes zone name validation at config load, pre-compiled glob\nmatchers, zone classification, import allowlist checking, regression\nbaseline support, and full rules integration (apply_rules,\nhas_error_severity_issues, promote_warns_to_errors).\n\nDetector (Phase 2), reporting (Phase 3), and MCP (Phase 4) follow in\nsubsequent commits.",
+          "timestamp": "2026-04-01T15:38:11+02:00",
+          "tree_id": "92d8d0cf7f33143fce191766692a545a18864d3b",
+          "url": "https://github.com/fallow-rs/fallow/commit/89e9c6a876189baffd684cb2a770baa0eaf75fec"
+        },
+        "date": 1775050992657,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_single_file",
+            "value": 45848,
+            "range": "± 1394",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_10_files",
+            "value": 1626834,
+            "range": "± 35683",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_100_files",
+            "value": 2975578,
+            "range": "± 118387",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_1000_files",
+            "value": 15349045,
+            "range": "± 146117",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "resolve_re_export_chains",
+            "value": 103649,
+            "range": "± 1426",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache_round_trip",
+            "value": 1979,
+            "range": "± 8",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x500_identical",
+            "value": 204676,
+            "range": "± 4663",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x2000_identical",
+            "value": 918537,
+            "range": "± 6067",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_10x500_identical",
+            "value": 1726068,
+            "range": "± 30145",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_50x200_diverse",
+            "value": 513332,
+            "range": "± 29484",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_100x200_mixed",
+            "value": 4214419,
+            "range": "± 27053",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x5000_identical",
+            "value": 2519838,
+            "range": "± 8635",
             "unit": "ns/iter"
           }
         ]
