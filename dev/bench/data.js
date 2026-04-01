@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775035902335,
+  "lastUpdate": 1775038058712,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Benchmarks": [
@@ -11999,6 +11999,102 @@ window.BENCHMARK_DATA = {
             "name": "dupe_detect_2x5000_identical",
             "value": 2507999,
             "range": "± 11605",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b1c2d04f6b27621c91d60e9c125d3772f368ed7e",
+          "message": "chore(deps): bump the oxc group across 1 directory with 7 updates (#35)\n\n* chore(deps): bump the oxc group with 7 updates\n\nBumps the oxc group with 7 updates:\n\n| Package | From | To |\n| --- | --- | --- |\n| [oxc_allocator](https://github.com/oxc-project/oxc) | `0.120.0` | `0.122.0` |\n| [oxc_ast](https://github.com/oxc-project/oxc) | `0.120.0` | `0.122.0` |\n| [oxc_ast_visit](https://github.com/oxc-project/oxc) | `0.120.0` | `0.122.0` |\n| [oxc_parser](https://github.com/oxc-project/oxc) | `0.120.0` | `0.122.0` |\n| [oxc_semantic](https://github.com/oxc-project/oxc) | `0.120.0` | `0.122.0` |\n| [oxc_span](https://github.com/oxc-project/oxc) | `0.120.0` | `0.122.0` |\n| [oxc_syntax](https://github.com/oxc-project/oxc) | `0.120.0` | `0.122.0` |\n\n\nUpdates `oxc_allocator` from 0.120.0 to 0.122.0\n- [Release notes](https://github.com/oxc-project/oxc/releases)\n- [Changelog](https://github.com/oxc-project/oxc/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/oxc-project/oxc/compare/crates_v0.120.0...crates_v0.122.0)\n\nUpdates `oxc_ast` from 0.120.0 to 0.122.0\n- [Release notes](https://github.com/oxc-project/oxc/releases)\n- [Changelog](https://github.com/oxc-project/oxc/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/oxc-project/oxc/compare/crates_v0.120.0...crates_v0.122.0)\n\nUpdates `oxc_ast_visit` from 0.120.0 to 0.122.0\n- [Release notes](https://github.com/oxc-project/oxc/releases)\n- [Changelog](https://github.com/oxc-project/oxc/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/oxc-project/oxc/compare/crates_v0.120.0...crates_v0.122.0)\n\nUpdates `oxc_parser` from 0.120.0 to 0.122.0\n- [Release notes](https://github.com/oxc-project/oxc/releases)\n- [Changelog](https://github.com/oxc-project/oxc/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/oxc-project/oxc/compare/crates_v0.120.0...crates_v0.122.0)\n\nUpdates `oxc_semantic` from 0.120.0 to 0.122.0\n- [Release notes](https://github.com/oxc-project/oxc/releases)\n- [Changelog](https://github.com/oxc-project/oxc/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/oxc-project/oxc/compare/crates_v0.120.0...crates_v0.122.0)\n\nUpdates `oxc_span` from 0.120.0 to 0.122.0\n- [Release notes](https://github.com/oxc-project/oxc/releases)\n- [Changelog](https://github.com/oxc-project/oxc/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/oxc-project/oxc/compare/crates_v0.120.0...crates_v0.122.0)\n\nUpdates `oxc_syntax` from 0.120.0 to 0.122.0\n- [Release notes](https://github.com/oxc-project/oxc/releases)\n- [Changelog](https://github.com/oxc-project/oxc/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/oxc-project/oxc/compare/crates_v0.120.0...crates_v0.122.0)\n\n---\nupdated-dependencies:\n- dependency-name: oxc_allocator\n  dependency-version: 0.122.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n  dependency-group: oxc\n- dependency-name: oxc_ast\n  dependency-version: 0.122.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n  dependency-group: oxc\n- dependency-name: oxc_ast_visit\n  dependency-version: 0.122.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n  dependency-group: oxc\n- dependency-name: oxc_parser\n  dependency-version: 0.122.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n  dependency-group: oxc\n- dependency-name: oxc_semantic\n  dependency-version: 0.122.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n  dependency-group: oxc\n- dependency-name: oxc_span\n  dependency-version: 0.122.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n  dependency-group: oxc\n- dependency-name: oxc_syntax\n  dependency-version: 0.122.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n  dependency-group: oxc\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* fix: append .exe to binary path on Windows for e2e tests\n\n* chore: fix rustfmt style in audit_tests\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Bart Waardenburg <bart@waardenburg.dev>",
+          "timestamp": "2026-04-01T12:03:29+02:00",
+          "tree_id": "20ccde1bd5fb17578d48fc0e2ac026c84f944fe5",
+          "url": "https://github.com/fallow-rs/fallow/commit/b1c2d04f6b27621c91d60e9c125d3772f368ed7e"
+        },
+        "date": 1775038058235,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_single_file",
+            "value": 35094,
+            "range": "± 256",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_10_files",
+            "value": 1678682,
+            "range": "± 36022",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_100_files",
+            "value": 3096492,
+            "range": "± 17467",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_1000_files",
+            "value": 16140686,
+            "range": "± 332579",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "resolve_re_export_chains",
+            "value": 99012,
+            "range": "± 466",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache_round_trip",
+            "value": 2009,
+            "range": "± 12",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x500_identical",
+            "value": 180566,
+            "range": "± 7055",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x2000_identical",
+            "value": 791413,
+            "range": "± 4437",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_10x500_identical",
+            "value": 1668726,
+            "range": "± 24314",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_50x200_diverse",
+            "value": 513731,
+            "range": "± 26799",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_100x200_mixed",
+            "value": 3676453,
+            "range": "± 36161",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x5000_identical",
+            "value": 2140853,
+            "range": "± 15526",
             "unit": "ns/iter"
           }
         ]
