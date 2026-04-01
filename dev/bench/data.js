@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775050993204,
+  "lastUpdate": 1775054599029,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Benchmarks": [
@@ -12287,6 +12287,102 @@ window.BENCHMARK_DATA = {
             "name": "dupe_detect_2x5000_identical",
             "value": 2519838,
             "range": "± 8635",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "f93db9ee717332d2c6500e4e814e4923049832d5",
+          "message": "feat: add architecture boundary violation detector (Phase 2)\n\nImplements the boundary violation detector that checks imports against\nuser-defined architecture zones and rules. Classifies modules into zones\nvia glob patterns and detects cross-zone imports that violate the\nconfigured allowlist.\n\nPipeline: for each reachable module, classify into zone → for each\nimport edge, classify target → if not in allowlist, emit violation.\nZone classification is cached per FileId for performance.\n\nIncludes: detector with unit tests, integration into analyze/mod.rs,\nCLI --boundary-violations filter flag, all 6 report formats (human,\nJSON, SARIF, compact, markdown, CodeClimate), LSP diagnostics with\nrelated info, baseline support, workspace/changed-file filtering,\nregression tracking, integration tests, test fixture, snapshot updates,\nand documentation updates (README, AGENTS, CLAUDE, detection rules,\noutput schema, backwards compatibility).",
+          "timestamp": "2026-04-01T16:31:24+02:00",
+          "tree_id": "c84e283d06b946bc03d81c98866f8af4f2bb7090",
+          "url": "https://github.com/fallow-rs/fallow/commit/f93db9ee717332d2c6500e4e814e4923049832d5"
+        },
+        "date": 1775054597726,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_single_file",
+            "value": 44482,
+            "range": "± 2070",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_10_files",
+            "value": 1606739,
+            "range": "± 26130",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_100_files",
+            "value": 2990177,
+            "range": "± 91416",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_1000_files",
+            "value": 15613309,
+            "range": "± 508684",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "resolve_re_export_chains",
+            "value": 102681,
+            "range": "± 2929",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache_round_trip",
+            "value": 1966,
+            "range": "± 5",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x500_identical",
+            "value": 205552,
+            "range": "± 10692",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x2000_identical",
+            "value": 906471,
+            "range": "± 7974",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_10x500_identical",
+            "value": 1702363,
+            "range": "± 16564",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_50x200_diverse",
+            "value": 517275,
+            "range": "± 28735",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_100x200_mixed",
+            "value": 4187391,
+            "range": "± 33388",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x5000_identical",
+            "value": 2519985,
+            "range": "± 8598",
             "unit": "ns/iter"
           }
         ]
