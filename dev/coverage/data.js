@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775055165485,
+  "lastUpdate": 1775055949481,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -4170,6 +4170,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/4f9e625584f2862f514254cf0f46b9a25a261010"
         },
         "date": 1775055164176,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 94.4,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "9c899ddedbda3340e586ce0799edea369e78a977",
+          "message": "test: add boundary violation tests for Action and CI jq scripts\n\nTest review comment body (zones, paths, line), annotation format,\nand summary section output with actual boundary violation data.\nVerifies the jq scripts correctly render all BoundaryViolation fields.",
+          "timestamp": "2026-04-01T17:04:37+02:00",
+          "tree_id": "04379c474c2f389b864e877fbf4dd4988c8af157",
+          "url": "https://github.com/fallow-rs/fallow/commit/9c899ddedbda3340e586ce0799edea369e78a977"
+        },
+        "date": 1775055948976,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
