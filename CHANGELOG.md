@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.2] - 2026-04-02
+
+### Added
+
+- **npm package resolution for `extends`** -- config files can now extend shared configs from npm packages using the `npm:` prefix (e.g., `"extends": "npm:@company/fallow-config"`). Resolution walks up `node_modules/`, checks `package.json` `exports`/`main`, and falls back to standard config file names. Subpaths supported (e.g., `npm:@co/config/strict.json`).
+- **MCP server hardening** -- improved parameter validation, tool descriptions, and error messages for better AI agent integration.
+
+### Internal
+
+- Path confinement (`resolve_confined`) prevents traversal attacks via npm subpaths or malicious `package.json` exports/main fields.
+- Package name validation rejects `..`/`.` components and bare `@scope` without name.
+
 ## [2.9.1] - 2026-04-02
 
 ### Fixed
@@ -702,7 +714,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--changed-since` and `--fail-on-issues` for CI
 - Cross-workspace resolution for npm/yarn/pnpm workspaces
 
-[Unreleased]: https://github.com/fallow-rs/fallow/compare/v2.9.1...HEAD
+[Unreleased]: https://github.com/fallow-rs/fallow/compare/v2.9.2...HEAD
+[2.9.2]: https://github.com/fallow-rs/fallow/compare/v2.9.1...v2.9.2
 [2.9.1]: https://github.com/fallow-rs/fallow/compare/v2.9.0...v2.9.1
 [2.9.0]: https://github.com/fallow-rs/fallow/compare/v2.8.1...v2.9.0
 [2.8.1]: https://github.com/fallow-rs/fallow/compare/v2.8.0...v2.8.1
