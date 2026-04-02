@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775139078777,
+  "lastUpdate": 1775140050960,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -4576,6 +4576,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/f1fe55081e25831e99fb0ba4410eab0b153dd391"
         },
         "date": 1775139078277,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 94.5,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "bc6d5acae092efb4f2e87e928e87aae77d4b7939",
+          "message": "docs: add actions field to health and dupes types in output-schema.json",
+          "timestamp": "2026-04-02T16:26:22+02:00",
+          "tree_id": "a636a9ae036365c9e79644f5e9b585a5f5b2df45",
+          "url": "https://github.com/fallow-rs/fallow/commit/bc6d5acae092efb4f2e87e928e87aae77d4b7939"
+        },
+        "date": 1775140050405,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
