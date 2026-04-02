@@ -1,0 +1,216 @@
+//! Vital signs: project-wide metrics for trend tracking and snapshots.
+
+/// Current snapshot schema version. Independent of the report's SCHEMA_VERSION.
+/// v2: Added `score` and `grade` fields.
+pub const SNAPSHOT_SCHEMA_VERSION: u32 = 2;
+
+/// Project-wide vital signs — a fixed set of metrics for trend tracking.
+///
+/// Metrics are `Option` when the data source was not available in the current run
+/// (e.g., `duplication_pct` is `None` unless the duplication pipeline was run,
+/// `hotspot_count` is `None` without git history).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct VitalSigns {
+    /// Percentage of files not reachable from any entry point.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dead_file_pct: Option<f64>,
+    /// Percentage of exports never imported by other modules.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dead_export_pct: Option<f64>,
+    /// Average cyclomatic complexity across all functions.
+    pub avg_cyclomatic: f64,
+    /// 90th percentile cyclomatic complexity.
+    pub p90_cyclomatic: u32,
+    /// Code duplication percentage (None if duplication pipeline was not run).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duplication_pct: Option<f64>,
+    /// Number of hotspot files (score >= 50). None if git history unavailable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hotspot_count: Option<u32>,
+    /// Average maintainability index across all scored files (0–100).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub maintainability_avg: Option<f64>,
+    /// Number of unused dependencies (dependencies + devDependencies + optional).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unused_dep_count: Option<u32>,
+    /// Number of circular dependency chains.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub circular_dep_count: Option<u32>,
+}
+
+/// Raw counts backing the vital signs percentages.
+///
+/// Stored alongside `VitalSigns` in snapshots so that Phase 2b trend reporting
+/// can decompose percentage changes into numerator vs denominator shifts.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct VitalSignsCounts {
+    pub total_files: usize,
+    pub total_exports: usize,
+    pub dead_files: usize,
+    pub dead_exports: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duplicated_lines: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total_lines: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub files_scored: Option<usize>,
+    pub total_deps: usize,
+}
+
+/// A point-in-time snapshot of project vital signs, persisted to disk.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct VitalSignsSnapshot {
+    /// Schema version for snapshot format (independent of report schema_version).
+    pub snapshot_schema_version: u32,
+    /// Fallow version that produced this snapshot.
+    pub version: String,
+    /// ISO 8601 timestamp.
+    pub timestamp: String,
+    /// Git commit SHA at time of snapshot (None if not in a git repo).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub git_sha: Option<String>,
+    /// Git branch name (None if not in a git repo or detached HEAD).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub git_branch: Option<String>,
+    /// Whether the repository is a shallow clone.
+    #[serde(default)]
+    pub shallow_clone: bool,
+    /// The vital signs metrics.
+    pub vital_signs: VitalSigns,
+    /// Raw counts for trend decomposition.
+    pub counts: VitalSignsCounts,
+    /// Project health score (0–100). Added in schema v2.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub score: Option<f64>,
+    /// Letter grade (A/B/C/D/F). Added in schema v2.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub grade: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn vital_signs_serialization_roundtrip() {
+        let vs = VitalSigns {
+            dead_file_pct: Some(3.2),
+            dead_export_pct: Some(8.1),
+            avg_cyclomatic: 4.7,
+            p90_cyclomatic: 12,
+            duplication_pct: None,
+            hotspot_count: Some(5),
+            maintainability_avg: Some(72.4),
+            unused_dep_count: Some(4),
+            circular_dep_count: Some(2),
+        };
+        let json = serde_json::to_string(&vs).unwrap();
+        let deserialized: VitalSigns = serde_json::from_str(&json).unwrap();
+        assert!((deserialized.avg_cyclomatic - 4.7).abs() < f64::EPSILON);
+        assert_eq!(deserialized.p90_cyclomatic, 12);
+        assert_eq!(deserialized.hotspot_count, Some(5));
+        // duplication_pct should be absent in JSON and None after deser
+        assert!(!json.contains("duplication_pct"));
+        assert!(deserialized.duplication_pct.is_none());
+    }
+
+    #[test]
+    fn vital_signs_snapshot_roundtrip() {
+        let snapshot = VitalSignsSnapshot {
+            snapshot_schema_version: SNAPSHOT_SCHEMA_VERSION,
+            version: "1.8.1".into(),
+            timestamp: "2026-03-25T14:30:00Z".into(),
+            git_sha: Some("abc1234".into()),
+            git_branch: Some("main".into()),
+            shallow_clone: false,
+            vital_signs: VitalSigns {
+                dead_file_pct: Some(3.2),
+                dead_export_pct: Some(8.1),
+                avg_cyclomatic: 4.7,
+                p90_cyclomatic: 12,
+                duplication_pct: None,
+                hotspot_count: None,
+                maintainability_avg: Some(72.4),
+                unused_dep_count: Some(4),
+                circular_dep_count: Some(2),
+            },
+            counts: VitalSignsCounts {
+                total_files: 1200,
+                total_exports: 5400,
+                dead_files: 38,
+                dead_exports: 437,
+                duplicated_lines: None,
+                total_lines: None,
+                files_scored: Some(1150),
+                total_deps: 42,
+            },
+            score: Some(78.5),
+            grade: Some("B".into()),
+        };
+        let json = serde_json::to_string_pretty(&snapshot).unwrap();
+        let rt: VitalSignsSnapshot = serde_json::from_str(&json).unwrap();
+        assert_eq!(rt.snapshot_schema_version, SNAPSHOT_SCHEMA_VERSION);
+        assert_eq!(rt.git_sha.as_deref(), Some("abc1234"));
+        assert_eq!(rt.counts.total_files, 1200);
+        assert_eq!(rt.counts.dead_exports, 437);
+        assert_eq!(rt.score, Some(78.5));
+        assert_eq!(rt.grade.as_deref(), Some("B"));
+    }
+
+    #[test]
+    fn vital_signs_all_none_optional_fields_omitted() {
+        let vs = VitalSigns {
+            dead_file_pct: None,
+            dead_export_pct: None,
+            avg_cyclomatic: 5.0,
+            p90_cyclomatic: 10,
+            duplication_pct: None,
+            hotspot_count: None,
+            maintainability_avg: None,
+            unused_dep_count: None,
+            circular_dep_count: None,
+        };
+        let json = serde_json::to_string(&vs).unwrap();
+        assert!(!json.contains("dead_file_pct"));
+        assert!(!json.contains("dead_export_pct"));
+        assert!(!json.contains("duplication_pct"));
+        assert!(!json.contains("hotspot_count"));
+        assert!(!json.contains("maintainability_avg"));
+        assert!(!json.contains("unused_dep_count"));
+        assert!(!json.contains("circular_dep_count"));
+        // Required fields always present
+        assert!(json.contains("avg_cyclomatic"));
+        assert!(json.contains("p90_cyclomatic"));
+    }
+
+    #[test]
+    fn snapshot_schema_version_is_two() {
+        assert_eq!(SNAPSHOT_SCHEMA_VERSION, 2);
+    }
+
+    #[test]
+    fn snapshot_v1_deserializes_with_default_score_and_grade() {
+        // A v1 snapshot without score/grade fields must still deserialize
+        let json = r#"{
+            "snapshot_schema_version": 1,
+            "version": "1.5.0",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "shallow_clone": false,
+            "vital_signs": {
+                "avg_cyclomatic": 2.0,
+                "p90_cyclomatic": 5
+            },
+            "counts": {
+                "total_files": 100,
+                "total_exports": 500,
+                "dead_files": 0,
+                "dead_exports": 0,
+                "total_deps": 20
+            }
+        }"#;
+        let snap: VitalSignsSnapshot = serde_json::from_str(json).unwrap();
+        assert!(snap.score.is_none());
+        assert!(snap.grade.is_none());
+        assert_eq!(snap.snapshot_schema_version, 1);
+    }
+}
