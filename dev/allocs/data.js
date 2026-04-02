@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775123363103,
+  "lastUpdate": 1775127313911,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -5313,6 +5313,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15858,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534576,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5819,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "9026172cd64b9a4f92aa03ba8757bb6ccdaf3494",
+          "message": "fix: sort circular deps by files and export usage reference locations\n\nAddress review findings: sort circular_dependencies by files (not\nlength) for path-consistent ordering, and sort nested\nreference_locations within export_usages for LSP determinism.",
+          "timestamp": "2026-04-02T12:53:36+02:00",
+          "tree_id": "8b5e065307648cf479390d8949eea6a3d8c19a7b",
+          "url": "https://github.com/fallow-rs/fallow/commit/9026172cd64b9a4f92aa03ba8757bb6ccdaf3494"
+        },
+        "date": 1775127312748,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3586050,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15856,
             "unit": "allocations"
           },
           {
