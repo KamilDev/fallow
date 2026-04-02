@@ -373,118 +373,14 @@ pub(super) fn print_health_markdown(report: &crate::health_types::HealthReport, 
 /// Build markdown output for health (complexity) results.
 #[must_use]
 pub fn build_health_markdown(report: &crate::health_types::HealthReport, root: &Path) -> String {
-    let rel = |p: &Path| {
-        escape_backticks(&normalize_uri(
-            &relative_path(p, root).display().to_string(),
-        ))
-    };
-
     let mut out = String::new();
 
-    // Health score
     if let Some(ref hs) = report.health_score {
         let _ = writeln!(out, "## Health Score: {:.0} ({})\n", hs.score, hs.grade);
     }
 
-    // Trend comparison table
-    if let Some(ref trend) = report.health_trend {
-        let sha_str = trend
-            .compared_to
-            .git_sha
-            .as_deref()
-            .map_or(String::new(), |sha| format!(" ({sha})"));
-        let _ = writeln!(
-            out,
-            "## Trend (vs {}{})\n",
-            trend
-                .compared_to
-                .timestamp
-                .get(..10)
-                .unwrap_or(&trend.compared_to.timestamp),
-            sha_str,
-        );
-        out.push_str("| Metric | Previous | Current | Delta | Direction |\n");
-        out.push_str("|:-------|:---------|:--------|:------|:----------|\n");
-        for m in &trend.metrics {
-            let fmt_val = |v: f64| -> String {
-                if m.unit == "%" {
-                    format!("{v:.1}%")
-                } else if (v - v.round()).abs() < 0.05 {
-                    format!("{v:.0}")
-                } else {
-                    format!("{v:.1}")
-                }
-            };
-            let prev = fmt_val(m.previous);
-            let cur = fmt_val(m.current);
-            let delta = if m.unit == "%" {
-                format!("{:+.1}%", m.delta)
-            } else if (m.delta - m.delta.round()).abs() < 0.05 {
-                format!("{:+.0}", m.delta)
-            } else {
-                format!("{:+.1}", m.delta)
-            };
-            let _ = writeln!(
-                out,
-                "| {} | {} | {} | {} | {} {} |",
-                m.label,
-                prev,
-                cur,
-                delta,
-                m.direction.arrow(),
-                m.direction.label(),
-            );
-        }
-        let md_sha = trend
-            .compared_to
-            .git_sha
-            .as_deref()
-            .map_or(String::new(), |sha| format!(" ({sha})"));
-        let _ = writeln!(
-            out,
-            "\n*vs {}{} · {} {} available*\n",
-            trend
-                .compared_to
-                .timestamp
-                .get(..10)
-                .unwrap_or(&trend.compared_to.timestamp),
-            md_sha,
-            trend.snapshots_loaded,
-            if trend.snapshots_loaded == 1 {
-                "snapshot"
-            } else {
-                "snapshots"
-            },
-        );
-    }
-
-    // Vital signs summary table
-    if let Some(ref vs) = report.vital_signs {
-        out.push_str("## Vital Signs\n\n");
-        out.push_str("| Metric | Value |\n");
-        out.push_str("|:-------|------:|\n");
-        let _ = writeln!(out, "| Avg Cyclomatic | {:.1} |", vs.avg_cyclomatic);
-        let _ = writeln!(out, "| P90 Cyclomatic | {} |", vs.p90_cyclomatic);
-        if let Some(v) = vs.dead_file_pct {
-            let _ = writeln!(out, "| Dead Files | {v:.1}% |");
-        }
-        if let Some(v) = vs.dead_export_pct {
-            let _ = writeln!(out, "| Dead Exports | {v:.1}% |");
-        }
-        if let Some(v) = vs.maintainability_avg {
-            let _ = writeln!(out, "| Maintainability (avg) | {v:.1} |");
-        }
-        if let Some(v) = vs.hotspot_count {
-            let _ = writeln!(out, "| Hotspots | {v} |");
-        }
-        if let Some(v) = vs.circular_dep_count {
-            let _ = writeln!(out, "| Circular Deps | {v} |");
-        }
-        if let Some(v) = vs.unused_dep_count {
-            let _ = writeln!(out, "| Unused Deps | {v} |");
-        }
-        out.push('\n');
-    }
+    write_trend_section(&mut out, report);
+    write_vital_signs_section(&mut out, report);
 
     if report.findings.is_empty()
         && report.file_scores.is_empty()
@@ -504,187 +400,352 @@ pub fn build_health_markdown(report: &crate::health_types::HealthReport, root: &
         return out;
     }
 
-    if !report.findings.is_empty() {
-        let count = report.summary.functions_above_threshold;
-        let shown = report.findings.len();
-        if shown < count {
-            let _ = write!(
-                out,
-                "## Fallow: {count} high complexity function{} ({shown} shown)\n\n",
-                plural(count),
-            );
+    write_findings_section(&mut out, report, root);
+    write_file_scores_section(&mut out, report, root);
+    write_hotspots_section(&mut out, report, root);
+    write_targets_section(&mut out, report, root);
+    write_metric_legend(&mut out, report);
+
+    out
+}
+
+/// Write the trend comparison table to the output.
+fn write_trend_section(out: &mut String, report: &crate::health_types::HealthReport) {
+    let Some(ref trend) = report.health_trend else {
+        return;
+    };
+    let sha_str = trend
+        .compared_to
+        .git_sha
+        .as_deref()
+        .map_or(String::new(), |sha| format!(" ({sha})"));
+    let _ = writeln!(
+        out,
+        "## Trend (vs {}{})\n",
+        trend
+            .compared_to
+            .timestamp
+            .get(..10)
+            .unwrap_or(&trend.compared_to.timestamp),
+        sha_str,
+    );
+    out.push_str("| Metric | Previous | Current | Delta | Direction |\n");
+    out.push_str("|:-------|:---------|:--------|:------|:----------|\n");
+    for m in &trend.metrics {
+        let fmt_val = |v: f64| -> String {
+            if m.unit == "%" {
+                format!("{v:.1}%")
+            } else if (v - v.round()).abs() < 0.05 {
+                format!("{v:.0}")
+            } else {
+                format!("{v:.1}")
+            }
+        };
+        let prev = fmt_val(m.previous);
+        let cur = fmt_val(m.current);
+        let delta = if m.unit == "%" {
+            format!("{:+.1}%", m.delta)
+        } else if (m.delta - m.delta.round()).abs() < 0.05 {
+            format!("{:+.0}", m.delta)
         } else {
-            let _ = write!(
-                out,
-                "## Fallow: {count} high complexity function{}\n\n",
-                plural(count),
-            );
-        }
-
-        out.push_str("| File | Function | Cyclomatic | Cognitive | Lines |\n");
-        out.push_str("|:-----|:---------|:-----------|:----------|:------|\n");
-
-        for finding in &report.findings {
-            let file_str = rel(&finding.path);
-            let cyc_marker = if finding.cyclomatic > report.summary.max_cyclomatic_threshold {
-                " **!**"
-            } else {
-                ""
-            };
-            let cog_marker = if finding.cognitive > report.summary.max_cognitive_threshold {
-                " **!**"
-            } else {
-                ""
-            };
-            let _ = writeln!(
-                out,
-                "| `{file_str}:{line}` | `{name}` | {cyc}{cyc_marker} | {cog}{cog_marker} | {lines} |",
-                line = finding.line,
-                name = escape_backticks(&finding.name),
-                cyc = finding.cyclomatic,
-                cog = finding.cognitive,
-                lines = finding.line_count,
-            );
-        }
-
-        let s = &report.summary;
-        let _ = write!(
-            out,
-            "\n**{files}** files, **{funcs}** functions analyzed \
-             (thresholds: cyclomatic > {cyc}, cognitive > {cog})\n",
-            files = s.files_analyzed,
-            funcs = s.functions_analyzed,
-            cyc = s.max_cyclomatic_threshold,
-            cog = s.max_cognitive_threshold,
-        );
-    }
-
-    // File health scores table
-    if !report.file_scores.is_empty() {
-        out.push('\n');
+            format!("{:+.1}", m.delta)
+        };
         let _ = writeln!(
             out,
-            "### File Health Scores ({} files)\n",
-            report.file_scores.len(),
+            "| {} | {} | {} | {} | {} {} |",
+            m.label,
+            prev,
+            cur,
+            delta,
+            m.direction.arrow(),
+            m.direction.label(),
         );
-        out.push_str("| File | MI | Fan-in | Fan-out | Dead Code | Density |\n");
-        out.push_str("|:-----|:---|:-------|:--------|:----------|:--------|\n");
+    }
+    let md_sha = trend
+        .compared_to
+        .git_sha
+        .as_deref()
+        .map_or(String::new(), |sha| format!(" ({sha})"));
+    let _ = writeln!(
+        out,
+        "\n*vs {}{} · {} {} available*\n",
+        trend
+            .compared_to
+            .timestamp
+            .get(..10)
+            .unwrap_or(&trend.compared_to.timestamp),
+        md_sha,
+        trend.snapshots_loaded,
+        if trend.snapshots_loaded == 1 {
+            "snapshot"
+        } else {
+            "snapshots"
+        },
+    );
+}
 
-        for score in &report.file_scores {
-            let file_str = rel(&score.path);
-            let _ = writeln!(
-                out,
-                "| `{file_str}` | {mi:.1} | {fi} | {fan_out} | {dead:.0}% | {density:.2} |",
-                mi = score.maintainability_index,
-                fi = score.fan_in,
-                fan_out = score.fan_out,
-                dead = score.dead_code_ratio * 100.0,
-                density = score.complexity_density,
-            );
-        }
+/// Write the vital signs summary table to the output.
+fn write_vital_signs_section(out: &mut String, report: &crate::health_types::HealthReport) {
+    let Some(ref vs) = report.vital_signs else {
+        return;
+    };
+    out.push_str("## Vital Signs\n\n");
+    out.push_str("| Metric | Value |\n");
+    out.push_str("|:-------|------:|\n");
+    let _ = writeln!(out, "| Avg Cyclomatic | {:.1} |", vs.avg_cyclomatic);
+    let _ = writeln!(out, "| P90 Cyclomatic | {} |", vs.p90_cyclomatic);
+    if let Some(v) = vs.dead_file_pct {
+        let _ = writeln!(out, "| Dead Files | {v:.1}% |");
+    }
+    if let Some(v) = vs.dead_export_pct {
+        let _ = writeln!(out, "| Dead Exports | {v:.1}% |");
+    }
+    if let Some(v) = vs.maintainability_avg {
+        let _ = writeln!(out, "| Maintainability (avg) | {v:.1} |");
+    }
+    if let Some(v) = vs.hotspot_count {
+        let _ = writeln!(out, "| Hotspots | {v} |");
+    }
+    if let Some(v) = vs.circular_dep_count {
+        let _ = writeln!(out, "| Circular Deps | {v} |");
+    }
+    if let Some(v) = vs.unused_dep_count {
+        let _ = writeln!(out, "| Unused Deps | {v} |");
+    }
+    out.push('\n');
+}
 
-        if let Some(avg) = report.summary.average_maintainability {
-            let _ = write!(out, "\n**Average maintainability index:** {avg:.1}/100\n");
-        }
+/// Write the complexity findings table to the output.
+fn write_findings_section(
+    out: &mut String,
+    report: &crate::health_types::HealthReport,
+    root: &Path,
+) {
+    if report.findings.is_empty() {
+        return;
     }
 
-    // Hotspot table
-    if !report.hotspots.is_empty() {
-        out.push('\n');
-        let header = report.hotspot_summary.as_ref().map_or_else(
-            || format!("### Hotspots ({} files)\n", report.hotspots.len()),
-            |summary| {
-                format!(
-                    "### Hotspots ({} files, since {})\n",
-                    report.hotspots.len(),
-                    summary.since,
-                )
-            },
-        );
-        let _ = writeln!(out, "{header}");
-        out.push_str("| File | Score | Commits | Churn | Density | Fan-in | Trend |\n");
-        out.push_str("|:-----|:------|:--------|:------|:--------|:-------|:------|\n");
+    let rel = |p: &Path| {
+        escape_backticks(&normalize_uri(
+            &relative_path(p, root).display().to_string(),
+        ))
+    };
 
-        for entry in &report.hotspots {
-            let file_str = rel(&entry.path);
-            let _ = writeln!(
-                out,
-                "| `{file_str}` | {score:.1} | {commits} | {churn} | {density:.2} | {fi} | {trend} |",
-                score = entry.score,
-                commits = entry.commits,
-                churn = entry.lines_added + entry.lines_deleted,
-                density = entry.complexity_density,
-                fi = entry.fan_in,
-                trend = entry.trend,
-            );
-        }
-
-        if let Some(ref summary) = report.hotspot_summary
-            && summary.files_excluded > 0
-        {
-            let _ = write!(
-                out,
-                "\n*{} file{} excluded (< {} commits)*\n",
-                summary.files_excluded,
-                plural(summary.files_excluded),
-                summary.min_commits,
-            );
-        }
-    }
-
-    // Refactoring targets
-    if !report.targets.is_empty() {
+    let count = report.summary.functions_above_threshold;
+    let shown = report.findings.len();
+    if shown < count {
         let _ = write!(
             out,
-            "\n### Refactoring Targets ({})\n\n",
-            report.targets.len()
+            "## Fallow: {count} high complexity function{} ({shown} shown)\n\n",
+            plural(count),
         );
-        out.push_str("| Efficiency | Category | Effort / Confidence | File | Recommendation |\n");
-        out.push_str("|:-----------|:---------|:--------------------|:-----|:---------------|\n");
-        for target in &report.targets {
-            let file_str = normalize_uri(&relative_path(&target.path, root).display().to_string());
-            let category = target.category.label();
-            let effort = target.effort.label();
-            let confidence = target.confidence.label();
-            let _ = writeln!(
-                out,
-                "| {:.1} | {category} | {effort} / {confidence} | `{file_str}` | {} |",
-                target.efficiency, target.recommendation,
-            );
-        }
+    } else {
+        let _ = write!(
+            out,
+            "## Fallow: {count} high complexity function{}\n\n",
+            plural(count),
+        );
     }
 
-    // Metric legend — explains abbreviations used in the tables above
+    out.push_str("| File | Function | Cyclomatic | Cognitive | Lines |\n");
+    out.push_str("|:-----|:---------|:-----------|:----------|:------|\n");
+
+    for finding in &report.findings {
+        let file_str = rel(&finding.path);
+        let cyc_marker = if finding.cyclomatic > report.summary.max_cyclomatic_threshold {
+            " **!**"
+        } else {
+            ""
+        };
+        let cog_marker = if finding.cognitive > report.summary.max_cognitive_threshold {
+            " **!**"
+        } else {
+            ""
+        };
+        let _ = writeln!(
+            out,
+            "| `{file_str}:{line}` | `{name}` | {cyc}{cyc_marker} | {cog}{cog_marker} | {lines} |",
+            line = finding.line,
+            name = escape_backticks(&finding.name),
+            cyc = finding.cyclomatic,
+            cog = finding.cognitive,
+            lines = finding.line_count,
+        );
+    }
+
+    let s = &report.summary;
+    let _ = write!(
+        out,
+        "\n**{files}** files, **{funcs}** functions analyzed \
+         (thresholds: cyclomatic > {cyc}, cognitive > {cog})\n",
+        files = s.files_analyzed,
+        funcs = s.functions_analyzed,
+        cyc = s.max_cyclomatic_threshold,
+        cog = s.max_cognitive_threshold,
+    );
+}
+
+/// Write the file health scores table to the output.
+fn write_file_scores_section(
+    out: &mut String,
+    report: &crate::health_types::HealthReport,
+    root: &Path,
+) {
+    if report.file_scores.is_empty() {
+        return;
+    }
+
+    let rel = |p: &Path| {
+        escape_backticks(&normalize_uri(
+            &relative_path(p, root).display().to_string(),
+        ))
+    };
+
+    out.push('\n');
+    let _ = writeln!(
+        out,
+        "### File Health Scores ({} files)\n",
+        report.file_scores.len(),
+    );
+    out.push_str("| File | MI | Fan-in | Fan-out | Dead Code | Density |\n");
+    out.push_str("|:-----|:---|:-------|:--------|:----------|:--------|\n");
+
+    for score in &report.file_scores {
+        let file_str = rel(&score.path);
+        let _ = writeln!(
+            out,
+            "| `{file_str}` | {mi:.1} | {fi} | {fan_out} | {dead:.0}% | {density:.2} |",
+            mi = score.maintainability_index,
+            fi = score.fan_in,
+            fan_out = score.fan_out,
+            dead = score.dead_code_ratio * 100.0,
+            density = score.complexity_density,
+        );
+    }
+
+    if let Some(avg) = report.summary.average_maintainability {
+        let _ = write!(out, "\n**Average maintainability index:** {avg:.1}/100\n");
+    }
+}
+
+/// Write the hotspots table to the output.
+fn write_hotspots_section(
+    out: &mut String,
+    report: &crate::health_types::HealthReport,
+    root: &Path,
+) {
+    if report.hotspots.is_empty() {
+        return;
+    }
+
+    let rel = |p: &Path| {
+        escape_backticks(&normalize_uri(
+            &relative_path(p, root).display().to_string(),
+        ))
+    };
+
+    out.push('\n');
+    let header = report.hotspot_summary.as_ref().map_or_else(
+        || format!("### Hotspots ({} files)\n", report.hotspots.len()),
+        |summary| {
+            format!(
+                "### Hotspots ({} files, since {})\n",
+                report.hotspots.len(),
+                summary.since,
+            )
+        },
+    );
+    let _ = writeln!(out, "{header}");
+    out.push_str("| File | Score | Commits | Churn | Density | Fan-in | Trend |\n");
+    out.push_str("|:-----|:------|:--------|:------|:--------|:-------|:------|\n");
+
+    for entry in &report.hotspots {
+        let file_str = rel(&entry.path);
+        let _ = writeln!(
+            out,
+            "| `{file_str}` | {score:.1} | {commits} | {churn} | {density:.2} | {fi} | {trend} |",
+            score = entry.score,
+            commits = entry.commits,
+            churn = entry.lines_added + entry.lines_deleted,
+            density = entry.complexity_density,
+            fi = entry.fan_in,
+            trend = entry.trend,
+        );
+    }
+
+    if let Some(ref summary) = report.hotspot_summary
+        && summary.files_excluded > 0
+    {
+        let _ = write!(
+            out,
+            "\n*{} file{} excluded (< {} commits)*\n",
+            summary.files_excluded,
+            plural(summary.files_excluded),
+            summary.min_commits,
+        );
+    }
+}
+
+/// Write the refactoring targets table to the output.
+fn write_targets_section(
+    out: &mut String,
+    report: &crate::health_types::HealthReport,
+    root: &Path,
+) {
+    if report.targets.is_empty() {
+        return;
+    }
+    let _ = write!(
+        out,
+        "\n### Refactoring Targets ({})\n\n",
+        report.targets.len()
+    );
+    out.push_str("| Efficiency | Category | Effort / Confidence | File | Recommendation |\n");
+    out.push_str("|:-----------|:---------|:--------------------|:-----|:---------------|\n");
+    for target in &report.targets {
+        let file_str = normalize_uri(&relative_path(&target.path, root).display().to_string());
+        let category = target.category.label();
+        let effort = target.effort.label();
+        let confidence = target.confidence.label();
+        let _ = writeln!(
+            out,
+            "| {:.1} | {category} | {effort} / {confidence} | `{file_str}` | {} |",
+            target.efficiency, target.recommendation,
+        );
+    }
+}
+
+/// Write the metric legend collapsible section to the output.
+fn write_metric_legend(out: &mut String, report: &crate::health_types::HealthReport) {
     let has_scores = !report.file_scores.is_empty();
     let has_hotspots = !report.hotspots.is_empty();
     let has_targets = !report.targets.is_empty();
-    if has_scores || has_hotspots || has_targets {
-        out.push_str("\n---\n\n<details><summary>Metric definitions</summary>\n\n");
-        if has_scores {
-            out.push_str("- **MI** — Maintainability Index (0\u{2013}100, higher is better)\n");
-            out.push_str("- **Fan-in** — files that import this file (blast radius)\n");
-            out.push_str("- **Fan-out** — files this file imports (coupling)\n");
-            out.push_str("- **Dead Code** — % of value exports with zero references\n");
-            out.push_str("- **Density** — cyclomatic complexity / lines of code\n");
-        }
-        if has_hotspots {
-            out.push_str(
-                "- **Score** — churn \u{00d7} complexity (0\u{2013}100, higher = riskier)\n",
-            );
-            out.push_str("- **Commits** — commits in the analysis window\n");
-            out.push_str("- **Churn** — total lines added + deleted\n");
-            out.push_str("- **Trend** — accelerating / stable / cooling\n");
-        }
-        if has_targets {
-            out.push_str("- **Efficiency** — priority / effort (higher = better quick-win value, default sort)\n");
-            out.push_str("- **Category** — recommendation type (churn+complexity, high impact, dead code, complexity, coupling, circular dep)\n");
-            out.push_str("- **Effort** — estimated effort (low / medium / high) based on file size, function count, and fan-in\n");
-            out.push_str("- **Confidence** — recommendation reliability (high = deterministic analysis, medium = heuristic, low = git-dependent)\n");
-        }
-        out.push_str("\n[Full metric reference](https://docs.fallow.tools/explanations/metrics)\n\n</details>\n");
+    if !has_scores && !has_hotspots && !has_targets {
+        return;
     }
-
-    out
+    out.push_str("\n---\n\n<details><summary>Metric definitions</summary>\n\n");
+    if has_scores {
+        out.push_str("- **MI** — Maintainability Index (0\u{2013}100, higher is better)\n");
+        out.push_str("- **Fan-in** — files that import this file (blast radius)\n");
+        out.push_str("- **Fan-out** — files this file imports (coupling)\n");
+        out.push_str("- **Dead Code** — % of value exports with zero references\n");
+        out.push_str("- **Density** — cyclomatic complexity / lines of code\n");
+    }
+    if has_hotspots {
+        out.push_str("- **Score** — churn \u{00d7} complexity (0\u{2013}100, higher = riskier)\n");
+        out.push_str("- **Commits** — commits in the analysis window\n");
+        out.push_str("- **Churn** — total lines added + deleted\n");
+        out.push_str("- **Trend** — accelerating / stable / cooling\n");
+    }
+    if has_targets {
+        out.push_str("- **Efficiency** — priority / effort (higher = better quick-win value, default sort)\n");
+        out.push_str("- **Category** — recommendation type (churn+complexity, high impact, dead code, complexity, coupling, circular dep)\n");
+        out.push_str("- **Effort** — estimated effort (low / medium / high) based on file size, function count, and fan-in\n");
+        out.push_str("- **Confidence** — recommendation reliability (high = deterministic analysis, medium = heuristic, low = git-dependent)\n");
+    }
+    out.push_str(
+        "\n[Full metric reference](https://docs.fallow.tools/explanations/metrics)\n\n</details>\n",
+    );
 }
 
 #[cfg(test)]

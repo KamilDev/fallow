@@ -73,10 +73,8 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
     let max_cyclomatic = opts.max_cyclomatic.unwrap_or(config.health.max_cyclomatic);
     let max_cognitive = opts.max_cognitive.unwrap_or(config.health.max_cognitive);
 
-    // Discover files
+    // Discover and parse files
     let files = fallow_core::discover::discover_files(&config);
-
-    // Parse all files (complexity is computed during parsing)
     let cache = if config.no_cache {
         None
     } else {
@@ -85,13 +83,9 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
     let parse_result = fallow_core::extract::parse_all_files(&files, cache.as_ref());
 
     let ignore_set = build_ignore_set(&config.health.ignore);
-
-    // Get changed files for --changed-since filtering
     let changed_files = opts
         .changed_since
         .and_then(|git_ref| get_changed_files(opts.root, git_ref));
-
-    // Resolve workspace filter once — reused for both findings and file scores
     let ws_root = if let Some(ws_name) = opts.workspace {
         Some(resolve_workspace_filter(opts.root, ws_name, &opts.output)?)
     } else {
@@ -101,6 +95,7 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
     // Build FileId -> path lookup for O(1) access
     let file_paths: rustc_hash::FxHashMap<_, _> = files.iter().map(|f| (f.id, &f.path)).collect();
 
+    // Collect and filter complexity findings
     let (mut findings, files_analyzed, total_functions) = collect_findings(
         &parse_result.modules,
         &file_paths,
@@ -110,20 +105,10 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
         max_cyclomatic,
         max_cognitive,
     );
-
-    // Apply workspace filter (resolved once above, reused for file scores too)
     if let Some(ref ws) = ws_root {
         findings.retain(|f| f.path.starts_with(ws));
     }
-
-    // Sort findings
-    match opts.sort {
-        SortBy::Cyclomatic => findings.sort_by(|a, b| b.cyclomatic.cmp(&a.cyclomatic)),
-        SortBy::Cognitive => findings.sort_by(|a, b| b.cognitive.cmp(&a.cognitive)),
-        SortBy::Lines => findings.sort_by(|a, b| b.line_count.cmp(&a.line_count)),
-    }
-
-    // Capture total above threshold before baseline filtering
+    sort_findings(&mut findings, &opts.sort);
     let total_above_threshold = findings.len();
 
     // Load baseline for filtering (save happens after targets are computed)
@@ -136,57 +121,21 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
     } else {
         None
     };
-
-    // Apply --top limit
     if let Some(top) = opts.top {
         findings.truncate(top);
     }
 
-    // Compute file-level health scores when requested, when hotspots need them,
-    // or when targets need them.
-    // Uses analyze_with_parse_result to reuse the already-parsed modules from above,
-    // avoiding re-parsing. Discovery, resolution, and graph construction still run.
+    // Compute file-level health scores (needed by hotspots and targets too)
     let needs_file_scores = opts.file_scores || opts.hotspots || opts.targets;
     let (score_output, files_scored, average_maintainability) = if needs_file_scores {
-        let analysis_output =
-            fallow_core::analyze_with_parse_result(&config, &parse_result.modules).map_err(
-                |e| {
-                    eprintln!("Error: analysis failed: {e}");
-                    ExitCode::from(2)
-                },
-            )?;
-        match compute_file_scores(
+        compute_filtered_file_scores(
+            &config,
             &parse_result.modules,
             &file_paths,
             changed_files.as_ref(),
-            analysis_output,
-        ) {
-            Ok(mut output) => {
-                // Apply the same filters that findings get: workspace, ignore globs
-                if let Some(ref ws) = ws_root {
-                    output.scores.retain(|s| s.path.starts_with(ws));
-                }
-                if !ignore_set.is_empty() {
-                    output.scores.retain(|s| {
-                        let relative = s.path.strip_prefix(&config.root).unwrap_or(&s.path);
-                        !ignore_set.is_match(relative)
-                    });
-                }
-                // Compute average BEFORE --top truncation so it reflects the full project
-                let total_scored = output.scores.len();
-                let avg = if total_scored > 0 {
-                    let sum: f64 = output.scores.iter().map(|s| s.maintainability_index).sum();
-                    Some((sum / total_scored as f64 * 10.0).round() / 10.0)
-                } else {
-                    None
-                };
-                (Some(output), Some(total_scored), avg)
-            }
-            Err(e) => {
-                eprintln!("Warning: failed to compute file scores: {e}");
-                (None, Some(0), None)
-            }
-        }
+            ws_root.as_deref(),
+            &ignore_set,
+        )?
     } else {
         (None, None, None)
     };
@@ -195,7 +144,7 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
         .as_ref()
         .map_or(&[] as &[_], |o| o.scores.as_slice());
 
-    // Compute hotspot analysis when requested (or when targets need churn data).
+    // Compute hotspot analysis when requested (or when targets need churn data)
     let (hotspots, hotspot_summary) = if opts.hotspots || opts.targets {
         compute_hotspots(
             opts,
@@ -208,124 +157,287 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
         (Vec::new(), None)
     };
 
-    // Compute refactoring targets when requested.
-    let (targets, target_thresholds) = if opts.targets {
-        if let Some(ref output) = score_output {
-            let target_aux = TargetAuxData::from(output);
-            let (mut tgts, thresholds) =
-                compute_refactoring_targets(file_scores_slice, &target_aux, &hotspots);
-            if let Some(ref baseline) = loaded_baseline {
-                tgts = filter_new_health_targets(tgts, baseline, &config.root);
-            }
-            if let Some(top) = opts.top {
-                tgts.truncate(top);
-            }
-            (tgts, Some(thresholds))
-        } else {
-            (Vec::new(), None)
-        }
-    } else {
-        (Vec::new(), None)
-    };
+    // Compute refactoring targets
+    let (targets, target_thresholds) = compute_targets(
+        opts,
+        score_output.as_ref(),
+        file_scores_slice,
+        &hotspots,
+        loaded_baseline.as_ref(),
+        &config.root,
+    );
 
     if let Some(save_path) = opts.save_baseline {
         save_health_baseline(save_path, &findings, &targets, &config.root, opts.quiet)?;
     }
 
-    // Compute vital signs from available data (always, for the report summary)
-    let analysis_counts = score_output
-        .as_ref()
-        .map(|o| crate::vital_signs::AnalysisCounts {
-            total_exports: o.analysis_counts.total_exports,
-            dead_files: o.analysis_counts.dead_files,
-            dead_exports: o.analysis_counts.dead_exports,
-            unused_deps: o.analysis_counts.unused_deps,
-            circular_deps: o.analysis_counts.circular_deps,
-            total_deps: o.analysis_counts.total_deps,
-        });
-    let vs_input = vital_signs::VitalSignsInput {
-        modules: &parse_result.modules,
-        file_scores: if needs_file_scores {
-            Some(file_scores_slice)
-        } else {
-            None
-        },
-        // Some(&[]) when pipeline ran but returned 0 results (→ hotspot_count: 0),
-        // None when pipeline was not invoked (→ hotspot_count: null in snapshot).
-        hotspots: if opts.hotspots || opts.targets {
-            Some(&hotspots)
-        } else {
-            None
-        },
-        total_files: files.len(),
-        analysis_counts,
-    };
-    let vital_signs = vital_signs::compute_vital_signs(&vs_input);
+    // Compute vital signs (always needed for report summary)
+    let (vital_signs, counts) = compute_vital_signs_and_counts(
+        score_output.as_ref(),
+        &parse_result.modules,
+        needs_file_scores,
+        file_scores_slice,
+        opts.hotspots || opts.targets,
+        &hotspots,
+        files.len(),
+    );
 
-    // Compute health score when requested
     let health_score = if opts.score {
         Some(vital_signs::compute_health_score(&vital_signs, files.len()))
     } else {
         None
     };
 
-    // Build counts (cheap — needed for snapshot saving and trend comparison)
-    let counts = vital_signs::build_counts(&vs_input);
-
-    // Save snapshot if requested
-    if let Some(ref snapshot_path) = opts.save_snapshot {
-        let counts = counts.clone();
-        let shallow = hotspot_summary.as_ref().is_some_and(|s| s.shallow_clone);
-        let snapshot = vital_signs::build_snapshot(
-            vital_signs.clone(),
-            counts,
-            opts.root,
-            shallow,
-            health_score.as_ref(),
-        );
-        let explicit = if snapshot_path.as_os_str().is_empty() {
-            None
-        } else {
-            Some(snapshot_path.as_path())
-        };
-        match vital_signs::save_snapshot(&snapshot, opts.root, explicit) {
-            Ok(saved_path) => {
-                if !opts.quiet {
-                    eprintln!("Saved vital signs snapshot to {}", saved_path.display());
-                }
-            }
-            Err(e) => {
-                eprintln!("Error: {e}");
-                return Err(ExitCode::from(2));
-            }
-        }
-    }
-
-    // Compute trend if requested
-    let health_trend = if opts.trend {
-        if opts.changed_since.is_some() && !opts.quiet {
-            eprintln!(
-                "warning: --trend comparison may be inaccurate with --changed-since; \
-                 snapshots are typically from full-project runs"
-            );
-        }
-        let snapshots = vital_signs::load_snapshots(opts.root);
-        if snapshots.is_empty() && !opts.quiet {
-            eprintln!(
-                "No snapshots found. Run `fallow health --save-snapshot` to save a \
-                 baseline, then use --trend on subsequent runs to track progress."
-            );
-        }
-        vital_signs::compute_trend(
+    if opts.save_snapshot.is_some() {
+        save_snapshot(
+            opts,
             &vital_signs,
             &counts,
-            health_score.as_ref().map(|s| s.score),
-            &snapshots,
-        )
-    } else {
-        None
-    };
+            hotspot_summary.as_ref(),
+            health_score.as_ref(),
+        )?;
+    }
 
+    let health_trend = compute_health_trend(opts, &vital_signs, &counts, health_score.as_ref());
+
+    // Assemble final report
+    let report = assemble_health_report(
+        opts,
+        findings,
+        files_analyzed,
+        total_functions,
+        total_above_threshold,
+        max_cyclomatic,
+        max_cognitive,
+        files_scored,
+        average_maintainability,
+        vital_signs,
+        health_score,
+        score_output,
+        hotspots,
+        hotspot_summary,
+        targets,
+        target_thresholds,
+        health_trend,
+    );
+
+    Ok(HealthResult {
+        report,
+        config,
+        elapsed: start.elapsed(),
+    })
+}
+
+/// Sort findings by the specified criteria.
+fn sort_findings(findings: &mut [HealthFinding], sort: &SortBy) {
+    match sort {
+        SortBy::Cyclomatic => findings.sort_by(|a, b| b.cyclomatic.cmp(&a.cyclomatic)),
+        SortBy::Cognitive => findings.sort_by(|a, b| b.cognitive.cmp(&a.cognitive)),
+        SortBy::Lines => findings.sort_by(|a, b| b.line_count.cmp(&a.line_count)),
+    }
+}
+
+/// `(score_output, files_scored, average_maintainability)`.
+type FileScoreResult = (Option<scoring::FileScoreOutput>, Option<usize>, Option<f64>);
+
+/// Compute file scores, applying workspace and ignore filters.
+fn compute_filtered_file_scores(
+    config: &ResolvedConfig,
+    modules: &[fallow_core::extract::ModuleInfo],
+    file_paths: &rustc_hash::FxHashMap<fallow_core::discover::FileId, &std::path::PathBuf>,
+    changed_files: Option<&rustc_hash::FxHashSet<std::path::PathBuf>>,
+    ws_root: Option<&std::path::Path>,
+    ignore_set: &globset::GlobSet,
+) -> Result<FileScoreResult, ExitCode> {
+    let analysis_output = fallow_core::analyze_with_parse_result(config, modules).map_err(|e| {
+        eprintln!("Error: analysis failed: {e}");
+        ExitCode::from(2)
+    })?;
+    match compute_file_scores(modules, file_paths, changed_files, analysis_output) {
+        Ok(mut output) => {
+            if let Some(ws) = ws_root {
+                output.scores.retain(|s| s.path.starts_with(ws));
+            }
+            if !ignore_set.is_empty() {
+                output.scores.retain(|s| {
+                    let relative = s.path.strip_prefix(&config.root).unwrap_or(&s.path);
+                    !ignore_set.is_match(relative)
+                });
+            }
+            // Compute average BEFORE --top truncation so it reflects the full project
+            let total_scored = output.scores.len();
+            let avg = if total_scored > 0 {
+                let sum: f64 = output.scores.iter().map(|s| s.maintainability_index).sum();
+                Some((sum / total_scored as f64 * 10.0).round() / 10.0)
+            } else {
+                None
+            };
+            Ok((Some(output), Some(total_scored), avg))
+        }
+        Err(e) => {
+            eprintln!("Warning: failed to compute file scores: {e}");
+            Ok((None, Some(0), None))
+        }
+    }
+}
+
+/// Compute refactoring targets when requested, applying baseline and top filters.
+fn compute_targets(
+    opts: &HealthOptions<'_>,
+    score_output: Option<&scoring::FileScoreOutput>,
+    file_scores_slice: &[FileHealthScore],
+    hotspots: &[HotspotEntry],
+    loaded_baseline: Option<&HealthBaselineData>,
+    config_root: &std::path::Path,
+) -> (Vec<RefactoringTarget>, Option<TargetThresholds>) {
+    if !opts.targets {
+        return (Vec::new(), None);
+    }
+    let Some(output) = score_output else {
+        return (Vec::new(), None);
+    };
+    let target_aux = TargetAuxData::from(output);
+    let (mut tgts, thresholds) =
+        compute_refactoring_targets(file_scores_slice, &target_aux, hotspots);
+    if let Some(baseline) = loaded_baseline {
+        tgts = filter_new_health_targets(tgts, baseline, config_root);
+    }
+    if let Some(top) = opts.top {
+        tgts.truncate(top);
+    }
+    (tgts, Some(thresholds))
+}
+
+/// Build vital signs and counts from available analysis data.
+fn compute_vital_signs_and_counts(
+    score_output: Option<&scoring::FileScoreOutput>,
+    modules: &[fallow_core::extract::ModuleInfo],
+    needs_file_scores: bool,
+    file_scores_slice: &[FileHealthScore],
+    needs_hotspots: bool,
+    hotspots: &[HotspotEntry],
+    total_files: usize,
+) -> (
+    crate::health_types::VitalSigns,
+    crate::health_types::VitalSignsCounts,
+) {
+    let analysis_counts = score_output.map(|o| crate::vital_signs::AnalysisCounts {
+        total_exports: o.analysis_counts.total_exports,
+        dead_files: o.analysis_counts.dead_files,
+        dead_exports: o.analysis_counts.dead_exports,
+        unused_deps: o.analysis_counts.unused_deps,
+        circular_deps: o.analysis_counts.circular_deps,
+        total_deps: o.analysis_counts.total_deps,
+    });
+    let vs_input = vital_signs::VitalSignsInput {
+        modules,
+        file_scores: if needs_file_scores {
+            Some(file_scores_slice)
+        } else {
+            None
+        },
+        // Some(&[]) when pipeline ran but returned 0 results (-> hotspot_count: 0),
+        // None when pipeline was not invoked (-> hotspot_count: null in snapshot).
+        hotspots: if needs_hotspots { Some(hotspots) } else { None },
+        total_files,
+        analysis_counts,
+    };
+    let signs = vital_signs::compute_vital_signs(&vs_input);
+    let counts = vital_signs::build_counts(&vs_input);
+    (signs, counts)
+}
+
+/// Save a vital signs snapshot to disk if requested.
+fn save_snapshot(
+    opts: &HealthOptions<'_>,
+    vital_signs: &crate::health_types::VitalSigns,
+    counts: &crate::health_types::VitalSignsCounts,
+    hotspot_summary: Option<&crate::health_types::HotspotSummary>,
+    health_score: Option<&crate::health_types::HealthScore>,
+) -> Result<(), ExitCode> {
+    let snapshot_path = opts.save_snapshot.as_ref().expect("caller checked is_some");
+    let shallow = hotspot_summary.is_some_and(|s| s.shallow_clone);
+    let snapshot = vital_signs::build_snapshot(
+        vital_signs.clone(),
+        counts.clone(),
+        opts.root,
+        shallow,
+        health_score,
+    );
+    let explicit = if snapshot_path.as_os_str().is_empty() {
+        None
+    } else {
+        Some(snapshot_path.as_path())
+    };
+    match vital_signs::save_snapshot(&snapshot, opts.root, explicit) {
+        Ok(saved_path) => {
+            if !opts.quiet {
+                eprintln!("Saved vital signs snapshot to {}", saved_path.display());
+            }
+            Ok(())
+        }
+        Err(e) => {
+            eprintln!("Error: {e}");
+            Err(ExitCode::from(2))
+        }
+    }
+}
+
+/// Compute health trend from historical snapshots if requested.
+fn compute_health_trend(
+    opts: &HealthOptions<'_>,
+    vital_signs: &crate::health_types::VitalSigns,
+    counts: &crate::health_types::VitalSignsCounts,
+    health_score: Option<&crate::health_types::HealthScore>,
+) -> Option<crate::health_types::HealthTrend> {
+    if !opts.trend {
+        return None;
+    }
+    if opts.changed_since.is_some() && !opts.quiet {
+        eprintln!(
+            "warning: --trend comparison may be inaccurate with --changed-since; \
+             snapshots are typically from full-project runs"
+        );
+    }
+    let snapshots = vital_signs::load_snapshots(opts.root);
+    if snapshots.is_empty() && !opts.quiet {
+        eprintln!(
+            "No snapshots found. Run `fallow health --save-snapshot` to save a \
+             baseline, then use --trend on subsequent runs to track progress."
+        );
+    }
+    vital_signs::compute_trend(
+        vital_signs,
+        counts,
+        health_score.map(|s| s.score),
+        &snapshots,
+    )
+}
+
+/// Assemble the final `HealthReport` from all computed data.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "assembles report from many computed pieces"
+)]
+fn assemble_health_report(
+    opts: &HealthOptions<'_>,
+    findings: Vec<HealthFinding>,
+    files_analyzed: usize,
+    total_functions: usize,
+    total_above_threshold: usize,
+    max_cyclomatic: u16,
+    max_cognitive: u16,
+    files_scored: Option<usize>,
+    average_maintainability: Option<f64>,
+    vital_signs: crate::health_types::VitalSigns,
+    health_score: Option<crate::health_types::HealthScore>,
+    score_output: Option<scoring::FileScoreOutput>,
+    hotspots: Vec<HotspotEntry>,
+    hotspot_summary: Option<crate::health_types::HotspotSummary>,
+    targets: Vec<RefactoringTarget>,
+    target_thresholds: Option<TargetThresholds>,
+    health_trend: Option<crate::health_types::HealthTrend>,
+) -> HealthReport {
     // Extract file scores for the report (apply --top after hotspot/target computation)
     let file_scores = if opts.file_scores {
         let mut scores = score_output.map(|o| o.scores).unwrap_or_default();
@@ -344,7 +456,7 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
         (Vec::new(), None)
     };
 
-    let report = HealthReport {
+    HealthReport {
         summary: HealthSummary {
             files_analyzed,
             functions_analyzed: total_functions,
@@ -371,15 +483,7 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
         targets,
         target_thresholds,
         health_trend,
-    };
-
-    let elapsed = start.elapsed();
-
-    Ok(HealthResult {
-        report,
-        config,
-        elapsed,
-    })
+    }
 }
 
 /// Build a glob set from health ignore patterns.

@@ -199,27 +199,7 @@ fn build_summary(
 pub fn execute_audit(opts: &AuditOptions<'_>) -> Result<AuditResult, ExitCode> {
     let start = Instant::now();
 
-    // Resolve base ref: explicit --changed-since / --base, or auto-detect
-    let base_ref = if let Some(ref_str) = opts.changed_since {
-        ref_str.to_string()
-    } else {
-        let Some(branch) = auto_detect_base_branch(opts.root) else {
-            return Err(emit_error(
-                "could not detect base branch. Use --base <ref> to specify the comparison target (e.g., --base main)",
-                2,
-                &opts.output,
-            ));
-        };
-        // Validate auto-detected branch name (explicit --changed-since is validated in main.rs)
-        if let Err(e) = crate::validate::validate_git_ref(&branch) {
-            return Err(emit_error(
-                &format!("auto-detected base branch '{branch}' is not a valid git ref: {e}"),
-                2,
-                &opts.output,
-            ));
-        }
-        branch
-    };
+    let base_ref = resolve_base_ref(opts)?;
 
     // Get changed files (hard error if it fails, unlike combined mode)
     let Some(changed_files) = crate::check::get_changed_files(opts.root, &base_ref) else {
@@ -233,31 +213,92 @@ pub fn execute_audit(opts: &AuditOptions<'_>) -> Result<AuditResult, ExitCode> {
     };
     let changed_files_count = changed_files.len();
 
-    // If no files changed, return early with pass verdict
     if changed_files.is_empty() {
-        return Ok(AuditResult {
-            verdict: AuditVerdict::Pass,
-            summary: AuditSummary {
-                dead_code_issues: 0,
-                dead_code_has_errors: false,
-                complexity_findings: 0,
-                max_cyclomatic: None,
-                duplication_clone_groups: 0,
-            },
-            changed_files_count: 0,
-            base_ref,
-            head_sha: get_head_sha(opts.root),
-            output: opts.output.clone(),
-            check: None,
-            dupes: None,
-            health: None,
-            elapsed: start.elapsed(),
-        });
+        return Ok(empty_audit_result(base_ref, opts, start.elapsed()));
     }
 
     let changed_since = Some(base_ref.as_str());
 
-    // Run dead code analysis
+    // Run all three analyses
+    let check_result = run_audit_check(opts, changed_since)?;
+    let dupes_result = run_audit_dupes(opts, changed_since)?;
+    let health_result = run_audit_health(opts, changed_since)?;
+
+    let verdict = compute_verdict(
+        check_result.as_ref(),
+        dupes_result.as_ref(),
+        health_result.as_ref(),
+    );
+    let summary = build_summary(
+        check_result.as_ref(),
+        dupes_result.as_ref(),
+        health_result.as_ref(),
+    );
+
+    Ok(AuditResult {
+        verdict,
+        summary,
+        changed_files_count,
+        base_ref,
+        head_sha: get_head_sha(opts.root),
+        output: opts.output.clone(),
+        check: check_result,
+        dupes: dupes_result,
+        health: health_result,
+        elapsed: start.elapsed(),
+    })
+}
+
+/// Resolve the base ref: explicit --changed-since / --base, or auto-detect.
+fn resolve_base_ref(opts: &AuditOptions<'_>) -> Result<String, ExitCode> {
+    if let Some(ref_str) = opts.changed_since {
+        return Ok(ref_str.to_string());
+    }
+    let Some(branch) = auto_detect_base_branch(opts.root) else {
+        return Err(emit_error(
+            "could not detect base branch. Use --base <ref> to specify the comparison target (e.g., --base main)",
+            2,
+            &opts.output,
+        ));
+    };
+    // Validate auto-detected branch name (explicit --changed-since is validated in main.rs)
+    if let Err(e) = crate::validate::validate_git_ref(&branch) {
+        return Err(emit_error(
+            &format!("auto-detected base branch '{branch}' is not a valid git ref: {e}"),
+            2,
+            &opts.output,
+        ));
+    }
+    Ok(branch)
+}
+
+/// Build an empty pass result when no files have changed.
+fn empty_audit_result(base_ref: String, opts: &AuditOptions<'_>, elapsed: Duration) -> AuditResult {
+    AuditResult {
+        verdict: AuditVerdict::Pass,
+        summary: AuditSummary {
+            dead_code_issues: 0,
+            dead_code_has_errors: false,
+            complexity_findings: 0,
+            max_cyclomatic: None,
+            duplication_clone_groups: 0,
+        },
+        changed_files_count: 0,
+        base_ref,
+        head_sha: get_head_sha(opts.root),
+        output: opts.output.clone(),
+        check: None,
+        dupes: None,
+        health: None,
+        elapsed,
+    }
+}
+
+/// Run dead code analysis for the audit pipeline.
+fn run_audit_check<'a>(
+    opts: &'a AuditOptions<'a>,
+    changed_since: Option<&'a str>,
+) -> Result<Option<CheckResult>, ExitCode> {
     let filters = IssueFilters::default();
     let trace_opts = TraceOptions {
         trace_export: None,
@@ -265,7 +306,7 @@ pub fn execute_audit(opts: &AuditOptions<'_>) -> Result<AuditResult, ExitCode> {
         trace_dependency: None,
         performance: opts.performance,
     };
-    let check_result = match crate::check::execute_check(&CheckOptions {
+    match crate::check::execute_check(&CheckOptions {
         root: opts.root,
         config_path: opts.config_path,
         output: opts.output.clone(),
@@ -292,12 +333,17 @@ pub fn execute_audit(opts: &AuditOptions<'_>) -> Result<AuditResult, ExitCode> {
             quiet: opts.quiet,
         },
     }) {
-        Ok(r) => Some(r),
-        Err(code) => return Err(code),
-    };
+        Ok(r) => Ok(Some(r)),
+        Err(code) => Err(code),
+    }
+}
 
-    // Run duplication analysis
-    let dupes_result = match crate::dupes::execute_dupes(&DupesOptions {
+/// Run duplication analysis for the audit pipeline.
+fn run_audit_dupes<'a>(
+    opts: &'a AuditOptions<'a>,
+    changed_since: Option<&'a str>,
+) -> Result<Option<DupesResult>, ExitCode> {
+    match crate::dupes::execute_dupes(&DupesOptions {
         root: opts.root,
         config_path: opts.config_path,
         output: opts.output.clone(),
@@ -318,12 +364,17 @@ pub fn execute_audit(opts: &AuditOptions<'_>) -> Result<AuditResult, ExitCode> {
         changed_since,
         explain: opts.explain,
     }) {
-        Ok(r) => Some(r),
-        Err(code) => return Err(code),
-    };
+        Ok(r) => Ok(Some(r)),
+        Err(code) => Err(code),
+    }
+}
 
-    // Run complexity analysis (findings only, no scores/hotspots/targets)
-    let health_result = match crate::health::execute_health(&HealthOptions {
+/// Run complexity analysis for the audit pipeline (findings only, no scores/hotspots/targets).
+fn run_audit_health<'a>(
+    opts: &'a AuditOptions<'a>,
+    changed_since: Option<&'a str>,
+) -> Result<Option<HealthResult>, ExitCode> {
+    match crate::health::execute_health(&HealthOptions {
         root: opts.root,
         config_path: opts.config_path,
         output: opts.output.clone(),
@@ -351,33 +402,9 @@ pub fn execute_audit(opts: &AuditOptions<'_>) -> Result<AuditResult, ExitCode> {
         save_snapshot: None,
         trend: false,
     }) {
-        Ok(r) => Some(r),
-        Err(code) => return Err(code),
-    };
-
-    let verdict = compute_verdict(
-        check_result.as_ref(),
-        dupes_result.as_ref(),
-        health_result.as_ref(),
-    );
-    let summary = build_summary(
-        check_result.as_ref(),
-        dupes_result.as_ref(),
-        health_result.as_ref(),
-    );
-
-    Ok(AuditResult {
-        verdict,
-        summary,
-        changed_files_count,
-        base_ref,
-        head_sha: get_head_sha(opts.root),
-        output: opts.output.clone(),
-        check: check_result,
-        dupes: dupes_result,
-        health: health_result,
-        elapsed: start.elapsed(),
-    })
+        Ok(r) => Ok(Some(r)),
+        Err(code) => Err(code),
+    }
 }
 
 // ── Print ────────────────────────────────────────────────────────

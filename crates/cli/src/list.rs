@@ -102,99 +102,26 @@ pub fn run_list(opts: &ListOptions<'_>) -> ExitCode {
     };
 
     match opts.output {
-        OutputFormat::Json => {
-            let mut result = serde_json::Map::new();
-
-            if (opts.plugins || show_all)
-                && let Some(ref pr) = plugin_result
-            {
-                let pl: Vec<serde_json::Value> = pr
-                    .active_plugins
-                    .iter()
-                    .map(|name| serde_json::json!({ "name": name }))
-                    .collect();
-                result.insert("plugins".to_string(), serde_json::json!(pl));
-            }
-
-            if (opts.files || show_all)
-                && let Some(ref disc) = discovered
-            {
-                let paths: Vec<serde_json::Value> = disc
-                    .iter()
-                    .map(|f| {
-                        let relative = f.path.strip_prefix(opts.root).unwrap_or(&f.path);
-                        serde_json::json!(relative.display().to_string())
-                    })
-                    .collect();
-                result.insert("file_count".to_string(), serde_json::json!(paths.len()));
-                result.insert("files".to_string(), serde_json::json!(paths));
-            }
-
-            if let Some(ref entries) = all_entry_points {
-                let eps: Vec<serde_json::Value> = entries
-                    .iter()
-                    .map(|ep| {
-                        let relative = ep.path.strip_prefix(opts.root).unwrap_or(&ep.path);
-                        serde_json::json!({
-                            "path": relative.display().to_string(),
-                            "source": ep.source.to_string(),
-                        })
-                    })
-                    .collect();
-                result.insert(
-                    "entry_point_count".to_string(),
-                    serde_json::json!(eps.len()),
-                );
-                result.insert("entry_points".to_string(), serde_json::json!(eps));
-            }
-
-            if let Some(ref bd) = boundary_data {
-                result.insert("boundaries".to_string(), boundary_data_to_json(bd));
-            }
-
-            match serde_json::to_string_pretty(&serde_json::Value::Object(result)) {
-                Ok(json) => println!("{json}"),
-                Err(e) => {
-                    eprintln!("Error: failed to serialize list output: {e}");
-                    return ExitCode::from(2);
-                }
-            }
-        }
+        OutputFormat::Json => print_list_json(
+            opts,
+            show_all,
+            plugin_result.as_ref(),
+            discovered.as_deref(),
+            all_entry_points.as_deref(),
+            boundary_data.as_ref(),
+        ),
         _ => {
-            if (opts.plugins || show_all)
-                && let Some(ref pr) = plugin_result
-            {
-                eprintln!("Active plugins:");
-                for name in &pr.active_plugins {
-                    eprintln!("  - {name}");
-                }
-            }
-
-            if (opts.files || show_all)
-                && let Some(ref disc) = discovered
-            {
-                eprintln!("Discovered {} files", disc.len());
-                for file in disc {
-                    let relative = file.path.strip_prefix(opts.root).unwrap_or(&file.path);
-                    println!("{}", relative.display());
-                }
-            }
-
-            if let Some(ref entries) = all_entry_points {
-                eprintln!("Found {} entry points", entries.len());
-                for ep in entries {
-                    let relative = ep.path.strip_prefix(opts.root).unwrap_or(&ep.path);
-                    println!("{} ({})", relative.display(), ep.source);
-                }
-            }
-
-            if let Some(ref bd) = boundary_data {
-                print_boundary_data_human(bd);
-            }
+            print_list_human(
+                opts,
+                show_all,
+                plugin_result.as_ref(),
+                discovered.as_deref(),
+                all_entry_points.as_deref(),
+                boundary_data.as_ref(),
+            );
+            ExitCode::SUCCESS
         }
     }
-
-    ExitCode::SUCCESS
 }
 
 /// Determine whether all listing modes should be shown.
@@ -216,6 +143,119 @@ const fn needs_file_discovery(
     boundaries: bool,
 ) -> bool {
     files || show_all || entry_points || boundaries
+}
+
+// ── Output helpers ─────────────────────────────────────────────
+
+/// Print list results as JSON and return the appropriate exit code.
+fn print_list_json(
+    opts: &ListOptions<'_>,
+    show_all: bool,
+    plugin_result: Option<&fallow_core::plugins::AggregatedPluginResult>,
+    discovered: Option<&[fallow_core::discover::DiscoveredFile]>,
+    entry_points: Option<&[fallow_core::discover::EntryPoint]>,
+    boundary_data: Option<&BoundaryData>,
+) -> ExitCode {
+    let mut result = serde_json::Map::new();
+
+    if (opts.plugins || show_all)
+        && let Some(pr) = plugin_result
+    {
+        let pl: Vec<serde_json::Value> = pr
+            .active_plugins
+            .iter()
+            .map(|name| serde_json::json!({ "name": name }))
+            .collect();
+        result.insert("plugins".to_string(), serde_json::json!(pl));
+    }
+
+    if (opts.files || show_all)
+        && let Some(disc) = discovered
+    {
+        let paths: Vec<serde_json::Value> = disc
+            .iter()
+            .map(|f| {
+                let relative = f.path.strip_prefix(opts.root).unwrap_or(&f.path);
+                serde_json::json!(relative.display().to_string())
+            })
+            .collect();
+        result.insert("file_count".to_string(), serde_json::json!(paths.len()));
+        result.insert("files".to_string(), serde_json::json!(paths));
+    }
+
+    if let Some(entries) = entry_points {
+        let eps: Vec<serde_json::Value> = entries
+            .iter()
+            .map(|ep| {
+                let relative = ep.path.strip_prefix(opts.root).unwrap_or(&ep.path);
+                serde_json::json!({
+                    "path": relative.display().to_string(),
+                    "source": ep.source.to_string(),
+                })
+            })
+            .collect();
+        result.insert(
+            "entry_point_count".to_string(),
+            serde_json::json!(eps.len()),
+        );
+        result.insert("entry_points".to_string(), serde_json::json!(eps));
+    }
+
+    if let Some(bd) = boundary_data {
+        result.insert("boundaries".to_string(), boundary_data_to_json(bd));
+    }
+
+    match serde_json::to_string_pretty(&serde_json::Value::Object(result)) {
+        Ok(json) => {
+            println!("{json}");
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("Error: failed to serialize list output: {e}");
+            ExitCode::from(2)
+        }
+    }
+}
+
+/// Print list results in human-readable format.
+fn print_list_human(
+    opts: &ListOptions<'_>,
+    show_all: bool,
+    plugin_result: Option<&fallow_core::plugins::AggregatedPluginResult>,
+    discovered: Option<&[fallow_core::discover::DiscoveredFile]>,
+    entry_points: Option<&[fallow_core::discover::EntryPoint]>,
+    boundary_data: Option<&BoundaryData>,
+) {
+    if (opts.plugins || show_all)
+        && let Some(pr) = plugin_result
+    {
+        eprintln!("Active plugins:");
+        for name in &pr.active_plugins {
+            eprintln!("  - {name}");
+        }
+    }
+
+    if (opts.files || show_all)
+        && let Some(disc) = discovered
+    {
+        eprintln!("Discovered {} files", disc.len());
+        for file in disc {
+            let relative = file.path.strip_prefix(opts.root).unwrap_or(&file.path);
+            println!("{}", relative.display());
+        }
+    }
+
+    if let Some(entries) = entry_points {
+        eprintln!("Found {} entry points", entries.len());
+        for ep in entries {
+            let relative = ep.path.strip_prefix(opts.root).unwrap_or(&ep.path);
+            println!("{} ({})", relative.display(), ep.source);
+        }
+    }
+
+    if let Some(bd) = boundary_data {
+        print_boundary_data_human(bd);
+    }
 }
 
 // ── Boundary listing helpers ───────────────────────────────────
