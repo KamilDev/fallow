@@ -72,7 +72,7 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
         let check_opts = CheckOptions {
             root: opts.root,
             config_path: opts.config_path,
-            output: opts.output.clone(),
+            output: opts.output,
             no_cache: opts.no_cache,
             threads: opts.threads,
             quiet: opts.quiet,
@@ -102,7 +102,7 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
         let dupes_opts = DupesOptions {
             root: opts.root,
             config_path: opts.config_path,
-            output: opts.output.clone(),
+            output: opts.output,
             no_cache: opts.no_cache,
             threads: opts.threads,
             quiet: opts.quiet,
@@ -285,7 +285,7 @@ fn print_combined_json(
                 return emit_error(
                     &format!("JSON serialization error: {e}"),
                     2,
-                    &OutputFormat::Json,
+                    OutputFormat::Json,
                 );
             }
         }
@@ -300,7 +300,7 @@ fn print_combined_json(
                 return emit_error(
                     &format!("JSON serialization error: {e}"),
                     2,
-                    &OutputFormat::Json,
+                    OutputFormat::Json,
                 );
             }
         }
@@ -315,7 +315,7 @@ fn print_combined_json(
                 return emit_error(
                     &format!("JSON serialization error: {e}"),
                     2,
-                    &OutputFormat::Json,
+                    OutputFormat::Json,
                 );
             }
         }
@@ -329,7 +329,7 @@ fn print_combined_json(
         Err(e) => emit_error(
             &format!("JSON serialization error: {e}"),
             2,
-            &OutputFormat::Json,
+            OutputFormat::Json,
         ),
     }
 }
@@ -392,7 +392,7 @@ fn print_combined_sarif(
         Err(e) => emit_error(
             &format!("SARIF serialization error: {e}"),
             2,
-            &OutputFormat::Sarif,
+            OutputFormat::Sarif,
         ),
     }
 }
@@ -434,7 +434,7 @@ fn print_combined_codeclimate(
         Err(e) => emit_error(
             &format!("CodeClimate serialization error: {e}"),
             2,
-            &OutputFormat::CodeClimate,
+            OutputFormat::CodeClimate,
         ),
     }
 }
@@ -443,7 +443,7 @@ fn build_health_opts<'a>(opts: &'a CombinedOptions<'a>) -> HealthOptions<'a> {
     HealthOptions {
         root: opts.root,
         config_path: opts.config_path,
-        output: opts.output.clone(),
+        output: opts.output,
         no_cache: opts.no_cache,
         threads: opts.threads,
         quiet: opts.quiet,

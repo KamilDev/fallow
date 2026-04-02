@@ -28,13 +28,13 @@ pub fn run_fix(opts: &FixOptions<'_>) -> ExitCode {
     if !opts.dry_run && !opts.yes && !std::io::stdin().is_terminal() {
         let msg = "fix command requires --yes (or --force) in non-interactive environments. \
                    Use --dry-run to preview changes first, then pass --yes to confirm.";
-        return super::emit_error(msg, 2, &opts.output);
+        return super::emit_error(msg, 2, opts.output);
     }
 
     let config = match super::load_config(
         opts.root,
         opts.config_path,
-        opts.output.clone(),
+        opts.output,
         opts.no_cache,
         opts.threads,
         opts.production,
@@ -47,7 +47,7 @@ pub fn run_fix(opts: &FixOptions<'_>) -> ExitCode {
     let results = match fallow_core::analyze(&config) {
         Ok(r) => r,
         Err(e) => {
-            return super::emit_error(&format!("Analysis error: {e}"), 2, &opts.output);
+            return super::emit_error(&format!("Analysis error: {e}"), 2, opts.output);
         }
     };
 
@@ -85,13 +85,13 @@ pub fn run_fix(opts: &FixOptions<'_>) -> ExitCode {
     let mut had_write_error = exports::apply_export_fixes(
         opts.root,
         &exports_by_file,
-        &opts.output,
+        opts.output,
         opts.dry_run,
         &mut fixes,
     );
 
     had_write_error |=
-        deps::apply_dependency_fixes(opts.root, &results, &opts.output, opts.dry_run, &mut fixes);
+        deps::apply_dependency_fixes(opts.root, &results, opts.output, opts.dry_run, &mut fixes);
 
     // Group unused enum members by file path for batch editing.
     if !results.unused_enum_members.is_empty() {
@@ -107,7 +107,7 @@ pub fn run_fix(opts: &FixOptions<'_>) -> ExitCode {
         had_write_error |= enum_members::apply_enum_member_fixes(
             opts.root,
             &enum_members_by_file,
-            &opts.output,
+            opts.output,
             opts.dry_run,
             &mut fixes,
         );

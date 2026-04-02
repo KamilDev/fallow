@@ -239,11 +239,16 @@ pub(super) fn compute_file_scores(
 
         // Track value export count for dead code gate
         let value_exports = node.exports.iter().filter(|e| !e.is_type_only).count();
-        value_export_counts.insert((*path).clone(), value_exports);
+        // Clone the path once; reuse via .clone() for map keys that need ownership,
+        // and move the final copy into FileHealthScore to avoid one extra allocation.
+        let path_owned = (*path).clone();
+        value_export_counts.insert(path_owned.clone(), value_exports);
 
         // For fully-unused files, populate all export names as evidence
         // (unused_exports only tracks individually-unused exports, not exports from unreachable files)
-        if unused_files.contains((*path).as_path()) && !unused_export_names.contains_key(*path) {
+        if unused_files.contains(path_owned.as_path())
+            && !unused_export_names.contains_key(&path_owned)
+        {
             let names: Vec<String> = node
                 .exports
                 .iter()
@@ -251,12 +256,12 @@ pub(super) fn compute_file_scores(
                 .map(|e| e.name.to_string())
                 .collect();
             if !names.is_empty() {
-                unused_export_names.insert((*path).clone(), names);
+                unused_export_names.insert(path_owned.clone(), names);
             }
         }
 
         let dead_code_ratio = compute_dead_code_ratio(
-            (*path).as_path(),
+            path_owned.as_path(),
             &node.exports,
             &unused_files,
             &unused_exports_by_path,
@@ -275,7 +280,7 @@ pub(super) fn compute_file_scores(
         );
 
         scores.push(FileHealthScore {
-            path: (*path).clone(),
+            path: path_owned,
             fan_in,
             fan_out,
             dead_code_ratio: dead_code_ratio_rounded,

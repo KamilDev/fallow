@@ -133,7 +133,7 @@ pub const fn severity_to_level(s: Severity) -> Level {
 pub fn print_results(
     results: &AnalysisResults,
     ctx: &ReportContext<'_>,
-    output: &OutputFormat,
+    output: OutputFormat,
     regression: Option<&crate::regression::RegressionOutcome>,
 ) -> ExitCode {
     match output {
@@ -168,7 +168,7 @@ pub fn print_results(
 pub fn print_duplication_report(
     report: &DuplicationReport,
     ctx: &ReportContext<'_>,
-    output: &OutputFormat,
+    output: OutputFormat,
 ) -> ExitCode {
     match output {
         OutputFormat::Human => {
@@ -200,7 +200,7 @@ pub fn print_duplication_report(
 pub fn print_health_report(
     report: &crate::health_types::HealthReport,
     ctx: &ReportContext<'_>,
-    output: &OutputFormat,
+    output: OutputFormat,
 ) -> ExitCode {
     match output {
         OutputFormat::Human => {
@@ -229,7 +229,7 @@ pub fn print_cross_reference_findings(
     cross_ref: &fallow_core::cross_reference::CrossReferenceResult,
     root: &Path,
     quiet: bool,
-    output: &OutputFormat,
+    output: OutputFormat,
 ) {
     human::print_cross_reference_findings(cross_ref, root, quiet, output);
 }
@@ -237,7 +237,7 @@ pub fn print_cross_reference_findings(
 // ── Trace output ──────────────────────────────────────────────────
 
 /// Print export trace results.
-pub fn print_export_trace(trace: &ExportTrace, format: &OutputFormat) {
+pub fn print_export_trace(trace: &ExportTrace, format: OutputFormat) {
     match format {
         OutputFormat::Json => json::print_trace_json(trace),
         _ => human::print_export_trace_human(trace),
@@ -245,7 +245,7 @@ pub fn print_export_trace(trace: &ExportTrace, format: &OutputFormat) {
 }
 
 /// Print file trace results.
-pub fn print_file_trace(trace: &FileTrace, format: &OutputFormat) {
+pub fn print_file_trace(trace: &FileTrace, format: OutputFormat) {
     match format {
         OutputFormat::Json => json::print_trace_json(trace),
         _ => human::print_file_trace_human(trace),
@@ -253,7 +253,7 @@ pub fn print_file_trace(trace: &FileTrace, format: &OutputFormat) {
 }
 
 /// Print dependency trace results.
-pub fn print_dependency_trace(trace: &DependencyTrace, format: &OutputFormat) {
+pub fn print_dependency_trace(trace: &DependencyTrace, format: OutputFormat) {
     match format {
         OutputFormat::Json => json::print_trace_json(trace),
         _ => human::print_dependency_trace_human(trace),
@@ -261,7 +261,7 @@ pub fn print_dependency_trace(trace: &DependencyTrace, format: &OutputFormat) {
 }
 
 /// Print clone trace results.
-pub fn print_clone_trace(trace: &CloneTrace, root: &Path, format: &OutputFormat) {
+pub fn print_clone_trace(trace: &CloneTrace, root: &Path, format: OutputFormat) {
     match format {
         OutputFormat::Json => json::print_trace_json(trace),
         _ => human::print_clone_trace_human(trace, root),
@@ -270,7 +270,7 @@ pub fn print_clone_trace(trace: &CloneTrace, root: &Path, format: &OutputFormat)
 
 /// Print pipeline performance timings.
 /// In JSON mode, outputs to stderr to avoid polluting the JSON analysis output on stdout.
-pub fn print_performance(timings: &PipelineTimings, format: &OutputFormat) {
+pub fn print_performance(timings: &PipelineTimings, format: OutputFormat) {
     match format {
         OutputFormat::Json => match serde_json::to_string_pretty(timings) {
             Ok(json) => eprintln!("{json}"),

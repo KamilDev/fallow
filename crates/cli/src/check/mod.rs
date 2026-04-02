@@ -150,7 +150,7 @@ pub fn execute_check(opts: &CheckOptions<'_>) -> Result<CheckResult, ExitCode> {
     let config = load_config(
         opts.root,
         opts.config_path,
-        opts.output.clone(),
+        opts.output,
         opts.no_cache,
         opts.threads,
         opts.production,
@@ -162,7 +162,7 @@ pub fn execute_check(opts: &CheckOptions<'_>) -> Result<CheckResult, ExitCode> {
         Some(filtering::resolve_workspace_filter(
             opts.root,
             ws_name,
-            &opts.output,
+            opts.output,
         )?)
     } else {
         None
@@ -183,14 +183,14 @@ pub fn execute_check(opts: &CheckOptions<'_>) -> Result<CheckResult, ExitCode> {
                 trace_output.timings,
             ),
             Err(e) => {
-                return Err(emit_error(&format!("Analysis error: {e}"), 2, &opts.output));
+                return Err(emit_error(&format!("Analysis error: {e}"), 2, opts.output));
             }
         }
     } else {
         match fallow_core::analyze(&config) {
             Ok(r) => (r, None, None),
             Err(e) => {
-                return Err(emit_error(&format!("Analysis error: {e}"), 2, &opts.output));
+                return Err(emit_error(&format!("Analysis error: {e}"), 2, opts.output));
             }
         }
     };
@@ -200,13 +200,13 @@ pub fn execute_check(opts: &CheckOptions<'_>) -> Result<CheckResult, ExitCode> {
     if let Some(ref timings) = trace_timings
         && opts.trace_opts.performance
     {
-        report::print_performance(timings, &config.output);
+        report::print_performance(timings, config.output);
     }
 
     // Trace early-return
     if let Some(ref graph) = trace_graph
         && let Some(code) =
-            output::handle_trace_output(graph, opts.trace_opts, &config.root, &config.output)
+            output::handle_trace_output(graph, opts.trace_opts, &config.root, config.output)
     {
         return Err(code);
     }
@@ -318,7 +318,7 @@ pub fn print_check_result(
     let report_code = report::print_results(
         &result.results,
         &ctx,
-        &result.config.output,
+        result.config.output,
         if regression_json {
             result.regression.as_ref()
         } else {

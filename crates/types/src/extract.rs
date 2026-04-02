@@ -189,7 +189,7 @@ pub struct MemberInfo {
 /// assert_ne!(kind, MemberKind::ClassMethod);
 /// assert_ne!(MemberKind::ClassMethod, MemberKind::ClassProperty);
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, bincode::Encode, bincode::Decode)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, bincode::Encode, bincode::Decode)]
 #[serde(rename_all = "snake_case")]
 pub enum MemberKind {
     /// A TypeScript enum member.

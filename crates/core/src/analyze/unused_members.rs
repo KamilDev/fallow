@@ -171,7 +171,7 @@ pub fn find_unused_members(
                     path: module.path.clone(),
                     parent_name: export_name.clone(),
                     member_name: member.name.clone(),
-                    kind: member.kind.clone(),
+                    kind: member.kind,
                     line,
                     col,
                 };

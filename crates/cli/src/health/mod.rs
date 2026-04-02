@@ -62,7 +62,7 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
     let config = load_config(
         opts.root,
         opts.config_path,
-        opts.output.clone(),
+        opts.output,
         opts.no_cache,
         opts.threads,
         opts.production,
@@ -87,7 +87,7 @@ pub fn execute_health(opts: &HealthOptions<'_>) -> Result<HealthResult, ExitCode
         .changed_since
         .and_then(|git_ref| get_changed_files(opts.root, git_ref));
     let ws_root = if let Some(ws_name) = opts.workspace {
-        Some(resolve_workspace_filter(opts.root, ws_name, &opts.output)?)
+        Some(resolve_workspace_filter(opts.root, ws_name, opts.output)?)
     } else {
         None
     };
@@ -637,7 +637,7 @@ pub fn print_health_result(
         quiet,
         explain,
     };
-    let report_code = report::print_health_report(&result.report, &ctx, &result.config.output);
+    let report_code = report::print_health_report(&result.report, &ctx, result.config.output);
     if report_code != ExitCode::SUCCESS {
         return report_code;
     }

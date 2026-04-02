@@ -16,7 +16,7 @@ pub(super) fn handle_trace_output(
     graph: &ModuleGraph,
     trace_opts: &TraceOptions,
     root: &std::path::Path,
-    output: &OutputFormat,
+    output: OutputFormat,
 ) -> Option<ExitCode> {
     if let Some(ref trace_spec) = trace_opts.trace_export {
         let Some((file_path, export_name)) = parse_trace_spec(trace_spec) else {
@@ -117,7 +117,7 @@ pub fn run_cross_reference(
     let cross_ref = fallow_core::cross_reference::cross_reference(&dupe_report, unfiltered_results);
 
     if cross_ref.has_findings() {
-        report::print_cross_reference_findings(&cross_ref, &config.root, quiet, &config.output);
+        report::print_cross_reference_findings(&cross_ref, &config.root, quiet, config.output);
     }
 }
 

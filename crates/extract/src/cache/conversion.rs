@@ -1,4 +1,11 @@
 //! Conversion between [`ModuleInfo`](crate::ModuleInfo) and [`CachedModule`].
+//!
+//! Both functions convert between borrowed source structs and owned target structs
+//! (`&CachedModule -> ModuleInfo`, `&ModuleInfo -> CachedModule`). All `String` clones
+//! are structurally necessary: the cache store retains ownership of `CachedModule`
+//! entries (for persistence), and `ModuleInfo` must outlive the cache for the
+//! analysis pipeline. Eliminating these clones would require shared ownership
+//! (`Arc<str>`) across the entire extraction + analysis pipeline.
 
 use oxc_span::Span;
 
@@ -39,7 +46,7 @@ pub fn cached_to_module(
                 .iter()
                 .map(|m| MemberInfo {
                     name: m.name.clone(),
-                    kind: m.kind.clone(),
+                    kind: m.kind,
                     span: Span::new(m.span_start, m.span_end),
                     has_decorator: m.has_decorator,
                 })
@@ -175,7 +182,7 @@ pub fn module_to_cached(
                     .iter()
                     .map(|m| CachedMember {
                         name: m.name.clone(),
-                        kind: m.kind.clone(),
+                        kind: m.kind,
                         span_start: m.span.start,
                         span_end: m.span.end,
                         has_decorator: m.has_decorator,

@@ -9,7 +9,7 @@ pub(in crate::report) fn print_cross_reference_findings(
     cross_ref: &fallow_core::cross_reference::CrossReferenceResult,
     root: &Path,
     quiet: bool,
-    output: &OutputFormat,
+    output: OutputFormat,
 ) {
     if cross_ref.combined_findings.is_empty() {
         return;

@@ -1,7 +1,7 @@
 /// Output format for results.
 ///
 /// This is CLI-only (via `--format` flag), not stored in config files.
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Copy)]
 pub enum OutputFormat {
     /// Human-readable terminal output with source context.
     #[default]
@@ -65,10 +65,11 @@ mod tests {
     }
 
     #[test]
-    fn output_format_clone() {
+    fn output_format_copy() {
         let original = OutputFormat::Json;
-        #[expect(clippy::redundant_clone, reason = "testing Clone impl works")]
-        let cloned = original.clone();
-        assert!(matches!(cloned, OutputFormat::Json));
+        let copied = original;
+        assert!(matches!(copied, OutputFormat::Json));
+        // Original still usable (Copy)
+        assert!(matches!(original, OutputFormat::Json));
     }
 }

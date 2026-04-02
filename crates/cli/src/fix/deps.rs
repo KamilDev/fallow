@@ -9,7 +9,7 @@ use super::io::atomic_write;
 pub(super) fn apply_dependency_fixes(
     root: &Path,
     results: &fallow_core::results::AnalysisResults,
-    output: &OutputFormat,
+    output: OutputFormat,
     dry_run: bool,
     fixes: &mut Vec<serde_json::Value>,
 ) -> bool {
@@ -127,7 +127,7 @@ mod tests {
             });
 
         let mut fixes = Vec::new();
-        apply_dependency_fixes(root, &results, &OutputFormat::Json, true, &mut fixes);
+        apply_dependency_fixes(root, &results, OutputFormat::Json, true, &mut fixes);
 
         // package.json should not change
         assert_eq!(std::fs::read_to_string(&pkg_path).unwrap(), original);
@@ -159,7 +159,7 @@ mod tests {
 
         let mut fixes = Vec::new();
         let had_error =
-            apply_dependency_fixes(root, &results, &OutputFormat::Human, false, &mut fixes);
+            apply_dependency_fixes(root, &results, OutputFormat::Human, false, &mut fixes);
 
         assert!(!had_error);
         let content = std::fs::read_to_string(&pkg_path).unwrap();
@@ -176,7 +176,7 @@ mod tests {
         let results = fallow_core::results::AnalysisResults::default();
         let mut fixes = Vec::new();
         let had_error =
-            apply_dependency_fixes(root, &results, &OutputFormat::Human, false, &mut fixes);
+            apply_dependency_fixes(root, &results, OutputFormat::Human, false, &mut fixes);
         assert!(!had_error);
         assert!(fixes.is_empty());
     }
@@ -204,7 +204,7 @@ mod tests {
 
         let mut fixes = Vec::new();
         let had_error =
-            apply_dependency_fixes(root, &results, &OutputFormat::Human, false, &mut fixes);
+            apply_dependency_fixes(root, &results, OutputFormat::Human, false, &mut fixes);
 
         assert!(!had_error);
         let content = std::fs::read_to_string(&pkg_path).unwrap();
@@ -240,7 +240,7 @@ mod tests {
 
         let mut fixes = Vec::new();
         let had_error =
-            apply_dependency_fixes(root, &results, &OutputFormat::Human, false, &mut fixes);
+            apply_dependency_fixes(root, &results, OutputFormat::Human, false, &mut fixes);
 
         assert!(!had_error);
         let content = std::fs::read_to_string(&pkg_path).unwrap();
@@ -281,7 +281,7 @@ mod tests {
 
         let mut fixes = Vec::new();
         let had_error =
-            apply_dependency_fixes(root, &results, &OutputFormat::Human, false, &mut fixes);
+            apply_dependency_fixes(root, &results, OutputFormat::Human, false, &mut fixes);
 
         assert!(!had_error);
         let content = std::fs::read_to_string(&pkg_path).unwrap();
@@ -312,7 +312,7 @@ mod tests {
 
         let mut fixes = Vec::new();
         let had_error =
-            apply_dependency_fixes(root, &results, &OutputFormat::Human, false, &mut fixes);
+            apply_dependency_fixes(root, &results, OutputFormat::Human, false, &mut fixes);
 
         assert!(!had_error);
         let content = std::fs::read_to_string(&pkg_path).unwrap();
@@ -341,7 +341,7 @@ mod tests {
 
         let mut fixes = Vec::new();
         let had_error =
-            apply_dependency_fixes(root, &results, &OutputFormat::Human, false, &mut fixes);
+            apply_dependency_fixes(root, &results, OutputFormat::Human, false, &mut fixes);
 
         assert!(!had_error);
         // No fix was applied (dep not found)
@@ -367,7 +367,7 @@ mod tests {
             });
 
         let mut fixes = Vec::new();
-        apply_dependency_fixes(root, &results, &OutputFormat::Human, true, &mut fixes);
+        apply_dependency_fixes(root, &results, OutputFormat::Human, true, &mut fixes);
 
         // File should not be modified
         assert_eq!(std::fs::read_to_string(&pkg_path).unwrap(), original);
@@ -394,7 +394,7 @@ mod tests {
 
         let mut fixes = Vec::new();
         let had_error =
-            apply_dependency_fixes(root, &results, &OutputFormat::Human, false, &mut fixes);
+            apply_dependency_fixes(root, &results, OutputFormat::Human, false, &mut fixes);
 
         // Invalid JSON: the let-chain fails, so this path is just skipped
         assert!(!had_error);
@@ -419,7 +419,7 @@ mod tests {
 
         let mut fixes = Vec::new();
         let had_error =
-            apply_dependency_fixes(root, &results, &OutputFormat::Human, false, &mut fixes);
+            apply_dependency_fixes(root, &results, OutputFormat::Human, false, &mut fixes);
 
         assert!(!had_error);
         assert!(fixes.is_empty());
@@ -445,7 +445,7 @@ mod tests {
 
         let mut fixes = Vec::new();
         let had_error =
-            apply_dependency_fixes(root, &results, &OutputFormat::Human, false, &mut fixes);
+            apply_dependency_fixes(root, &results, OutputFormat::Human, false, &mut fixes);
 
         assert!(!had_error);
         // No dependencies section -> no fix
@@ -474,7 +474,7 @@ mod tests {
             });
 
         let mut fixes = Vec::new();
-        apply_dependency_fixes(root, &results, &OutputFormat::Human, false, &mut fixes);
+        apply_dependency_fixes(root, &results, OutputFormat::Human, false, &mut fixes);
 
         let content = std::fs::read_to_string(&pkg_path).unwrap();
         assert!(content.ends_with('\n'), "output should end with newline");

@@ -9,7 +9,7 @@ use crate::check::get_changed_files;
 use crate::report;
 use crate::{emit_error, load_config};
 
-#[derive(Clone, clap::ValueEnum)]
+#[derive(Clone, Copy, clap::ValueEnum)]
 pub enum DupesMode {
     Strict,
     Mild,
@@ -114,7 +114,7 @@ pub fn execute_dupes(opts: &DupesOptions<'_>) -> Result<DupesResult, ExitCode> {
     let config = load_config(
         opts.root,
         opts.config_path,
-        opts.output.clone(),
+        opts.output,
         opts.no_cache,
         opts.threads,
         opts.production,
@@ -129,17 +129,17 @@ pub fn execute_dupes(opts: &DupesOptions<'_>) -> Result<DupesResult, ExitCode> {
     if let Some(trace_spec) = opts.trace {
         let (file_path, line) = match parse_trace_spec(trace_spec) {
             Ok(parsed) => parsed,
-            Err(msg) => return Err(emit_error(msg, 2, &opts.output)),
+            Err(msg) => return Err(emit_error(msg, 2, opts.output)),
         };
         let trace_result = fallow_core::trace::trace_clone(&report, &config.root, file_path, line);
         if trace_result.matched_instance.is_none() {
             return Err(emit_error(
                 &format!("no clone found at {file_path}:{line}"),
                 2,
-                &opts.output,
+                opts.output,
             ));
         }
-        crate::report::print_clone_trace(&trace_result, &config.root, &opts.output);
+        crate::report::print_clone_trace(&trace_result, &config.root, opts.output);
         return Err(ExitCode::SUCCESS);
     }
 
@@ -152,7 +152,7 @@ pub fn execute_dupes(opts: &DupesOptions<'_>) -> Result<DupesResult, ExitCode> {
                     return Err(emit_error(
                         &format!("failed to write duplication baseline: {e}"),
                         2,
-                        &opts.output,
+                        opts.output,
                     ));
                 }
                 if !opts.quiet {
@@ -163,7 +163,7 @@ pub fn execute_dupes(opts: &DupesOptions<'_>) -> Result<DupesResult, ExitCode> {
                 return Err(emit_error(
                     &format!("failed to serialize duplication baseline: {e}"),
                     2,
-                    &opts.output,
+                    opts.output,
                 ));
             }
         }
@@ -180,7 +180,7 @@ pub fn execute_dupes(opts: &DupesOptions<'_>) -> Result<DupesResult, ExitCode> {
                     return Err(emit_error(
                         &format!("failed to parse duplication baseline: {e}"),
                         2,
-                        &opts.output,
+                        opts.output,
                     ));
                 }
             },
@@ -188,7 +188,7 @@ pub fn execute_dupes(opts: &DupesOptions<'_>) -> Result<DupesResult, ExitCode> {
                 return Err(emit_error(
                     &format!("failed to read duplication baseline: {e}"),
                     2,
-                    &opts.output,
+                    opts.output,
                 ));
             }
         }
@@ -229,7 +229,7 @@ pub fn print_dupes_result(result: &DupesResult, quiet: bool, explain: bool) -> E
         quiet,
         explain,
     };
-    let report_code = report::print_duplication_report(&result.report, &ctx, &result.config.output);
+    let report_code = report::print_duplication_report(&result.report, &ctx, result.config.output);
     if report_code != ExitCode::SUCCESS {
         return report_code;
     }

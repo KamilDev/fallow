@@ -21,7 +21,7 @@ pub(super) struct EnumMemberFix {
 pub(super) fn apply_enum_member_fixes(
     root: &Path,
     members_by_file: &FxHashMap<PathBuf, Vec<&fallow_core::results::UnusedMember>>,
-    output: &OutputFormat,
+    output: OutputFormat,
     dry_run: bool,
     fixes: &mut Vec<serde_json::Value>,
 ) -> bool {
@@ -243,7 +243,7 @@ mod tests {
         let had_error = apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -278,7 +278,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -304,7 +304,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -333,7 +333,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -360,7 +360,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -384,7 +384,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -412,7 +412,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -434,13 +434,7 @@ mod tests {
         members_by_file.insert(file.clone(), vec![&member]);
 
         let mut fixes = Vec::new();
-        apply_enum_member_fixes(
-            root,
-            &members_by_file,
-            &OutputFormat::Json,
-            true,
-            &mut fixes,
-        );
+        apply_enum_member_fixes(root, &members_by_file, OutputFormat::Json, true, &mut fixes);
 
         assert_eq!(std::fs::read_to_string(&file).unwrap(), original);
         assert_eq!(fixes.len(), 1);
@@ -468,7 +462,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -499,7 +493,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -528,7 +522,7 @@ mod tests {
         apply_enum_member_fixes(
             &root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -554,7 +548,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -579,7 +573,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -604,7 +598,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -632,7 +626,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -696,7 +690,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -730,7 +724,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -753,7 +747,7 @@ mod tests {
         let had_error = apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -781,7 +775,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -831,7 +825,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -856,7 +850,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             true,
             &mut fixes,
         );
@@ -883,7 +877,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -913,7 +907,7 @@ mod tests {
         apply_enum_member_fixes(
             root,
             &members_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );

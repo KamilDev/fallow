@@ -424,7 +424,7 @@ enum Command {
     },
 }
 
-#[derive(Clone, clap::ValueEnum)]
+#[derive(Clone, Copy, clap::ValueEnum)]
 enum Format {
     Human,
     Json,
@@ -463,7 +463,7 @@ pub enum AnalysisKind {
 
 /// Emit an error as structured JSON on stdout when `--format json` is active,
 /// then return the given exit code. For non-JSON formats, emit to stderr as usual.
-fn emit_error(message: &str, exit_code: u8, output: &fallow_config::OutputFormat) -> ExitCode {
+fn emit_error(message: &str, exit_code: u8, output: fallow_config::OutputFormat) -> ExitCode {
     if matches!(output, fallow_config::OutputFormat::Json) {
         let error_obj = serde_json::json!({
             "error": true,
@@ -521,14 +521,14 @@ fn load_config(
             Ok(c) => Some(c),
             Err(e) => {
                 let msg = format!("failed to load config '{}': {e}", path.display());
-                return Err(emit_error(&msg, 2, &output));
+                return Err(emit_error(&msg, 2, output));
             }
         }
     } else {
         match FallowConfig::find_and_load(root) {
             Ok(found) => found.map(|(c, _)| c),
             Err(e) => {
-                return Err(emit_error(&e, 2, &output));
+                return Err(emit_error(&e, 2, output));
             }
         }
     };
@@ -564,9 +564,9 @@ fn resolve_format(cli: &Cli) -> FormatConfig {
     let cli_format_was_explicit = std::env::args()
         .any(|a| a == "--format" || a == "--output" || a.starts_with("--format=") || a == "-f");
     let format: Format = if cli_format_was_explicit {
-        cli.format.clone()
+        cli.format
     } else {
-        format_from_env().unwrap_or_else(|| cli.format.clone())
+        format_from_env().unwrap_or(cli.format)
     };
 
     // Resolve quiet: CLI --quiet flag > FALLOW_QUIET env var > false
@@ -609,7 +609,7 @@ fn setup_tracing(quiet: bool, is_watch: bool) {
 
 fn validate_inputs(
     cli: &Cli,
-    output: &fallow_config::OutputFormat,
+    output: fallow_config::OutputFormat,
 ) -> Result<(PathBuf, usize), ExitCode> {
     // Validate control characters in key string inputs
     if let Some(ref config_path) = cli.config
@@ -738,7 +738,7 @@ fn main() -> ExitCode {
         matches!(cli.command, Some(Command::Watch { .. })),
     );
 
-    let (root, threads) = match validate_inputs(&cli, &fmt.output) {
+    let (root, threads) = match validate_inputs(&cli, fmt.output) {
         Ok(v) => v,
         Err(code) => return code,
     };
@@ -766,7 +766,7 @@ fn main() -> ExitCode {
         return emit_error(
             "--ci, --fail-on-issues, and --sarif-file are only valid with dead-code, dupes, health, or bare invocation",
             2,
-            &output,
+            output,
         );
     }
 
@@ -775,17 +775,17 @@ fn main() -> ExitCode {
         return emit_error(
             "--only and --skip can only be used without a subcommand",
             2,
-            &output,
+            output,
         );
     }
     if !cli.only.is_empty() && !cli.skip.is_empty() {
-        return emit_error("--only and --skip are mutually exclusive", 2, &output);
+        return emit_error("--only and --skip are mutually exclusive", 2, output);
     }
 
     // Parse regression tolerance
     let tolerance = match regression::Tolerance::parse(&cli.tolerance) {
         Ok(t) => t,
-        Err(e) => return emit_error(&format!("invalid --tolerance: {e}"), 2, &output),
+        Err(e) => return emit_error(&format!("invalid --tolerance: {e}"), 2, output),
     };
 
     // Resolve save-regression-baseline target
@@ -1202,7 +1202,7 @@ mod tests {
 
     #[test]
     fn emit_error_returns_given_exit_code() {
-        let code = emit_error("test error", 2, &fallow_config::OutputFormat::Human);
+        let code = emit_error("test error", 2, fallow_config::OutputFormat::Human);
         assert_eq!(code, ExitCode::from(2));
     }
 

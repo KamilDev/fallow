@@ -66,7 +66,7 @@ pub fn filter_to_workspace(
 pub fn resolve_workspace_filter(
     root: &std::path::Path,
     workspace_name: &str,
-    output: &OutputFormat,
+    output: OutputFormat,
 ) -> Result<std::path::PathBuf, ExitCode> {
     let workspaces = discover_workspaces(root);
     if workspaces.is_empty() {

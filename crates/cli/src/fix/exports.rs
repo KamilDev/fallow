@@ -14,7 +14,7 @@ pub(super) struct ExportFix {
 pub(super) fn apply_export_fixes(
     root: &Path,
     exports_by_file: &FxHashMap<PathBuf, Vec<&fallow_core::results::UnusedExport>>,
-    output: &OutputFormat,
+    output: OutputFormat,
     dry_run: bool,
     fixes: &mut Vec<serde_json::Value>,
 ) -> bool {
@@ -180,13 +180,7 @@ mod tests {
         exports_by_file.insert(file.clone(), vec![&export]);
 
         let mut fixes = Vec::new();
-        apply_export_fixes(
-            root,
-            &exports_by_file,
-            &OutputFormat::Json,
-            true,
-            &mut fixes,
-        );
+        apply_export_fixes(root, &exports_by_file, OutputFormat::Json, true, &mut fixes);
 
         // File should not be modified
         assert_eq!(std::fs::read_to_string(&file).unwrap(), original);
@@ -212,7 +206,7 @@ mod tests {
         let had_error = apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -239,7 +233,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -263,7 +257,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -287,7 +281,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -311,7 +305,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -336,7 +330,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -361,7 +355,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -389,7 +383,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -415,7 +409,7 @@ mod tests {
         apply_export_fixes(
             &root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -441,7 +435,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -470,7 +464,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -499,7 +493,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -525,7 +519,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -549,7 +543,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -573,7 +567,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -597,7 +591,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -621,7 +615,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -647,7 +641,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -673,7 +667,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -702,7 +696,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -726,7 +720,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -752,7 +746,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             true,
             &mut fixes,
         );
@@ -781,7 +775,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -804,7 +798,7 @@ mod tests {
         let had_error = apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );
@@ -829,7 +823,7 @@ mod tests {
         apply_export_fixes(
             root,
             &exports_by_file,
-            &OutputFormat::Human,
+            OutputFormat::Human,
             false,
             &mut fixes,
         );

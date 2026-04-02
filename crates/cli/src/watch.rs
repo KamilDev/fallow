@@ -108,7 +108,7 @@ fn analyze_and_report(config: &fallow_config::ResolvedConfig, opts: &WatchOption
         quiet: opts.quiet,
         explain: opts.explain,
     };
-    let report_code = report::print_results(&results, &ctx, &config.output, None);
+    let report_code = report::print_results(&results, &ctx, config.output, None);
     if report_code != ExitCode::SUCCESS {
         eprintln!("Warning: report output failed");
     }
@@ -123,7 +123,7 @@ fn reload_config_or_keep_previous(
     match load(
         opts.root,
         opts.config_path,
-        opts.output.clone(),
+        opts.output,
         opts.no_cache,
         opts.threads,
         opts.production,
@@ -145,7 +145,7 @@ pub fn run_watch(opts: &WatchOptions<'_>) -> ExitCode {
     let mut config = match load_config(
         opts.root,
         opts.config_path,
-        opts.output.clone(),
+        opts.output,
         opts.no_cache,
         opts.threads,
         opts.production,

@@ -208,7 +208,7 @@ pub fn execute_audit(opts: &AuditOptions<'_>) -> Result<AuditResult, ExitCode> {
                 "could not determine changed files for base ref '{base_ref}'. Verify the ref exists in this git repository"
             ),
             2,
-            &opts.output,
+            opts.output,
         ));
     };
     let changed_files_count = changed_files.len();
@@ -241,7 +241,7 @@ pub fn execute_audit(opts: &AuditOptions<'_>) -> Result<AuditResult, ExitCode> {
         changed_files_count,
         base_ref,
         head_sha: get_head_sha(opts.root),
-        output: opts.output.clone(),
+        output: opts.output,
         check: check_result,
         dupes: dupes_result,
         health: health_result,
@@ -258,7 +258,7 @@ fn resolve_base_ref(opts: &AuditOptions<'_>) -> Result<String, ExitCode> {
         return Err(emit_error(
             "could not detect base branch. Use --base <ref> to specify the comparison target (e.g., --base main)",
             2,
-            &opts.output,
+            opts.output,
         ));
     };
     // Validate auto-detected branch name (explicit --changed-since is validated in main.rs)
@@ -266,7 +266,7 @@ fn resolve_base_ref(opts: &AuditOptions<'_>) -> Result<String, ExitCode> {
         return Err(emit_error(
             &format!("auto-detected base branch '{branch}' is not a valid git ref: {e}"),
             2,
-            &opts.output,
+            opts.output,
         ));
     }
     Ok(branch)
@@ -286,7 +286,7 @@ fn empty_audit_result(base_ref: String, opts: &AuditOptions<'_>, elapsed: Durati
         changed_files_count: 0,
         base_ref,
         head_sha: get_head_sha(opts.root),
-        output: opts.output.clone(),
+        output: opts.output,
         check: None,
         dupes: None,
         health: None,
@@ -309,7 +309,7 @@ fn run_audit_check<'a>(
     match crate::check::execute_check(&CheckOptions {
         root: opts.root,
         config_path: opts.config_path,
-        output: opts.output.clone(),
+        output: opts.output,
         no_cache: opts.no_cache,
         threads: opts.threads,
         quiet: opts.quiet,
@@ -346,7 +346,7 @@ fn run_audit_dupes<'a>(
     match crate::dupes::execute_dupes(&DupesOptions {
         root: opts.root,
         config_path: opts.config_path,
-        output: opts.output.clone(),
+        output: opts.output,
         no_cache: opts.no_cache,
         threads: opts.threads,
         quiet: opts.quiet,
@@ -377,7 +377,7 @@ fn run_audit_health<'a>(
     match crate::health::execute_health(&HealthOptions {
         root: opts.root,
         config_path: opts.config_path,
-        output: opts.output.clone(),
+        output: opts.output,
         no_cache: opts.no_cache,
         threads: opts.threads,
         quiet: opts.quiet,
@@ -412,9 +412,9 @@ fn run_audit_health<'a>(
 /// Print audit results and return the appropriate exit code.
 #[must_use]
 pub fn print_audit_result(result: &AuditResult, quiet: bool, explain: bool) -> ExitCode {
-    let output = &result.output;
+    let output = result.output;
 
-    let format_exit = match *output {
+    let format_exit = match output {
         OutputFormat::Json => print_audit_json(result),
         OutputFormat::Human | OutputFormat::Compact | OutputFormat::Markdown => {
             print_audit_human(result, quiet, explain, output);
@@ -440,7 +440,7 @@ pub fn print_audit_result(result: &AuditResult, quiet: bool, explain: bool) -> E
 
 // ── Human format ─────────────────────────────────────────────────
 
-fn print_audit_human(result: &AuditResult, quiet: bool, explain: bool, output: &OutputFormat) {
+fn print_audit_human(result: &AuditResult, quiet: bool, explain: bool, output: OutputFormat) {
     let show_headers = matches!(output, OutputFormat::Human) && !quiet;
 
     // Scope line (stderr)
@@ -635,7 +635,7 @@ fn print_audit_json(result: &AuditResult) -> ExitCode {
                 return emit_error(
                     &format!("JSON serialization error: {e}"),
                     2,
-                    &OutputFormat::Json,
+                    OutputFormat::Json,
                 );
             }
         }
@@ -650,7 +650,7 @@ fn print_audit_json(result: &AuditResult) -> ExitCode {
                 return emit_error(
                     &format!("JSON serialization error: {e}"),
                     2,
-                    &OutputFormat::Json,
+                    OutputFormat::Json,
                 );
             }
         }
@@ -665,7 +665,7 @@ fn print_audit_json(result: &AuditResult) -> ExitCode {
                 return emit_error(
                     &format!("JSON serialization error: {e}"),
                     2,
-                    &OutputFormat::Json,
+                    OutputFormat::Json,
                 );
             }
         }
