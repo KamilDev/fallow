@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775027614673,
+  "lastUpdate": 1775113554935,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Conformance": [
@@ -356,6 +356,73 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/636fe4f18d157410ed9f8ef8ff5d9257a0524a7b"
         },
         "date": 1775027613528,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Agreement Rate",
+            "value": 1.8,
+            "unit": "%"
+          },
+          {
+            "name": "Agreed Issues",
+            "value": 147,
+            "unit": "issues"
+          },
+          {
+            "name": "Fallow Total",
+            "value": 7426,
+            "unit": "issues"
+          },
+          {
+            "name": "Knip Total",
+            "value": 670,
+            "unit": "issues"
+          },
+          {
+            "name": "fastify Agreement",
+            "value": 3,
+            "unit": "%"
+          },
+          {
+            "name": "preact Agreement",
+            "value": 3.4,
+            "unit": "%"
+          },
+          {
+            "name": "query Agreement",
+            "value": 0,
+            "unit": "%"
+          },
+          {
+            "name": "svelte Agreement",
+            "value": 0.3,
+            "unit": "%"
+          },
+          {
+            "name": "zod Agreement",
+            "value": 9.1,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "committer": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "id": "b03d6253eba68e7e62a047a2f085fffd31251e56",
+          "message": "docs: add boundary preset example to README",
+          "timestamp": "2026-04-01T18:53:39Z",
+          "url": "https://github.com/fallow-rs/fallow/commit/b03d6253eba68e7e62a047a2f085fffd31251e56"
+        },
+        "date": 1775113554171,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
