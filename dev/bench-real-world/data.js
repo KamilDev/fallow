@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775031780069,
+  "lastUpdate": 1775117685302,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Real-World Benchmarks": [
@@ -611,6 +611,108 @@ window.BENCHMARK_DATA = {
           {
             "name": "next.js (warm)",
             "value": 1445,
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "committer": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "id": "181f611ec3433b99dada91ea4aa26885e18b54ad",
+          "message": "refactor: use Display for EntryPointSource and relative paths in list output\n\nAdd Display impl for EntryPointSource with human-readable strings\n(e.g. \"package.json main\" instead of \"PackageJsonMain\"). Switch list\ncommand human output to relative paths and Display formatting.",
+          "timestamp": "2026-04-02T07:42:06Z",
+          "url": "https://github.com/fallow-rs/fallow/commit/181f611ec3433b99dada91ea4aa26885e18b54ad"
+        },
+        "date": 1775117684097,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "preact (cold)",
+            "value": 39,
+            "unit": "ms"
+          },
+          {
+            "name": "preact (warm)",
+            "value": 33,
+            "unit": "ms"
+          },
+          {
+            "name": "fastify (cold)",
+            "value": 51,
+            "unit": "ms"
+          },
+          {
+            "name": "fastify (warm)",
+            "value": 41,
+            "unit": "ms"
+          },
+          {
+            "name": "zod (cold)",
+            "value": 43,
+            "unit": "ms"
+          },
+          {
+            "name": "zod (warm)",
+            "value": 42,
+            "unit": "ms"
+          },
+          {
+            "name": "vue-core (cold)",
+            "value": 112,
+            "unit": "ms"
+          },
+          {
+            "name": "vue-core (warm)",
+            "value": 101,
+            "unit": "ms"
+          },
+          {
+            "name": "svelte (cold)",
+            "value": 461,
+            "unit": "ms"
+          },
+          {
+            "name": "svelte (warm)",
+            "value": 433,
+            "unit": "ms"
+          },
+          {
+            "name": "query (cold)",
+            "value": 334,
+            "unit": "ms"
+          },
+          {
+            "name": "query (warm)",
+            "value": 320,
+            "unit": "ms"
+          },
+          {
+            "name": "vite (cold)",
+            "value": 222,
+            "unit": "ms"
+          },
+          {
+            "name": "vite (warm)",
+            "value": 213,
+            "unit": "ms"
+          },
+          {
+            "name": "next.js (cold)",
+            "value": 1950,
+            "unit": "ms"
+          },
+          {
+            "name": "next.js (warm)",
+            "value": 1883,
             "unit": "ms"
           }
         ]
