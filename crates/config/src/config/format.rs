@@ -29,4 +29,46 @@ mod tests {
         let format = OutputFormat::default();
         assert!(matches!(format, OutputFormat::Human));
     }
+
+    #[test]
+    fn output_format_all_variants_constructible() {
+        // Verify all variants can be constructed and pattern-matched
+        assert!(matches!(OutputFormat::Human, OutputFormat::Human));
+        assert!(matches!(OutputFormat::Json, OutputFormat::Json));
+        assert!(matches!(OutputFormat::Sarif, OutputFormat::Sarif));
+        assert!(matches!(OutputFormat::Compact, OutputFormat::Compact));
+        assert!(matches!(OutputFormat::Markdown, OutputFormat::Markdown));
+        assert!(matches!(
+            OutputFormat::CodeClimate,
+            OutputFormat::CodeClimate
+        ));
+        assert!(matches!(OutputFormat::Badge, OutputFormat::Badge));
+    }
+
+    #[test]
+    fn output_format_debug_impl() {
+        // Verify Debug is derived and produces reasonable output
+        let human = format!("{:?}", OutputFormat::Human);
+        assert_eq!(human, "Human");
+        let json = format!("{:?}", OutputFormat::Json);
+        assert_eq!(json, "Json");
+        let sarif = format!("{:?}", OutputFormat::Sarif);
+        assert_eq!(sarif, "Sarif");
+        let compact = format!("{:?}", OutputFormat::Compact);
+        assert_eq!(compact, "Compact");
+        let markdown = format!("{:?}", OutputFormat::Markdown);
+        assert_eq!(markdown, "Markdown");
+        let codeclimate = format!("{:?}", OutputFormat::CodeClimate);
+        assert_eq!(codeclimate, "CodeClimate");
+        let badge = format!("{:?}", OutputFormat::Badge);
+        assert_eq!(badge, "Badge");
+    }
+
+    #[test]
+    fn output_format_clone() {
+        let original = OutputFormat::Json;
+        #[expect(clippy::redundant_clone, reason = "testing Clone impl works")]
+        let cloned = original.clone();
+        assert!(matches!(cloned, OutputFormat::Json));
+    }
 }

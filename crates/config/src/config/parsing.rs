@@ -1201,4 +1201,290 @@ minTokens = 100
         let pkg: PackageJson = serde_json::from_str(r#"{"name": "test"}"#).unwrap();
         assert!(pkg.optional_dependency_names().is_empty());
     }
+
+    // ── find_config_path ────────────────────────────────────────────
+
+    #[test]
+    fn find_config_path_returns_fallowrc_json() {
+        let dir = test_dir("find-path-json");
+        std::fs::create_dir(dir.path().join(".git")).unwrap();
+        std::fs::write(
+            dir.path().join(".fallowrc.json"),
+            r#"{"entry": ["src/main.ts"]}"#,
+        )
+        .unwrap();
+
+        let path = FallowConfig::find_config_path(dir.path());
+        assert!(path.is_some());
+        assert!(path.unwrap().ends_with(".fallowrc.json"));
+    }
+
+    #[test]
+    fn find_config_path_returns_fallow_toml() {
+        let dir = test_dir("find-path-toml");
+        std::fs::create_dir(dir.path().join(".git")).unwrap();
+        std::fs::write(
+            dir.path().join("fallow.toml"),
+            "entry = [\"src/main.ts\"]\n",
+        )
+        .unwrap();
+
+        let path = FallowConfig::find_config_path(dir.path());
+        assert!(path.is_some());
+        assert!(path.unwrap().ends_with("fallow.toml"));
+    }
+
+    #[test]
+    fn find_config_path_returns_dot_fallow_toml() {
+        let dir = test_dir("find-path-dot-toml");
+        std::fs::create_dir(dir.path().join(".git")).unwrap();
+        std::fs::write(
+            dir.path().join(".fallow.toml"),
+            "entry = [\"src/main.ts\"]\n",
+        )
+        .unwrap();
+
+        let path = FallowConfig::find_config_path(dir.path());
+        assert!(path.is_some());
+        assert!(path.unwrap().ends_with(".fallow.toml"));
+    }
+
+    #[test]
+    fn find_config_path_prefers_json_over_toml() {
+        let dir = test_dir("find-path-priority");
+        std::fs::create_dir(dir.path().join(".git")).unwrap();
+        std::fs::write(
+            dir.path().join(".fallowrc.json"),
+            r#"{"entry": ["json.ts"]}"#,
+        )
+        .unwrap();
+        std::fs::write(dir.path().join("fallow.toml"), "entry = [\"toml.ts\"]\n").unwrap();
+
+        let path = FallowConfig::find_config_path(dir.path());
+        assert!(path.unwrap().ends_with(".fallowrc.json"));
+    }
+
+    #[test]
+    fn find_config_path_none_when_no_config() {
+        let dir = test_dir("find-path-none");
+        std::fs::create_dir(dir.path().join(".git")).unwrap();
+
+        let path = FallowConfig::find_config_path(dir.path());
+        assert!(path.is_none());
+    }
+
+    #[test]
+    fn find_config_path_stops_at_package_json() {
+        let dir = test_dir("find-path-pkg-stop");
+        std::fs::write(dir.path().join("package.json"), r#"{"name": "test"}"#).unwrap();
+
+        let path = FallowConfig::find_config_path(dir.path());
+        assert!(path.is_none());
+    }
+
+    // ── TOML extends support ────────────────────────────────────────
+
+    #[test]
+    fn extends_toml_base() {
+        let dir = test_dir("extends-toml");
+
+        std::fs::write(
+            dir.path().join("base.json"),
+            r#"{"rules": {"unused-files": "warn"}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join("fallow.toml"),
+            "extends = [\"base.json\"]\nentry = [\"src/index.ts\"]\n",
+        )
+        .unwrap();
+
+        let config = FallowConfig::load(&dir.path().join("fallow.toml")).unwrap();
+        assert_eq!(config.rules.unused_files, Severity::Warn);
+        assert_eq!(config.entry, vec!["src/index.ts"]);
+    }
+
+    // ── deep_merge_json edge cases ──────────────────────────────────
+
+    #[test]
+    fn deep_merge_boolean_overlay() {
+        let mut base = serde_json::json!(true);
+        deep_merge_json(&mut base, serde_json::json!(false));
+        assert_eq!(base, serde_json::json!(false));
+    }
+
+    #[test]
+    fn deep_merge_number_overlay() {
+        let mut base = serde_json::json!(42);
+        deep_merge_json(&mut base, serde_json::json!(99));
+        assert_eq!(base, serde_json::json!(99));
+    }
+
+    #[test]
+    fn deep_merge_disjoint_objects() {
+        let mut base = serde_json::json!({"a": 1});
+        let overlay = serde_json::json!({"b": 2});
+        deep_merge_json(&mut base, overlay);
+        assert_eq!(base, serde_json::json!({"a": 1, "b": 2}));
+    }
+
+    // ── MAX_EXTENDS_DEPTH constant ──────────────────────────────────
+
+    #[test]
+    fn max_extends_depth_is_reasonable() {
+        assert_eq!(MAX_EXTENDS_DEPTH, 10);
+    }
+
+    // ── Config names constant ───────────────────────────────────────
+
+    #[test]
+    fn config_names_has_three_entries() {
+        assert_eq!(CONFIG_NAMES.len(), 3);
+        // All names should start with "." or "fallow"
+        for name in CONFIG_NAMES {
+            assert!(
+                name.starts_with('.') || name.starts_with("fallow"),
+                "unexpected config name: {name}"
+            );
+        }
+    }
+
+    // ── package.json peer dependency names ───────────────────────────
+
+    #[test]
+    fn package_json_peer_dependency_names() {
+        let pkg: PackageJson = serde_json::from_str(
+            r#"{
+            "dependencies": {"react": "^18"},
+            "peerDependencies": {"react-dom": "^18", "react-native": "^0.72"}
+        }"#,
+        )
+        .unwrap();
+        let all = pkg.all_dependency_names();
+        assert!(all.contains(&"react".to_string()));
+        assert!(all.contains(&"react-dom".to_string()));
+        assert!(all.contains(&"react-native".to_string()));
+    }
+
+    // ── package.json scripts field ──────────────────────────────────
+
+    #[test]
+    fn package_json_scripts_field() {
+        let pkg: PackageJson = serde_json::from_str(
+            r#"{
+            "scripts": {
+                "build": "tsc",
+                "test": "vitest",
+                "lint": "fallow check"
+            }
+        }"#,
+        )
+        .unwrap();
+        let scripts = pkg.scripts.unwrap();
+        assert_eq!(scripts.len(), 3);
+        assert_eq!(scripts.get("build"), Some(&"tsc".to_string()));
+        assert_eq!(scripts.get("lint"), Some(&"fallow check".to_string()));
+    }
+
+    // ── Extends with TOML-to-TOML chain ─────────────────────────────
+
+    #[test]
+    fn extends_toml_chain() {
+        let dir = test_dir("extends-toml-chain");
+
+        std::fs::write(
+            dir.path().join("base.json"),
+            r#"{"entry": ["src/base.ts"]}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join("middle.json"),
+            r#"{"extends": ["base.json"], "rules": {"unused-files": "off"}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join("fallow.toml"),
+            "extends = [\"middle.json\"]\n",
+        )
+        .unwrap();
+
+        let config = FallowConfig::load(&dir.path().join("fallow.toml")).unwrap();
+        assert_eq!(config.entry, vec!["src/base.ts"]);
+        assert_eq!(config.rules.unused_files, Severity::Off);
+    }
+
+    // ── find_and_load walks up to parent ────────────────────────────
+
+    #[test]
+    fn find_and_load_walks_up_directories() {
+        let dir = test_dir("find-walk-up");
+        let sub = dir.path().join("src").join("deep");
+        std::fs::create_dir_all(&sub).unwrap();
+        std::fs::write(
+            dir.path().join(".fallowrc.json"),
+            r#"{"entry": ["src/main.ts"]}"#,
+        )
+        .unwrap();
+        // Create .git in root to stop search there
+        std::fs::create_dir(dir.path().join(".git")).unwrap();
+
+        let (config, path) = FallowConfig::find_and_load(&sub).unwrap().unwrap();
+        assert_eq!(config.entry, vec!["src/main.ts"]);
+        assert!(path.ends_with(".fallowrc.json"));
+    }
+
+    // ── JSON schema generation ──────────────────────────────────────
+
+    #[test]
+    fn json_schema_contains_entry_field() {
+        let schema = FallowConfig::json_schema();
+        let obj = schema.as_object().unwrap();
+        let props = obj.get("properties").and_then(|v| v.as_object());
+        assert!(props.is_some(), "schema should have properties");
+        assert!(
+            props.unwrap().contains_key("entry"),
+            "schema should contain entry property"
+        );
+    }
+
+    // ── Duplicates config via JSON in FallowConfig ──────────────────
+
+    #[test]
+    fn fallow_config_json_duplicates_all_fields() {
+        let json = r#"{
+            "duplicates": {
+                "enabled": true,
+                "mode": "semantic",
+                "minTokens": 200,
+                "minLines": 20,
+                "threshold": 10.5,
+                "ignore": ["**/*.test.ts"],
+                "skipLocal": true,
+                "crossLanguage": true,
+                "normalization": {
+                    "ignoreIdentifiers": true,
+                    "ignoreStringValues": false
+                }
+            }
+        }"#;
+        let config: FallowConfig = serde_json::from_str(json).unwrap();
+        assert!(config.duplicates.enabled);
+        assert_eq!(
+            config.duplicates.mode,
+            crate::config::DetectionMode::Semantic
+        );
+        assert_eq!(config.duplicates.min_tokens, 200);
+        assert_eq!(config.duplicates.min_lines, 20);
+        assert!((config.duplicates.threshold - 10.5).abs() < f64::EPSILON);
+        assert!(config.duplicates.skip_local);
+        assert!(config.duplicates.cross_language);
+        assert_eq!(
+            config.duplicates.normalization.ignore_identifiers,
+            Some(true)
+        );
+        assert_eq!(
+            config.duplicates.normalization.ignore_string_values,
+            Some(false)
+        );
+    }
 }

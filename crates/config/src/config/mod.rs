@@ -381,4 +381,205 @@ exports = ["*"]
             "extends field should be skipped in serialization"
         );
     }
+
+    // ── RegressionConfig / RegressionBaseline ──────────────────────
+
+    #[test]
+    fn regression_config_deserialize_json() {
+        let json = r#"{
+            "regression": {
+                "baseline": {
+                    "totalIssues": 42,
+                    "unusedFiles": 10,
+                    "unusedExports": 5,
+                    "circularDependencies": 2
+                }
+            }
+        }"#;
+        let config: FallowConfig = serde_json::from_str(json).unwrap();
+        let regression = config.regression.unwrap();
+        let baseline = regression.baseline.unwrap();
+        assert_eq!(baseline.total_issues, 42);
+        assert_eq!(baseline.unused_files, 10);
+        assert_eq!(baseline.unused_exports, 5);
+        assert_eq!(baseline.circular_dependencies, 2);
+        // Unset fields default to 0
+        assert_eq!(baseline.unused_types, 0);
+        assert_eq!(baseline.boundary_violations, 0);
+    }
+
+    #[test]
+    fn regression_config_defaults_to_none() {
+        let config: FallowConfig = serde_json::from_str("{}").unwrap();
+        assert!(config.regression.is_none());
+    }
+
+    #[test]
+    fn regression_baseline_all_zeros_by_default() {
+        let baseline = RegressionBaseline::default();
+        assert_eq!(baseline.total_issues, 0);
+        assert_eq!(baseline.unused_files, 0);
+        assert_eq!(baseline.unused_exports, 0);
+        assert_eq!(baseline.unused_types, 0);
+        assert_eq!(baseline.unused_dependencies, 0);
+        assert_eq!(baseline.unused_dev_dependencies, 0);
+        assert_eq!(baseline.unused_optional_dependencies, 0);
+        assert_eq!(baseline.unused_enum_members, 0);
+        assert_eq!(baseline.unused_class_members, 0);
+        assert_eq!(baseline.unresolved_imports, 0);
+        assert_eq!(baseline.unlisted_dependencies, 0);
+        assert_eq!(baseline.duplicate_exports, 0);
+        assert_eq!(baseline.circular_dependencies, 0);
+        assert_eq!(baseline.type_only_dependencies, 0);
+        assert_eq!(baseline.test_only_dependencies, 0);
+        assert_eq!(baseline.boundary_violations, 0);
+    }
+
+    #[test]
+    fn regression_config_serialize_roundtrip() {
+        let baseline = RegressionBaseline {
+            total_issues: 100,
+            unused_files: 20,
+            unused_exports: 30,
+            ..RegressionBaseline::default()
+        };
+        let regression = RegressionConfig {
+            baseline: Some(baseline),
+        };
+        let config = FallowConfig {
+            regression: Some(regression),
+            ..FallowConfig::default()
+        };
+        let json = serde_json::to_string(&config).unwrap();
+        let restored: FallowConfig = serde_json::from_str(&json).unwrap();
+        let restored_baseline = restored.regression.unwrap().baseline.unwrap();
+        assert_eq!(restored_baseline.total_issues, 100);
+        assert_eq!(restored_baseline.unused_files, 20);
+        assert_eq!(restored_baseline.unused_exports, 30);
+        assert_eq!(restored_baseline.unused_types, 0);
+    }
+
+    #[test]
+    fn regression_config_empty_baseline_deserialize() {
+        let json = r#"{"regression": {}}"#;
+        let config: FallowConfig = serde_json::from_str(json).unwrap();
+        let regression = config.regression.unwrap();
+        assert!(regression.baseline.is_none());
+    }
+
+    #[test]
+    fn regression_baseline_not_serialized_when_none() {
+        let config = FallowConfig {
+            regression: None,
+            ..FallowConfig::default()
+        };
+        let json = serde_json::to_string(&config).unwrap();
+        assert!(
+            !json.contains("regression"),
+            "regression should be skipped when None"
+        );
+    }
+
+    // ── JSON config with overrides and boundaries ──────────────────
+
+    #[test]
+    fn deserialize_json_with_overrides() {
+        let json = r#"{
+            "overrides": [
+                {
+                    "files": ["*.test.ts", "*.spec.ts"],
+                    "rules": {
+                        "unused-exports": "off",
+                        "unused-files": "warn"
+                    }
+                }
+            ]
+        }"#;
+        let config: FallowConfig = serde_json::from_str(json).unwrap();
+        assert_eq!(config.overrides.len(), 1);
+        assert_eq!(config.overrides[0].files.len(), 2);
+        assert_eq!(
+            config.overrides[0].rules.unused_exports,
+            Some(Severity::Off)
+        );
+        assert_eq!(config.overrides[0].rules.unused_files, Some(Severity::Warn));
+    }
+
+    #[test]
+    fn deserialize_json_with_boundaries() {
+        let json = r#"{
+            "boundaries": {
+                "preset": "layered"
+            }
+        }"#;
+        let config: FallowConfig = serde_json::from_str(json).unwrap();
+        assert_eq!(config.boundaries.preset, Some(BoundaryPreset::Layered));
+    }
+
+    // ── TOML with regression config ────────────────────────────────
+
+    #[test]
+    fn deserialize_toml_with_regression_baseline() {
+        let toml_str = r"
+[regression.baseline]
+totalIssues = 50
+unusedFiles = 10
+unusedExports = 15
+";
+        let config: FallowConfig = toml::from_str(toml_str).unwrap();
+        let baseline = config.regression.unwrap().baseline.unwrap();
+        assert_eq!(baseline.total_issues, 50);
+        assert_eq!(baseline.unused_files, 10);
+        assert_eq!(baseline.unused_exports, 15);
+    }
+
+    // ── TOML with multiple overrides ───────────────────────────────
+
+    #[test]
+    fn deserialize_toml_with_overrides() {
+        let toml_str = r#"
+[[overrides]]
+files = ["*.test.ts"]
+
+[overrides.rules]
+unused-exports = "off"
+
+[[overrides]]
+files = ["*.stories.tsx"]
+
+[overrides.rules]
+unused-files = "off"
+"#;
+        let config: FallowConfig = toml::from_str(toml_str).unwrap();
+        assert_eq!(config.overrides.len(), 2);
+        assert_eq!(
+            config.overrides[0].rules.unused_exports,
+            Some(Severity::Off)
+        );
+        assert_eq!(config.overrides[1].rules.unused_files, Some(Severity::Off));
+    }
+
+    // ── Default regression config ──────────────────────────────────
+
+    #[test]
+    fn regression_config_default_is_none_baseline() {
+        let config = RegressionConfig::default();
+        assert!(config.baseline.is_none());
+    }
+
+    // ── Config with multiple ignore export rules ───────────────────
+
+    #[test]
+    fn deserialize_json_multiple_ignore_export_rules() {
+        let json = r#"{
+            "ignoreExports": [
+                {"file": "src/types/**/*.ts", "exports": ["*"]},
+                {"file": "src/constants.ts", "exports": ["FOO", "BAR"]},
+                {"file": "src/index.ts", "exports": ["default"]}
+            ]
+        }"#;
+        let config: FallowConfig = serde_json::from_str(json).unwrap();
+        assert_eq!(config.ignore_exports.len(), 3);
+        assert_eq!(config.ignore_exports[2].exports, vec!["default"]);
+    }
 }

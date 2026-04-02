@@ -498,4 +498,136 @@ mod tests {
         assert!(entries.contains(&"./dist/node.cjs".to_string()));
         assert!(entries.contains(&"./dist/browser.mjs".to_string()));
     }
+
+    // ── Peer dependency names ───────────────────────────────────────
+
+    #[test]
+    fn package_json_peer_deps_only() {
+        let pkg: PackageJson =
+            serde_json::from_str(r#"{"peerDependencies": {"react": "^18", "react-dom": "^18"}}"#)
+                .unwrap();
+        let all = pkg.all_dependency_names();
+        assert_eq!(all.len(), 2);
+        assert!(all.contains(&"react".to_string()));
+        assert!(all.contains(&"react-dom".to_string()));
+
+        // No production or dev deps
+        assert!(pkg.production_dependency_names().is_empty());
+        assert!(pkg.dev_dependency_names().is_empty());
+    }
+
+    // ── Optional dependencies ───────────────────────────────────────
+
+    #[test]
+    fn package_json_optional_deps_in_all_names() {
+        let pkg: PackageJson =
+            serde_json::from_str(r#"{"optionalDependencies": {"fsevents": "^2"}}"#).unwrap();
+        let all = pkg.all_dependency_names();
+        assert!(all.contains(&"fsevents".to_string()));
+    }
+
+    // ── Browser field edge cases ────────────────────────────────────
+
+    #[test]
+    fn package_json_browser_array_ignored() {
+        // Browser field as array is not supported -- should not crash
+        let pkg: PackageJson =
+            serde_json::from_str(r#"{"browser": ["./a.js", "./b.js"]}"#).unwrap();
+        let entries = pkg.entry_points();
+        assert!(
+            entries.is_empty(),
+            "array browser field should not produce entries"
+        );
+    }
+
+    #[test]
+    fn package_json_browser_object_non_relative_skipped() {
+        let pkg: PackageJson = serde_json::from_str(
+            r#"{"browser": {"crypto": false, "./local.js": "./browser-local.js"}}"#,
+        )
+        .unwrap();
+        let entries = pkg.entry_points();
+        // false is not a string, "crypto" is not relative
+        // only "./browser-local.js" starts with "./"
+        assert_eq!(entries.len(), 1);
+        assert!(entries.contains(&"./browser-local.js".to_string()));
+    }
+
+    // ── Exports field edge cases ────────────────────────────────────
+
+    #[test]
+    fn package_json_exports_null_value() {
+        // Some packages use null for subpath exclusions
+        let pkg: PackageJson =
+            serde_json::from_str(r#"{"exports": {".": "./dist/index.js", "./internal": null}}"#)
+                .unwrap();
+        let entries = pkg.entry_points();
+        assert_eq!(entries.len(), 1);
+        assert!(entries.contains(&"./dist/index.js".to_string()));
+    }
+
+    #[test]
+    fn package_json_exports_empty_object() {
+        let pkg: PackageJson = serde_json::from_str(r#"{"exports": {}}"#).unwrap();
+        let entries = pkg.entry_points();
+        assert!(entries.is_empty());
+    }
+
+    // ── Workspace patterns edge cases ───────────────────────────────
+
+    #[test]
+    fn package_json_workspace_patterns_string_value_ignored() {
+        // workspaces as a string is not a valid format
+        let pkg: PackageJson = serde_json::from_str(r#"{"workspaces": "packages/*"}"#).unwrap();
+        let patterns = pkg.workspace_patterns();
+        assert!(patterns.is_empty());
+    }
+
+    #[test]
+    fn package_json_workspace_patterns_object_missing_packages() {
+        let pkg: PackageJson =
+            serde_json::from_str(r#"{"workspaces": {"nohoist": ["**/react-native"]}}"#).unwrap();
+        let patterns = pkg.workspace_patterns();
+        assert!(patterns.is_empty());
+    }
+
+    // ── Load from invalid JSON ──────────────────────────────────────
+
+    #[test]
+    fn package_json_load_invalid_json() {
+        let temp_dir = std::env::temp_dir().join("fallow-test-invalid-pkg-json");
+        let _ = std::fs::create_dir_all(&temp_dir);
+        let pkg_path = temp_dir.join("package.json");
+        std::fs::write(&pkg_path, "{ not valid json }").unwrap();
+
+        let result = PackageJson::load(&pkg_path);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("Failed to parse"), "got: {err}");
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    // ── Bin field with non-string value ─────────────────────────────
+
+    #[test]
+    fn package_json_bin_object_non_string_values_skipped() {
+        let pkg: PackageJson =
+            serde_json::from_str(r#"{"bin": {"cli": "./bin/cli.js", "bad": 42}}"#).unwrap();
+        let entries = pkg.entry_points();
+        assert_eq!(entries.len(), 1);
+        assert!(entries.contains(&"./bin/cli.js".to_string()));
+    }
+
+    // ── Default trait ───────────────────────────────────────────────
+
+    #[test]
+    fn package_json_default() {
+        let pkg = PackageJson::default();
+        assert!(pkg.name.is_none());
+        assert!(pkg.main.is_none());
+        assert!(pkg.entry_points().is_empty());
+        assert!(pkg.all_dependency_names().is_empty());
+        assert!(pkg.workspace_patterns().is_empty());
+    }
 }

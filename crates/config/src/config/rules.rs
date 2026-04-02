@@ -337,4 +337,149 @@ mod tests {
             "Expected descriptive error, got: {err}"
         );
     }
+
+    // ── PartialRulesConfig deserialization ───────────────────────────
+
+    #[test]
+    fn partial_rules_empty_json() {
+        let partial: PartialRulesConfig = serde_json::from_str("{}").unwrap();
+        assert!(partial.unused_files.is_none());
+        assert!(partial.unused_exports.is_none());
+        assert!(partial.unused_types.is_none());
+        assert!(partial.unused_dependencies.is_none());
+        assert!(partial.circular_dependencies.is_none());
+        assert!(partial.boundary_violation.is_none());
+    }
+
+    #[test]
+    fn partial_rules_subset_json() {
+        let json = r#"{
+            "unused-files": "warn",
+            "circular-dependencies": "off"
+        }"#;
+        let partial: PartialRulesConfig = serde_json::from_str(json).unwrap();
+        assert_eq!(partial.unused_files, Some(Severity::Warn));
+        assert_eq!(partial.circular_dependencies, Some(Severity::Off));
+        assert!(partial.unused_exports.is_none());
+    }
+
+    #[test]
+    fn partial_rules_all_fields_json() {
+        let json = r#"{
+            "unused-files": "error",
+            "unused-exports": "warn",
+            "unused-types": "off",
+            "unused-dependencies": "error",
+            "unused-dev-dependencies": "warn",
+            "unused-optional-dependencies": "off",
+            "unused-enum-members": "error",
+            "unused-class-members": "warn",
+            "unresolved-imports": "off",
+            "unlisted-dependencies": "error",
+            "duplicate-exports": "warn",
+            "type-only-dependencies": "off",
+            "test-only-dependencies": "error",
+            "circular-dependencies": "warn",
+            "boundary-violation": "off"
+        }"#;
+        let partial: PartialRulesConfig = serde_json::from_str(json).unwrap();
+        assert_eq!(partial.unused_files, Some(Severity::Error));
+        assert_eq!(partial.unused_exports, Some(Severity::Warn));
+        assert_eq!(partial.unused_types, Some(Severity::Off));
+        assert_eq!(partial.unused_dependencies, Some(Severity::Error));
+        assert_eq!(partial.unused_dev_dependencies, Some(Severity::Warn));
+        assert_eq!(partial.unused_optional_dependencies, Some(Severity::Off));
+        assert_eq!(partial.unused_enum_members, Some(Severity::Error));
+        assert_eq!(partial.unused_class_members, Some(Severity::Warn));
+        assert_eq!(partial.unresolved_imports, Some(Severity::Off));
+        assert_eq!(partial.unlisted_dependencies, Some(Severity::Error));
+        assert_eq!(partial.duplicate_exports, Some(Severity::Warn));
+        assert_eq!(partial.type_only_dependencies, Some(Severity::Off));
+        assert_eq!(partial.test_only_dependencies, Some(Severity::Error));
+        assert_eq!(partial.circular_dependencies, Some(Severity::Warn));
+        assert_eq!(partial.boundary_violation, Some(Severity::Off));
+    }
+
+    // ── PartialRulesConfig serialization skip_serializing_if ────────
+
+    #[test]
+    fn partial_rules_none_fields_not_serialized() {
+        let partial = PartialRulesConfig::default();
+        let json = serde_json::to_string(&partial).unwrap();
+        assert_eq!(
+            json, "{}",
+            "all-None partial should serialize to empty object"
+        );
+    }
+
+    #[test]
+    fn partial_rules_some_fields_serialized() {
+        let partial = PartialRulesConfig {
+            unused_files: Some(Severity::Warn),
+            ..Default::default()
+        };
+        let json = serde_json::to_string(&partial).unwrap();
+        assert!(json.contains("unused-files"));
+        assert!(!json.contains("unused-exports"));
+    }
+
+    // ── Severity JSON deserialization ────────────────────────────────
+
+    #[test]
+    fn severity_json_deserialization() {
+        let error: Severity = serde_json::from_str(r#""error""#).unwrap();
+        assert_eq!(error, Severity::Error);
+
+        let warn: Severity = serde_json::from_str(r#""warn""#).unwrap();
+        assert_eq!(warn, Severity::Warn);
+
+        let off: Severity = serde_json::from_str(r#""off""#).unwrap();
+        assert_eq!(off, Severity::Off);
+    }
+
+    #[test]
+    fn severity_invalid_json_value_rejected() {
+        let result: Result<Severity, _> = serde_json::from_str(r#""critical""#);
+        assert!(result.is_err());
+    }
+
+    // ── Severity default ────────────────────────────────────────────
+
+    #[test]
+    fn severity_default_is_error() {
+        assert_eq!(Severity::default(), Severity::Error);
+    }
+
+    // ── RulesConfig JSON serialize roundtrip ─────────────────────────
+
+    #[test]
+    fn rules_config_json_roundtrip() {
+        let rules = RulesConfig {
+            unused_files: Severity::Warn,
+            unused_exports: Severity::Off,
+            type_only_dependencies: Severity::Error,
+            ..RulesConfig::default()
+        };
+        let json = serde_json::to_string(&rules).unwrap();
+        let restored: RulesConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.unused_files, Severity::Warn);
+        assert_eq!(restored.unused_exports, Severity::Off);
+        assert_eq!(restored.type_only_dependencies, Severity::Error);
+        assert_eq!(restored.unused_dependencies, Severity::Error); // default
+    }
+
+    // ── apply_partial preserves type_only/test_only defaults ────────
+
+    #[test]
+    fn apply_partial_preserves_type_only_default() {
+        let mut rules = RulesConfig::default();
+        let partial = PartialRulesConfig {
+            unused_files: Some(Severity::Off),
+            ..Default::default()
+        };
+        rules.apply_partial(&partial);
+        // type_only_dependencies defaults to Warn, should be preserved
+        assert_eq!(rules.type_only_dependencies, Severity::Warn);
+        assert_eq!(rules.test_only_dependencies, Severity::Warn);
+    }
 }

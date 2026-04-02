@@ -371,4 +371,185 @@ mod tests {
         assert_eq!(config.ignore_string_values, Some(false));
         assert_eq!(config.ignore_numeric_values, None);
     }
+
+    // ── TOML deserialization ────────────────────────────────────────
+
+    #[test]
+    fn duplicates_config_toml_all_fields() {
+        let toml_str = r#"
+enabled = false
+mode = "weak"
+minTokens = 75
+minLines = 8
+threshold = 3.0
+ignore = ["vendor/**"]
+skipLocal = true
+crossLanguage = true
+
+[normalization]
+ignoreIdentifiers = true
+ignoreStringValues = true
+ignoreNumericValues = false
+"#;
+        let config: DuplicatesConfig = toml::from_str(toml_str).unwrap();
+        assert!(!config.enabled);
+        assert_eq!(config.mode, DetectionMode::Weak);
+        assert_eq!(config.min_tokens, 75);
+        assert_eq!(config.min_lines, 8);
+        assert!((config.threshold - 3.0).abs() < f64::EPSILON);
+        assert_eq!(config.ignore, vec!["vendor/**"]);
+        assert!(config.skip_local);
+        assert!(config.cross_language);
+        assert_eq!(config.normalization.ignore_identifiers, Some(true));
+        assert_eq!(config.normalization.ignore_string_values, Some(true));
+        assert_eq!(config.normalization.ignore_numeric_values, Some(false));
+    }
+
+    #[test]
+    fn duplicates_config_toml_defaults() {
+        let toml_str = "";
+        let config: DuplicatesConfig = toml::from_str(toml_str).unwrap();
+        assert!(config.enabled);
+        assert_eq!(config.mode, DetectionMode::Mild);
+        assert_eq!(config.min_tokens, 50);
+        assert_eq!(config.min_lines, 5);
+    }
+
+    // ── NormalizationConfig edge cases ──────────────────────────────
+
+    #[test]
+    fn normalization_config_default_all_none() {
+        let config = NormalizationConfig::default();
+        assert!(config.ignore_identifiers.is_none());
+        assert!(config.ignore_string_values.is_none());
+        assert!(config.ignore_numeric_values.is_none());
+    }
+
+    #[test]
+    fn normalization_config_empty_json_object() {
+        let config: NormalizationConfig = serde_json::from_str("{}").unwrap();
+        assert!(config.ignore_identifiers.is_none());
+        assert!(config.ignore_string_values.is_none());
+        assert!(config.ignore_numeric_values.is_none());
+    }
+
+    // ── DetectionMode default ───────────────────────────────────────
+
+    #[test]
+    fn detection_mode_default_is_mild() {
+        assert_eq!(DetectionMode::default(), DetectionMode::Mild);
+    }
+
+    // ── ResolvedNormalization equality ───────────────────────────────
+
+    #[test]
+    fn resolved_normalization_equality() {
+        let a = ResolvedNormalization {
+            ignore_identifiers: true,
+            ignore_string_values: false,
+            ignore_numeric_values: true,
+        };
+        let b = ResolvedNormalization {
+            ignore_identifiers: true,
+            ignore_string_values: false,
+            ignore_numeric_values: true,
+        };
+        assert_eq!(a, b);
+
+        let c = ResolvedNormalization {
+            ignore_identifiers: false,
+            ignore_string_values: false,
+            ignore_numeric_values: true,
+        };
+        assert_ne!(a, c);
+    }
+
+    // ── Detection mode JSON deserialization ──────────────────────────
+
+    #[test]
+    fn detection_mode_json_deserialization() {
+        let strict: DetectionMode = serde_json::from_str(r#""strict""#).unwrap();
+        assert_eq!(strict, DetectionMode::Strict);
+
+        let mild: DetectionMode = serde_json::from_str(r#""mild""#).unwrap();
+        assert_eq!(mild, DetectionMode::Mild);
+
+        let weak: DetectionMode = serde_json::from_str(r#""weak""#).unwrap();
+        assert_eq!(weak, DetectionMode::Weak);
+
+        let semantic: DetectionMode = serde_json::from_str(r#""semantic""#).unwrap();
+        assert_eq!(semantic, DetectionMode::Semantic);
+    }
+
+    #[test]
+    fn detection_mode_invalid_json() {
+        let result: Result<DetectionMode, _> = serde_json::from_str(r#""aggressive""#);
+        assert!(result.is_err());
+    }
+
+    // ── Serialize roundtrip ─────────────────────────────────────────
+
+    #[test]
+    fn duplicates_config_json_roundtrip() {
+        let config = DuplicatesConfig {
+            enabled: false,
+            mode: DetectionMode::Semantic,
+            min_tokens: 100,
+            min_lines: 10,
+            threshold: 5.5,
+            ignore: vec!["test/**".to_string()],
+            skip_local: true,
+            cross_language: true,
+            normalization: NormalizationConfig {
+                ignore_identifiers: Some(true),
+                ignore_string_values: None,
+                ignore_numeric_values: Some(false),
+            },
+        };
+        let json = serde_json::to_string(&config).unwrap();
+        let restored: DuplicatesConfig = serde_json::from_str(&json).unwrap();
+        assert!(!restored.enabled);
+        assert_eq!(restored.mode, DetectionMode::Semantic);
+        assert_eq!(restored.min_tokens, 100);
+        assert_eq!(restored.min_lines, 10);
+        assert!((restored.threshold - 5.5).abs() < f64::EPSILON);
+        assert!(restored.skip_local);
+        assert!(restored.cross_language);
+        assert_eq!(restored.normalization.ignore_identifiers, Some(true));
+        assert!(restored.normalization.ignore_string_values.is_none());
+        assert_eq!(restored.normalization.ignore_numeric_values, Some(false));
+    }
+
+    // ── NormalizationConfig skip_serializing_if ─────────────────────
+
+    #[test]
+    fn normalization_none_fields_not_serialized() {
+        let config = NormalizationConfig::default();
+        let json = serde_json::to_string(&config).unwrap();
+        assert!(
+            !json.contains("ignoreIdentifiers"),
+            "None fields should be skipped"
+        );
+        assert!(
+            !json.contains("ignoreStringValues"),
+            "None fields should be skipped"
+        );
+        assert!(
+            !json.contains("ignoreNumericValues"),
+            "None fields should be skipped"
+        );
+    }
+
+    #[test]
+    fn normalization_some_fields_serialized() {
+        let config = NormalizationConfig {
+            ignore_identifiers: Some(true),
+            ignore_string_values: None,
+            ignore_numeric_values: Some(false),
+        };
+        let json = serde_json::to_string(&config).unwrap();
+        assert!(json.contains("ignoreIdentifiers"));
+        assert!(!json.contains("ignoreStringValues"));
+        assert!(json.contains("ignoreNumericValues"));
+    }
 }

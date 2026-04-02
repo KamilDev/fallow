@@ -621,4 +621,109 @@ mod tests {
 
         let _ = std::fs::remove_dir_all(&temp_dir);
     }
+
+    // ── parse_pnpm_workspace_yaml edge cases ────────────────────────
+
+    #[test]
+    fn parse_pnpm_workspace_with_empty_lines_between_entries() {
+        let yaml = "packages:\n  - 'packages/*'\n\n  - 'apps/*'\n";
+        let patterns = parse_pnpm_workspace_yaml(yaml);
+        // Empty lines between entries should be tolerated (they're skipped)
+        assert_eq!(patterns, vec!["packages/*", "apps/*"]);
+    }
+
+    #[test]
+    fn parse_pnpm_workspace_mixed_quotes() {
+        let yaml = "packages:\n  - 'single/*'\n  - \"double/*\"\n  - bare/*\n";
+        let patterns = parse_pnpm_workspace_yaml(yaml);
+        assert_eq!(patterns, vec!["single/*", "double/*", "bare/*"]);
+    }
+
+    #[test]
+    fn parse_pnpm_workspace_with_negation() {
+        let yaml = "packages:\n  - 'packages/*'\n  - '!packages/test-*'\n";
+        let patterns = parse_pnpm_workspace_yaml(yaml);
+        assert_eq!(patterns, vec!["packages/*", "!packages/test-*"]);
+    }
+
+    // ── strip_trailing_commas advanced ───────────────────────────────
+
+    #[test]
+    fn strip_trailing_commas_string_with_closing_brackets() {
+        // String containing "]" and "}" should not affect comma stripping
+        let input = r#"{"key": "value with ] and }",}"#;
+        let expected = r#"{"key": "value with ] and }"}"#;
+        assert_eq!(strip_trailing_commas(input), expected);
+    }
+
+    #[test]
+    fn strip_trailing_commas_multiple_levels() {
+        let input = r#"{"a": {"b": [1, 2,], "c": 3,},}"#;
+        let expected = r#"{"a": {"b": [1, 2], "c": 3}}"#;
+        assert_eq!(strip_trailing_commas(input), expected);
+    }
+
+    // ── tsconfig_root_dir edge cases ────────────────────────────────
+
+    #[test]
+    fn tsconfig_root_dir_with_trailing_commas() {
+        let temp_dir = std::env::temp_dir().join("fallow-test-rootdir-trailing-comma");
+        let _ = std::fs::remove_dir_all(&temp_dir);
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        std::fs::write(
+            temp_dir.join("tsconfig.json"),
+            "{\n  \"compilerOptions\": {\n    \"rootDir\": \"app\",\n  },\n}",
+        )
+        .unwrap();
+
+        assert_eq!(parse_tsconfig_root_dir(&temp_dir), Some("app".to_string()));
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    // ── expand_workspace_glob with trailing slash ────────────────────
+
+    #[test]
+    fn expand_workspace_glob_trailing_slash() {
+        let temp_dir = std::env::temp_dir().join("fallow-test-expand-trailing");
+        let _ = std::fs::remove_dir_all(&temp_dir);
+        std::fs::create_dir_all(temp_dir.join("packages/a")).unwrap();
+        std::fs::write(temp_dir.join("packages/a/package.json"), r#"{"name": "a"}"#).unwrap();
+
+        let canonical_root = temp_dir.canonicalize().unwrap();
+        // Trailing slash pattern gets `*` appended -> `packages/*`
+        let results = expand_workspace_glob(&temp_dir, "packages/*", &canonical_root);
+        assert_eq!(results.len(), 1);
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    // ── expand_workspace_glob skips dirs without package.json ────────
+
+    #[test]
+    fn expand_workspace_glob_skips_dirs_without_pkg() {
+        let temp_dir = std::env::temp_dir().join("fallow-test-expand-no-pkg");
+        let _ = std::fs::remove_dir_all(&temp_dir);
+        std::fs::create_dir_all(temp_dir.join("packages/with-pkg")).unwrap();
+        std::fs::create_dir_all(temp_dir.join("packages/without-pkg")).unwrap();
+        std::fs::write(
+            temp_dir.join("packages/with-pkg/package.json"),
+            r#"{"name": "with"}"#,
+        )
+        .unwrap();
+        // packages/without-pkg has no package.json
+
+        let canonical_root = temp_dir.canonicalize().unwrap();
+        let results = expand_workspace_glob(&temp_dir, "packages/*", &canonical_root);
+        assert_eq!(results.len(), 1);
+        assert!(
+            results[0]
+                .0
+                .to_string_lossy()
+                .replace('\\', "/")
+                .ends_with("packages/with-pkg")
+        );
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
 }

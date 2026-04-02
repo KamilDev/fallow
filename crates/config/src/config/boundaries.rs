@@ -1087,4 +1087,234 @@ allow = ["db"]
         let empty = BoundaryConfig::default();
         assert_eq!(empty.preset_name(), None);
     }
+
+    #[test]
+    fn preset_name_all_variants() {
+        let cases = [
+            (BoundaryPreset::Layered, "layered"),
+            (BoundaryPreset::Hexagonal, "hexagonal"),
+            (BoundaryPreset::FeatureSliced, "feature-sliced"),
+            (BoundaryPreset::Bulletproof, "bulletproof"),
+        ];
+        for (preset, expected_name) in cases {
+            let config = BoundaryConfig {
+                preset: Some(preset),
+                zones: vec![],
+                rules: vec![],
+            };
+            assert_eq!(
+                config.preset_name(),
+                Some(expected_name),
+                "preset_name() mismatch for variant"
+            );
+        }
+    }
+
+    // ── ResolvedBoundaryConfig::is_empty ────────────────────────────
+
+    #[test]
+    fn resolved_boundary_config_empty() {
+        let resolved = ResolvedBoundaryConfig::default();
+        assert!(resolved.is_empty());
+    }
+
+    #[test]
+    fn resolved_boundary_config_with_zones_not_empty() {
+        let config = BoundaryConfig {
+            preset: None,
+            zones: vec![BoundaryZone {
+                name: "ui".to_string(),
+                patterns: vec!["src/ui/**".to_string()],
+                root: None,
+            }],
+            rules: vec![],
+        };
+        let resolved = config.resolve();
+        assert!(!resolved.is_empty());
+    }
+
+    // ── BoundaryConfig::is_empty edge cases ─────────────────────────
+
+    #[test]
+    fn boundary_config_with_only_rules_is_empty() {
+        // Having rules but no zones/preset is still "empty" since rules without zones
+        // cannot produce boundary violations.
+        let config = BoundaryConfig {
+            preset: None,
+            zones: vec![],
+            rules: vec![BoundaryRule {
+                from: "ui".to_string(),
+                allow: vec!["db".to_string()],
+            }],
+        };
+        assert!(config.is_empty());
+    }
+
+    #[test]
+    fn boundary_config_with_zones_not_empty() {
+        let config = BoundaryConfig {
+            preset: None,
+            zones: vec![BoundaryZone {
+                name: "ui".to_string(),
+                patterns: vec![],
+                root: None,
+            }],
+            rules: vec![],
+        };
+        assert!(!config.is_empty());
+    }
+
+    // ── Multiple zone patterns ──────────────────────────────────────
+
+    #[test]
+    fn zone_with_multiple_patterns_matches_any() {
+        let config = BoundaryConfig {
+            preset: None,
+            zones: vec![BoundaryZone {
+                name: "ui".to_string(),
+                patterns: vec![
+                    "src/components/**".to_string(),
+                    "src/pages/**".to_string(),
+                    "src/views/**".to_string(),
+                ],
+                root: None,
+            }],
+            rules: vec![],
+        };
+        let resolved = config.resolve();
+        assert_eq!(
+            resolved.classify_zone("src/components/Button.tsx"),
+            Some("ui")
+        );
+        assert_eq!(resolved.classify_zone("src/pages/Home.tsx"), Some("ui"));
+        assert_eq!(
+            resolved.classify_zone("src/views/Dashboard.tsx"),
+            Some("ui")
+        );
+        assert_eq!(resolved.classify_zone("src/utils/helpers.ts"), None);
+    }
+
+    // ── validate_zone_references with multiple errors ───────────────
+
+    #[test]
+    fn validate_zone_references_multiple_errors() {
+        let config = BoundaryConfig {
+            preset: None,
+            zones: vec![BoundaryZone {
+                name: "ui".to_string(),
+                patterns: vec![],
+                root: None,
+            }],
+            rules: vec![
+                BoundaryRule {
+                    from: "nonexistent_from".to_string(),
+                    allow: vec!["nonexistent_allow".to_string()],
+                },
+                BoundaryRule {
+                    from: "ui".to_string(),
+                    allow: vec!["also_nonexistent".to_string()],
+                },
+            ],
+        };
+        let errors = config.validate_zone_references();
+        // Rule 0: invalid "from" + invalid "allow" = 2 errors
+        // Rule 1: valid "from", invalid "allow" = 1 error
+        assert_eq!(errors.len(), 3);
+    }
+
+    // ── Preset expansion with custom source root ────────────────────
+
+    #[test]
+    fn expand_feature_sliced_with_custom_root() {
+        let mut config = BoundaryConfig {
+            preset: Some(BoundaryPreset::FeatureSliced),
+            zones: vec![],
+            rules: vec![],
+        };
+        config.expand("lib");
+        assert_eq!(config.zones[0].patterns, vec!["lib/app/**"]);
+        assert_eq!(config.zones[5].patterns, vec!["lib/shared/**"]);
+    }
+
+    // ── is_import_allowed for zone not in rules (unrestricted) ──────
+
+    #[test]
+    fn zone_not_in_rules_is_unrestricted() {
+        let config = BoundaryConfig {
+            preset: None,
+            zones: vec![
+                BoundaryZone {
+                    name: "a".to_string(),
+                    patterns: vec![],
+                    root: None,
+                },
+                BoundaryZone {
+                    name: "b".to_string(),
+                    patterns: vec![],
+                    root: None,
+                },
+                BoundaryZone {
+                    name: "c".to_string(),
+                    patterns: vec![],
+                    root: None,
+                },
+            ],
+            rules: vec![BoundaryRule {
+                from: "a".to_string(),
+                allow: vec!["b".to_string()],
+            }],
+        };
+        let resolved = config.resolve();
+        // "a" is restricted: can import from "b" but not "c"
+        assert!(resolved.is_import_allowed("a", "b"));
+        assert!(!resolved.is_import_allowed("a", "c"));
+        // "b" has no rule entry: unrestricted
+        assert!(resolved.is_import_allowed("b", "a"));
+        assert!(resolved.is_import_allowed("b", "c"));
+        // "c" has no rule entry: unrestricted
+        assert!(resolved.is_import_allowed("c", "a"));
+    }
+
+    // ── Preset serialization/deserialization roundtrip ───────────────
+
+    #[test]
+    fn boundary_preset_json_roundtrip() {
+        let presets = [
+            BoundaryPreset::Layered,
+            BoundaryPreset::Hexagonal,
+            BoundaryPreset::FeatureSliced,
+            BoundaryPreset::Bulletproof,
+        ];
+        for preset in presets {
+            let json = serde_json::to_string(&preset).unwrap();
+            let restored: BoundaryPreset = serde_json::from_str(&json).unwrap();
+            assert_eq!(restored, preset);
+        }
+    }
+
+    #[test]
+    fn deserialize_preset_bulletproof_json() {
+        let json = r#"{ "preset": "bulletproof" }"#;
+        let config: BoundaryConfig = serde_json::from_str(json).unwrap();
+        assert_eq!(config.preset, Some(BoundaryPreset::Bulletproof));
+    }
+
+    // ── Zone with invalid glob ──────────────────────────────────────
+
+    #[test]
+    fn resolve_skips_invalid_zone_glob() {
+        let config = BoundaryConfig {
+            preset: None,
+            zones: vec![BoundaryZone {
+                name: "broken".to_string(),
+                patterns: vec!["[invalid".to_string()],
+                root: None,
+            }],
+            rules: vec![],
+        };
+        let resolved = config.resolve();
+        // Zone exists but has no valid matchers, so no file can be classified into it
+        assert!(!resolved.is_empty());
+        assert_eq!(resolved.classify_zone("anything.ts"), None);
+    }
 }

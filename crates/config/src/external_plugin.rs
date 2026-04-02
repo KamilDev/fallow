@@ -871,4 +871,186 @@ enablers = ["pkg"]
         assert!(plugin.detection.is_none());
         assert_eq!(plugin.enablers, vec!["my-pkg"]);
     }
+
+    // ── Nested detection combinators ────────────────────────────────
+
+    #[test]
+    fn detection_nested_all_with_any() {
+        let json = r#"{
+            "type": "all",
+            "conditions": [
+                {"type": "dependency", "package": "react"},
+                {"type": "any", "conditions": [
+                    {"type": "fileExists", "pattern": "next.config.js"},
+                    {"type": "fileExists", "pattern": "next.config.mjs"}
+                ]}
+            ]
+        }"#;
+        let detection: PluginDetection = serde_json::from_str(json).unwrap();
+        match detection {
+            PluginDetection::All { conditions } => {
+                assert_eq!(conditions.len(), 2);
+                assert!(matches!(
+                    &conditions[0],
+                    PluginDetection::Dependency { package } if package == "react"
+                ));
+                match &conditions[1] {
+                    PluginDetection::Any { conditions: inner } => {
+                        assert_eq!(inner.len(), 2);
+                    }
+                    other => panic!("expected Any, got: {other:?}"),
+                }
+            }
+            other => panic!("expected All, got: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn detection_empty_all_conditions() {
+        let json = r#"{"type": "all", "conditions": []}"#;
+        let detection: PluginDetection = serde_json::from_str(json).unwrap();
+        assert!(matches!(
+            detection,
+            PluginDetection::All { conditions } if conditions.is_empty()
+        ));
+    }
+
+    #[test]
+    fn detection_empty_any_conditions() {
+        let json = r#"{"type": "any", "conditions": []}"#;
+        let detection: PluginDetection = serde_json::from_str(json).unwrap();
+        assert!(matches!(
+            detection,
+            PluginDetection::Any { conditions } if conditions.is_empty()
+        ));
+    }
+
+    // ── TOML with detection field ───────────────────────────────────
+
+    #[test]
+    fn detection_toml_dependency() {
+        let toml_str = r#"
+name = "my-plugin"
+
+[detection]
+type = "dependency"
+package = "next"
+"#;
+        let plugin: ExternalPluginDef = toml::from_str(toml_str).unwrap();
+        assert!(plugin.detection.is_some());
+        assert!(matches!(
+            plugin.detection.unwrap(),
+            PluginDetection::Dependency { package } if package == "next"
+        ));
+    }
+
+    #[test]
+    fn detection_toml_file_exists() {
+        let toml_str = r#"
+name = "my-plugin"
+
+[detection]
+type = "fileExists"
+pattern = "next.config.js"
+"#;
+        let plugin: ExternalPluginDef = toml::from_str(toml_str).unwrap();
+        assert!(matches!(
+            plugin.detection.unwrap(),
+            PluginDetection::FileExists { pattern } if pattern == "next.config.js"
+        ));
+    }
+
+    // ── Plugin with all fields set ──────────────────────────────────
+
+    #[test]
+    fn plugin_all_fields_json() {
+        let json = r#"{
+            "$schema": "https://fallow.dev/plugin-schema.json",
+            "name": "full-plugin",
+            "detection": {"type": "dependency", "package": "my-pkg"},
+            "enablers": ["fallback-enabler"],
+            "entryPoints": ["src/entry.ts"],
+            "configPatterns": ["config.js"],
+            "alwaysUsed": ["src/polyfills.ts"],
+            "toolingDependencies": ["my-cli"],
+            "usedExports": [{"pattern": "src/**", "exports": ["default", "setup"]}]
+        }"#;
+        let plugin: ExternalPluginDef = serde_json::from_str(json).unwrap();
+        assert_eq!(plugin.name, "full-plugin");
+        assert!(plugin.detection.is_some());
+        assert_eq!(plugin.enablers, vec!["fallback-enabler"]);
+        assert_eq!(plugin.entry_points, vec!["src/entry.ts"]);
+        assert_eq!(plugin.config_patterns, vec!["config.js"]);
+        assert_eq!(plugin.always_used, vec!["src/polyfills.ts"]);
+        assert_eq!(plugin.tooling_dependencies, vec!["my-cli"]);
+        assert_eq!(plugin.used_exports.len(), 1);
+        assert_eq!(plugin.used_exports[0].pattern, "src/**");
+        assert_eq!(plugin.used_exports[0].exports, vec!["default", "setup"]);
+    }
+
+    // ── Plugin name validation edge case ────────────────────────────
+
+    #[test]
+    fn plugin_with_special_chars_in_name() {
+        let json = r#"{"name": "@scope/my-plugin-v2.0", "enablers": ["pkg"]}"#;
+        let plugin: ExternalPluginDef = serde_json::from_str(json).unwrap();
+        assert_eq!(plugin.name, "@scope/my-plugin-v2.0");
+    }
+
+    // ── parse_plugin with various formats ───────────────────────────
+
+    #[test]
+    fn parse_plugin_toml_format() {
+        let content = r#"
+name = "test-plugin"
+enablers = ["test-pkg"]
+entryPoints = ["src/**/*.ts"]
+"#;
+        let result = parse_plugin(content, &PluginFormat::Toml, Path::new("test.toml"));
+        assert!(result.is_some());
+        let plugin = result.unwrap();
+        assert_eq!(plugin.name, "test-plugin");
+    }
+
+    #[test]
+    fn parse_plugin_json_format() {
+        let content = r#"{"name": "json-test", "enablers": ["pkg"]}"#;
+        let result = parse_plugin(content, &PluginFormat::Json, Path::new("test.json"));
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().name, "json-test");
+    }
+
+    #[test]
+    fn parse_plugin_jsonc_format() {
+        let content = r#"{
+            // A comment
+            "name": "jsonc-test",
+            "enablers": ["pkg"]
+        }"#;
+        let result = parse_plugin(content, &PluginFormat::Jsonc, Path::new("test.jsonc"));
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().name, "jsonc-test");
+    }
+
+    #[test]
+    fn parse_plugin_invalid_toml_returns_none() {
+        let content = "not valid toml [[[";
+        let result = parse_plugin(content, &PluginFormat::Toml, Path::new("bad.toml"));
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn parse_plugin_invalid_json_returns_none() {
+        let content = "{ not valid json }";
+        let result = parse_plugin(content, &PluginFormat::Json, Path::new("bad.json"));
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn parse_plugin_invalid_jsonc_returns_none() {
+        // Missing required `name` field
+        let content = r#"{"enablers": ["pkg"]}"#;
+        let result = parse_plugin(content, &PluginFormat::Jsonc, Path::new("bad.jsonc"));
+        assert!(result.is_none());
+    }
 }
