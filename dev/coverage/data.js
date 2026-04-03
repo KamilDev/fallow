@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775255057347,
+  "lastUpdate": 1775255199472,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -5388,6 +5388,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/2c2c0f13242cdb73b482154aab6f2329caa955bb"
         },
         "date": 1775255056155,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 92.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "06f366de32a2c3f48d28008a74565b2217beb834",
+          "message": "chore: allow CDLA-Permissive-2.0 license (webpki-roots v1.0.6)",
+          "timestamp": "2026-04-04T00:25:26+02:00",
+          "tree_id": "f4b07d814d2d1b67725386972265c27603faced6",
+          "url": "https://github.com/fallow-rs/fallow/commit/06f366de32a2c3f48d28008a74565b2217beb834"
+        },
+        "date": 1775255198612,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
