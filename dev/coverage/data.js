@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775198834336,
+  "lastUpdate": 1775199027928,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -4837,6 +4837,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/8d9b44e90867d2f9a146ca7ce76e2d42d6e6883b"
         },
         "date": 1775198833787,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 94.5,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "6185018a90fe9685d9a63cfc1071e096a53b6d97",
+          "message": "test: add vital signs header, scoped maintainability, and dead_export_pct removal tests\n\nFix combined fixtures to use relative paths (matching real fallow output)\nand add assertions for Codebase health header, scoped maintainability row\nappearing only when file_scores are filtered, and dead_export_pct absence.",
+          "timestamp": "2026-04-03T08:49:13+02:00",
+          "tree_id": "63009734790f2b4a9a1fd56f450120ac3e76f630",
+          "url": "https://github.com/fallow-rs/fallow/commit/6185018a90fe9685d9a63cfc1071e096a53b6d97"
+        },
+        "date": 1775199027453,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
