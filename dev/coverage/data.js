@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775203618728,
+  "lastUpdate": 1775204147449,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -4982,6 +4982,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/b82e6eab66c63d51f7cf1f19f575699414ebb9b9"
         },
         "date": 1775203617756,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 93.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "cebba4d73f41655d7349785d7fd755dd78eb22a1",
+          "message": "docs: update positioning with new intro framing and vs-linters link\n\n- Add link to fallow-vs-linters docs page in stack positioning section\n- Update elevator pitch closing to match new intro: \"Linters work file\n  by file. TypeScript works type by type. Neither builds the full module\n  graph. Fallow does.\"",
+          "timestamp": "2026-04-03T10:14:26+02:00",
+          "tree_id": "fb2ad989cfe802ff8a2acd4194aef7c90b5a1629",
+          "url": "https://github.com/fallow-rs/fallow/commit/cebba4d73f41655d7349785d7fd755dd78eb22a1"
+        },
+        "date": 1775204146264,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
