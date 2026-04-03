@@ -228,6 +228,7 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
                     false,
                     resolver,
                     None,
+                    opts.summary,
                 );
                 max_exit = max_exit.max(exit_code_to_u8(code));
             }
@@ -237,7 +238,12 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
                     eprintln!();
                     eprintln!("── Duplication ────────────────────────────────────");
                 }
-                let code = crate::dupes::print_dupes_result(result, opts.quiet, opts.explain);
+                let code = crate::dupes::print_dupes_result(
+                    result,
+                    opts.quiet,
+                    opts.explain,
+                    opts.summary,
+                );
                 max_exit = max_exit.max(exit_code_to_u8(code));
             }
 
@@ -246,8 +252,13 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
                     eprintln!();
                     eprintln!("── Complexity ─────────────────────────────────────");
                 }
-                let code =
-                    crate::health::print_health_result(result, opts.quiet, opts.explain, None);
+                let code = crate::health::print_health_result(
+                    result,
+                    opts.quiet,
+                    opts.explain,
+                    None,
+                    opts.summary,
+                );
                 max_exit = max_exit.max(exit_code_to_u8(code));
             }
         }

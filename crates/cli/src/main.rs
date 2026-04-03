@@ -116,6 +116,10 @@ struct Cli {
     #[arg(long, global = true)]
     explain: bool,
 
+    /// Show only category counts without individual items
+    #[arg(long, global = true)]
+    summary: bool,
+
     /// CI mode: equivalent to --format sarif --fail-on-issues --quiet
     #[arg(long, global = true)]
     ci: bool,
@@ -951,7 +955,7 @@ fn dispatch_bare_command(
         group_by: cli.group_by,
         explain: cli.explain,
         performance: cli.performance,
-        summary: false,
+        summary: cli.summary,
         run_check,
         run_dupes,
         run_health,
@@ -1048,7 +1052,7 @@ fn dispatch_subcommand(
                 trace_opts: &trace_opts,
                 explain: cli.explain,
                 top,
-                summary: false,
+                summary: cli.summary,
                 regression_opts: build_regression_opts(
                     cli.fail_on_regression,
                     tolerance,
@@ -1148,7 +1152,7 @@ fn dispatch_subcommand(
                 trace: trace.as_deref(),
                 changed_since: cli.changed_since.as_deref(),
                 explain: cli.explain,
-                summary: false,
+                summary: cli.summary,
                 group_by: cli.group_by,
             })
         }
@@ -1290,7 +1294,7 @@ fn dispatch_health(
         since,
         min_commits,
         explain: cli.explain,
-        summary: false,
+        summary: cli.summary,
         save_snapshot: save_snapshot.map(|opt| PathBuf::from(opt.as_deref().unwrap_or_default())),
         trend,
         group_by: cli.group_by,

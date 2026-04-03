@@ -175,6 +175,27 @@ pub fn build_json(
         );
     }
 
+    // Per-category summary counts for CI dashboard consumption
+    let summary = serde_json::json!({
+        "total_issues": results.total_issues(),
+        "unused_files": results.unused_files.len(),
+        "unused_exports": results.unused_exports.len(),
+        "unused_types": results.unused_types.len(),
+        "unused_dependencies": results.unused_dependencies.len()
+            + results.unused_dev_dependencies.len()
+            + results.unused_optional_dependencies.len(),
+        "unused_enum_members": results.unused_enum_members.len(),
+        "unused_class_members": results.unused_class_members.len(),
+        "unresolved_imports": results.unresolved_imports.len(),
+        "unlisted_dependencies": results.unlisted_dependencies.len(),
+        "duplicate_exports": results.duplicate_exports.len(),
+        "type_only_dependencies": results.type_only_dependencies.len(),
+        "test_only_dependencies": results.test_only_dependencies.len(),
+        "circular_dependencies": results.circular_dependencies.len(),
+        "boundary_violations": results.boundary_violations.len(),
+    });
+    map.insert("summary".to_string(), summary);
+
     if let serde_json::Value::Object(results_map) = results_value {
         for (key, value) in results_map {
             map.insert(key, value);

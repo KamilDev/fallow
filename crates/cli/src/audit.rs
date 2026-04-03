@@ -476,7 +476,7 @@ fn print_audit_human(result: &AuditResult, quiet: bool, explain: bool, output: O
                 eprintln!();
                 eprintln!("── Dead Code ──────────────────────────────────────");
             }
-            crate::check::print_check_result(check, quiet, explain, false, None, None);
+            crate::check::print_check_result(check, quiet, explain, false, None, None, false);
         }
 
         if has_dupe_groups && let Some(ref dupes) = result.dupes {
@@ -484,7 +484,7 @@ fn print_audit_human(result: &AuditResult, quiet: bool, explain: bool, output: O
                 eprintln!();
                 eprintln!("── Duplication ────────────────────────────────────");
             }
-            crate::dupes::print_dupes_result(dupes, quiet, explain);
+            crate::dupes::print_dupes_result(dupes, quiet, explain, false);
         }
 
         if has_health_findings && let Some(ref health) = result.health {
@@ -492,7 +492,7 @@ fn print_audit_human(result: &AuditResult, quiet: bool, explain: bool, output: O
                 eprintln!();
                 eprintln!("── Complexity ─────────────────────────────────────");
             }
-            crate::health::print_health_result(health, quiet, explain, None);
+            crate::health::print_health_result(health, quiet, explain, None, false);
         }
     }
 

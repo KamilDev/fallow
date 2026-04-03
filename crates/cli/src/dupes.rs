@@ -237,7 +237,12 @@ pub fn execute_dupes(opts: &DupesOptions<'_>) -> Result<DupesResult, ExitCode> {
 }
 
 /// Print duplication results and return appropriate exit code.
-pub fn print_dupes_result(result: &DupesResult, quiet: bool, explain: bool) -> ExitCode {
+pub fn print_dupes_result(
+    result: &DupesResult,
+    quiet: bool,
+    explain: bool,
+    summary: bool,
+) -> ExitCode {
     let ctx = report::ReportContext {
         root: &result.config.root,
         rules: &result.config.rules,
@@ -246,6 +251,7 @@ pub fn print_dupes_result(result: &DupesResult, quiet: bool, explain: bool) -> E
         explain,
         group_by: None,
         top: None,
+        summary,
     };
     let report_code = report::print_duplication_report(&result.report, &ctx, result.config.output);
     if report_code != ExitCode::SUCCESS {
@@ -279,7 +285,7 @@ pub fn run_dupes(opts: &DupesOptions<'_>) -> ExitCode {
         Ok(r) => r,
         Err(code) => return code,
     };
-    print_dupes_result_with_grouping(&result, opts.quiet, opts.explain, None)
+    print_dupes_result_with_grouping(&result, opts.quiet, opts.explain, None, opts.summary)
 }
 
 fn print_dupes_result_with_grouping(
@@ -287,6 +293,7 @@ fn print_dupes_result_with_grouping(
     quiet: bool,
     explain: bool,
     group_by: Option<report::OwnershipResolver>,
+    summary: bool,
 ) -> ExitCode {
     let ctx = report::ReportContext {
         root: &result.config.root,
@@ -296,6 +303,7 @@ fn print_dupes_result_with_grouping(
         explain,
         group_by,
         top: None,
+        summary,
     };
     report::print_duplication_report(&result.report, &ctx, result.config.output)
 }

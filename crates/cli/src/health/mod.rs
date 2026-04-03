@@ -637,7 +637,13 @@ pub fn run_health(opts: &HealthOptions<'_>) -> ExitCode {
         Err(code) => return code,
     };
     // Health grouping is a follow-up — for now, validate the flag and pass None
-    print_health_result(&result, opts.quiet, opts.explain, opts.min_score)
+    print_health_result(
+        &result,
+        opts.quiet,
+        opts.explain,
+        opts.min_score,
+        opts.summary,
+    )
 }
 
 /// Result of executing health analysis without printing.
@@ -653,6 +659,7 @@ pub fn print_health_result(
     quiet: bool,
     explain: bool,
     min_score: Option<f64>,
+    summary: bool,
 ) -> ExitCode {
     let ctx = report::ReportContext {
         root: &result.config.root,
@@ -662,6 +669,7 @@ pub fn print_health_result(
         explain,
         group_by: None,
         top: None,
+        summary,
     };
     let report_code = report::print_health_report(&result.report, &ctx, result.config.output);
     if report_code != ExitCode::SUCCESS {

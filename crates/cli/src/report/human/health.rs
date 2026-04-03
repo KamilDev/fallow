@@ -771,6 +771,46 @@ fn render_refactoring_targets(
     lines.push(String::new());
 }
 
+/// Print a concise health summary showing only aggregate statistics.
+pub(in crate::report) fn print_health_summary(
+    report: &crate::health_types::HealthReport,
+    elapsed: Duration,
+    quiet: bool,
+) {
+    let s = &report.summary;
+
+    println!("{}", "Health Summary".bold());
+    println!();
+    println!("  {:>6}  Functions analyzed", s.functions_analyzed);
+    println!("  {:>6}  Above threshold", s.functions_above_threshold);
+    if let Some(mi) = s.average_maintainability {
+        let label = if mi >= 85.0 {
+            "good"
+        } else if mi >= 65.0 {
+            "moderate"
+        } else {
+            "low"
+        };
+        println!("  {mi:>5.1}   Average MI ({label})");
+    }
+    if let Some(ref score) = report.health_score {
+        println!("  {:>5.0} {}  Health score", score.score, score.grade);
+    }
+
+    if !quiet {
+        eprintln!(
+            "{}",
+            format!(
+                "\u{2713} {} functions analyzed ({:.2}s)",
+                s.functions_analyzed,
+                elapsed.as_secs_f64()
+            )
+            .green()
+            .bold()
+        );
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,7 +1,7 @@
-mod check;
+pub(super) mod check;
 mod cross_ref;
-mod dupes;
-mod health;
+pub(super) mod dupes;
+pub(super) mod health;
 mod perf;
 mod traces;
 

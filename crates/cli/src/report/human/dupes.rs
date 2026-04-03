@@ -367,6 +367,53 @@ pub(super) fn detect_mirrored_families<'a>(
     (mirrors, non_mirrored)
 }
 
+/// Print a concise duplication summary showing only aggregate counts.
+pub(in crate::report) fn print_duplication_summary(
+    report: &DuplicationReport,
+    elapsed: Duration,
+    quiet: bool,
+) {
+    if report.clone_groups.is_empty() {
+        if !quiet {
+            eprintln!(
+                "{}",
+                format!(
+                    "\u{2713} No duplication found ({:.2}s)",
+                    elapsed.as_secs_f64()
+                )
+                .green()
+                .bold()
+            );
+        }
+        return;
+    }
+
+    let stats = &report.stats;
+
+    println!("{}", "Duplication Summary".bold());
+    println!();
+    println!("  {:>6}  Clone families", report.clone_families.len());
+    println!("  {:>6}  Clone groups", report.clone_groups.len());
+    println!(
+        "  {:>6}  Duplicated lines",
+        thousands(stats.duplicated_lines)
+    );
+    println!("  {:>5.1}%  Duplication rate", stats.duplication_percentage);
+
+    if !quiet {
+        eprintln!(
+            "{}",
+            format!(
+                "\u{2717} {:.1}% duplication ({:.2}s)",
+                stats.duplication_percentage,
+                elapsed.as_secs_f64()
+            )
+            .red()
+            .bold()
+        );
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

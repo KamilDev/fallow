@@ -1118,6 +1118,134 @@ fn build_summary_footer(
     parts.join(" \u{00b7} ")
 }
 
+/// Print a concise summary showing only category counts, no individual items.
+pub(in crate::report) fn print_check_summary(
+    results: &AnalysisResults,
+    rules: &RulesConfig,
+    elapsed: Duration,
+    quiet: bool,
+) {
+    let total = results.total_issues();
+    if total == 0 {
+        if !quiet {
+            eprintln!(
+                "{}",
+                format!("\u{2713} No issues found ({:.2}s)", elapsed.as_secs_f64())
+                    .green()
+                    .bold()
+            );
+        }
+        return;
+    }
+
+    println!("{}", "Dead Code Summary".bold());
+    println!();
+
+    let categories: &[(&str, usize, Level)] = &[
+        (
+            "Unused files",
+            results.unused_files.len(),
+            severity_to_level(rules.unused_files),
+        ),
+        (
+            "Unused exports",
+            results.unused_exports.len(),
+            severity_to_level(rules.unused_exports),
+        ),
+        (
+            "Unused types",
+            results.unused_types.len(),
+            severity_to_level(rules.unused_types),
+        ),
+        (
+            "Unused dependencies",
+            results.unused_dependencies.len(),
+            severity_to_level(rules.unused_dependencies),
+        ),
+        (
+            "Unused dev dependencies",
+            results.unused_dev_dependencies.len(),
+            severity_to_level(rules.unused_dev_dependencies),
+        ),
+        (
+            "Unused optional dependencies",
+            results.unused_optional_dependencies.len(),
+            severity_to_level(rules.unused_optional_dependencies),
+        ),
+        (
+            "Unused enum members",
+            results.unused_enum_members.len(),
+            severity_to_level(rules.unused_enum_members),
+        ),
+        (
+            "Unused class members",
+            results.unused_class_members.len(),
+            severity_to_level(rules.unused_class_members),
+        ),
+        (
+            "Unresolved imports",
+            results.unresolved_imports.len(),
+            severity_to_level(rules.unresolved_imports),
+        ),
+        (
+            "Unlisted dependencies",
+            results.unlisted_dependencies.len(),
+            severity_to_level(rules.unlisted_dependencies),
+        ),
+        (
+            "Duplicate exports",
+            results.duplicate_exports.len(),
+            severity_to_level(rules.duplicate_exports),
+        ),
+        (
+            "Type-only dependencies",
+            results.type_only_dependencies.len(),
+            severity_to_level(rules.type_only_dependencies),
+        ),
+        (
+            "Test-only dependencies",
+            results.test_only_dependencies.len(),
+            severity_to_level(rules.test_only_dependencies),
+        ),
+        (
+            "Circular dependencies",
+            results.circular_dependencies.len(),
+            severity_to_level(rules.circular_dependencies),
+        ),
+        (
+            "Boundary violations",
+            results.boundary_violations.len(),
+            severity_to_level(rules.boundary_violation),
+        ),
+    ];
+
+    for (name, count, level) in categories {
+        if *count == 0 {
+            continue;
+        }
+        let count_str = format!("{count:>6}");
+        let colored = match level {
+            Level::Error => count_str.red().bold().to_string(),
+            Level::Warn => count_str.yellow().to_string(),
+            Level::Info => count_str.dimmed().to_string(),
+        };
+        println!("  {colored}  {name}");
+    }
+
+    println!();
+    let total_str = format!("{total:>6}");
+    println!("  {}  {}", total_str.bold(), "Total".bold());
+
+    if !quiet {
+        eprintln!(
+            "{}",
+            format!("\u{2717} {total} issues ({:.2}s)", elapsed.as_secs_f64())
+                .red()
+                .bold()
+        );
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
