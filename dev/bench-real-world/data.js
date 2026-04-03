@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775117685302,
+  "lastUpdate": 1775203776764,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Real-World Benchmarks": [
@@ -713,6 +713,108 @@ window.BENCHMARK_DATA = {
           {
             "name": "next.js (warm)",
             "value": 1883,
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "committer": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "id": "b82e6eab66c63d51f7cf1f19f575699414ebb9b9",
+          "message": "fix: use slurpfile for PR files to avoid ARG_MAX on large PRs\n\nThe --argjson flag inlines the entire PR files JSON on the command line,\nwhich exceeds ARG_MAX for PRs with 100+ files (each carrying patch data).\nSwitch to --slurpfile which reads from a temp file instead. The jq script\nnormalizes both formats so tests using --argjson still work.",
+          "timestamp": "2026-04-03T08:05:37Z",
+          "url": "https://github.com/fallow-rs/fallow/commit/b82e6eab66c63d51f7cf1f19f575699414ebb9b9"
+        },
+        "date": 1775203775536,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "preact (cold)",
+            "value": 43,
+            "unit": "ms"
+          },
+          {
+            "name": "preact (warm)",
+            "value": 39,
+            "unit": "ms"
+          },
+          {
+            "name": "fastify (cold)",
+            "value": 59,
+            "unit": "ms"
+          },
+          {
+            "name": "fastify (warm)",
+            "value": 42,
+            "unit": "ms"
+          },
+          {
+            "name": "zod (cold)",
+            "value": 40,
+            "unit": "ms"
+          },
+          {
+            "name": "zod (warm)",
+            "value": 36,
+            "unit": "ms"
+          },
+          {
+            "name": "vue-core (cold)",
+            "value": 111,
+            "unit": "ms"
+          },
+          {
+            "name": "vue-core (warm)",
+            "value": 92,
+            "unit": "ms"
+          },
+          {
+            "name": "svelte (cold)",
+            "value": 448,
+            "unit": "ms"
+          },
+          {
+            "name": "svelte (warm)",
+            "value": 425,
+            "unit": "ms"
+          },
+          {
+            "name": "query (cold)",
+            "value": 337,
+            "unit": "ms"
+          },
+          {
+            "name": "query (warm)",
+            "value": 321,
+            "unit": "ms"
+          },
+          {
+            "name": "vite (cold)",
+            "value": 225,
+            "unit": "ms"
+          },
+          {
+            "name": "vite (warm)",
+            "value": 215,
+            "unit": "ms"
+          },
+          {
+            "name": "next.js (cold)",
+            "value": 1938,
+            "unit": "ms"
+          },
+          {
+            "name": "next.js (warm)",
+            "value": 1854,
             "unit": "ms"
           }
         ]
