@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775239452032,
+  "lastUpdate": 1775239616648,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -5272,6 +5272,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/28f45e286d4423b80f6bf6256df14cf633c21bbe"
         },
         "date": 1775239451511,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 93.6,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "0134c83b3089c6e159710452ed4dae24b7a3bfb8",
+          "message": "fix: unify section descriptions between CLI and CI summary templates\n\nAlign jq template descriptions with the canonical CLI descriptions from\nsection_footer_text(). Adds missing descriptions for enum members and\nclass members, improves circular deps and duplicate exports with\nconsequence language, and uses consistent terminology throughout.",
+          "timestamp": "2026-04-03T20:05:34+02:00",
+          "tree_id": "86292e705c3adbba04d5b46b9477935d14872912",
+          "url": "https://github.com/fallow-rs/fallow/commit/0134c83b3089c6e159710452ed4dae24b7a3bfb8"
+        },
+        "date": 1775239615694,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
