@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775199277461,
+  "lastUpdate": 1775203202307,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -4895,6 +4895,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/285c6dfbec92d5e730b469ac64aa2b9caa7389a6"
         },
         "date": 1775199276971,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 94.5,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "6506ff35600fe88c33b798ff8d260b3ec86b0ac6",
+          "message": "fix: improve review comment hunk filter UX and robustness\n\nPanel review follow-up:\n- Use per_page=100 on PR files API (reduces calls from 17+ to 5+ on large PRs)\n- Fix misleading warning on API failure: \"hunk filtering disabled\" instead of\n  \"posting all comments\" (those comments would then hit batch-422 anyway)\n- Rephrase body-only case: \"N findings in changed files · none are on lines\n  changed in this PR\" instead of confusing \"0 inline comments\"\n- Add code comments: line-1 fallback behavior for file-level findings, and\n  why startswith(\"@@\") + capture regex is safe with @@ in context labels",
+          "timestamp": "2026-04-03T09:57:26+02:00",
+          "tree_id": "57e7d06effbfbf27377b9819937b71fe19f7e5f8",
+          "url": "https://github.com/fallow-rs/fallow/commit/6506ff35600fe88c33b798ff8d260b3ec86b0ac6"
+        },
+        "date": 1775203200910,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
