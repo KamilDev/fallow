@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775113554935,
+  "lastUpdate": 1775199774812,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Conformance": [
@@ -443,6 +443,73 @@ window.BENCHMARK_DATA = {
           {
             "name": "Knip Total",
             "value": 670,
+            "unit": "issues"
+          },
+          {
+            "name": "fastify Agreement",
+            "value": 3,
+            "unit": "%"
+          },
+          {
+            "name": "preact Agreement",
+            "value": 3.4,
+            "unit": "%"
+          },
+          {
+            "name": "query Agreement",
+            "value": 0,
+            "unit": "%"
+          },
+          {
+            "name": "svelte Agreement",
+            "value": 0.3,
+            "unit": "%"
+          },
+          {
+            "name": "zod Agreement",
+            "value": 9.1,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "committer": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "id": "285c6dfbec92d5e730b469ac64aa2b9caa7389a6",
+          "message": "chore: release v2.10.1",
+          "timestamp": "2026-04-03T06:53:11Z",
+          "url": "https://github.com/fallow-rs/fallow/commit/285c6dfbec92d5e730b469ac64aa2b9caa7389a6"
+        },
+        "date": 1775199773421,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Agreement Rate",
+            "value": 1.9,
+            "unit": "%"
+          },
+          {
+            "name": "Agreed Issues",
+            "value": 147,
+            "unit": "issues"
+          },
+          {
+            "name": "Fallow Total",
+            "value": 7426,
+            "unit": "issues"
+          },
+          {
+            "name": "Knip Total",
+            "value": 662,
             "unit": "issues"
           },
           {
