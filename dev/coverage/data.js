@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775196952938,
+  "lastUpdate": 1775197180430,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -4721,6 +4721,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/d84deb133ed620a2182920f7db9e7c838aec8dbf"
         },
         "date": 1775196952440,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 94.5,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "161ce8e39ef64d989e0d905b398e2e4ecade957f",
+          "message": "fix: scope PR comments to changed files on shallow clones\n\nThe action's comment, summary, annotation, and review scripts relied on\ngit diff against the PR base SHA to determine changed files. On shallow\nclones (the default actions/checkout depth), the base SHA is unreachable\nand git diff silently fails, causing all scripts to show full-codebase\nresults instead of PR-scoped results.\n\nFix: compute the changed files list once in analyze.sh with a 3-level\nfallback (three-dot diff → shallow fetch + two-dot diff → GitHub API),\nsave to fallow-changed-files.json, and read it in all downstream scripts.",
+          "timestamp": "2026-04-03T08:18:17+02:00",
+          "tree_id": "359e43a5b0afb56d0a484899d503169af9ddf29b",
+          "url": "https://github.com/fallow-rs/fallow/commit/161ce8e39ef64d989e0d905b398e2e4ecade957f"
+        },
+        "date": 1775197178966,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
