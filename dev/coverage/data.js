@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775207850925,
+  "lastUpdate": 1775233128187,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -5098,6 +5098,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/ba0af01e313788b4726aee30efc8c0785c89e9b1"
         },
         "date": 1775207850427,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 93.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "bb63249facab554d9c0fa171a193bb70a1c38502",
+          "message": "fix: update stale \"Dead code breakdown\" comments in summary templates",
+          "timestamp": "2026-04-03T18:17:26+02:00",
+          "tree_id": "e2414cdbc7d6eb3cb85fbcb4faf30f48aa4c175d",
+          "url": "https://github.com/fallow-rs/fallow/commit/bb63249facab554d9c0fa171a193bb70a1c38502"
+        },
+        "date": 1775233127052,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
