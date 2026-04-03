@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775194146392,
+  "lastUpdate": 1775197459352,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -2986,6 +2986,35 @@ window.BENCHMARK_DATA = {
           {
             "name": "Binary Size (fallow)",
             "value": 121799624,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "69aa4bb6c8e6c49e0d983408072c1f603fba4949",
+          "message": "feat: add HTTPS URL resolution to config extends field\n\nThe `extends` field in `.fallowrc.json` now supports three resolution\nstrategies: relative paths, npm packages (`npm:`), and HTTPS URLs.\n\nURL extends fetch remote JSON configs with a 5s timeout (configurable\nvia `FALLOW_EXTENDS_TIMEOUT_SECS`), enforce HTTPS-only, cap response\nbodies at 1 MB, and normalize URLs for cycle detection. URL-sourced\nconfigs may extend other URLs or npm packages but not relative paths.",
+          "timestamp": "2026-04-03T08:20:56+02:00",
+          "tree_id": "761ff2f282e64f893daa86344cfe65e99cdbdf38",
+          "url": "https://github.com/fallow-rs/fallow/commit/69aa4bb6c8e6c49e0d983408072c1f603fba4949"
+        },
+        "date": 1775197458200,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 139415384,
             "unit": "bytes"
           }
         ]
