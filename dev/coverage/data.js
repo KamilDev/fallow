@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775197180430,
+  "lastUpdate": 1775197463168,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -4750,6 +4750,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/161ce8e39ef64d989e0d905b398e2e4ecade957f"
         },
         "date": 1775197178966,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 94.5,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "c7a867fdc6445667d105a882669c7bec2a4a5cc6",
+          "message": "test: add shallow-clone fallback tests for action scripts\n\nTests the pre-computed fallow-changed-files.json flow that enables PR\nscoping on shallow clones: pre-computed file used, fallback to unfiltered,\nempty list guard, combined format, and CHANGED_SINCE guard.",
+          "timestamp": "2026-04-03T08:22:07+02:00",
+          "tree_id": "1407d25769dedf215e067941e597e293aab9700a",
+          "url": "https://github.com/fallow-rs/fallow/commit/c7a867fdc6445667d105a882669c7bec2a4a5cc6"
+        },
+        "date": 1775197462695,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
