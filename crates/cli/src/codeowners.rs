@@ -77,7 +77,7 @@ impl CodeOwners {
     }
 
     /// Parse CODEOWNERS content into a lookup structure.
-    fn parse(content: &str) -> Result<Self, String> {
+    pub(crate) fn parse(content: &str) -> Result<Self, String> {
         let mut builder = GlobSetBuilder::new();
         let mut owners = Vec::new();
         let mut patterns = Vec::new();

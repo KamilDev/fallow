@@ -144,6 +144,24 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
 
     let total_elapsed = start.elapsed();
 
+    // Build ownership resolver once for human/compact/markdown rendering.
+    // Structured formats (JSON/SARIF/CodeClimate) have their own envelope and skip grouping.
+    let codeowners_cfg = check_result
+        .as_ref()
+        .map(|r| &r.config)
+        .or_else(|| health_result.as_ref().map(|r| &r.config))
+        .or_else(|| dupes_result.as_ref().map(|r| &r.config))
+        .and_then(|c| c.codeowners.as_deref());
+    let resolver = match crate::build_ownership_resolver(
+        opts.group_by,
+        opts.root,
+        codeowners_cfg,
+        opts.output,
+    ) {
+        Ok(r) => r,
+        Err(code) => return code,
+    };
+
     // Print combined report
     match opts.output {
         OutputFormat::Json => {
@@ -190,8 +208,13 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
                     eprintln!();
                     eprintln!("── Dead Code ──────────────────────────────────────");
                 }
-                let code =
-                    crate::check::print_check_result(result, opts.quiet, opts.explain, false, None);
+                let code = crate::check::print_check_result(
+                    result,
+                    opts.quiet,
+                    opts.explain,
+                    false,
+                    resolver,
+                );
                 max_exit = max_exit.max(exit_code_to_u8(code));
             }
 
