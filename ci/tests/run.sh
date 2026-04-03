@@ -74,7 +74,7 @@ echo "=== GitLab Summary scripts ==="
 echo "  summary-check.jq (GitLab):"
 OUT=$(jq -r -f "$CI_JQ_DIR/summary-check.jq" "$FIXTURES/check.json" 2>&1)
 assert_valid_markdown "$OUT" "produces output"
-assert_contains "$OUT" "Fallow Dead Code Analysis" "has title"
+assert_contains "$OUT" "Fallow Analysis" "has title"
 assert_contains "$OUT" "issues" "mentions issues"
 assert_contains "$OUT" "Unused" "lists unused categories"
 assert_not_contains "$OUT" '!\[NOTE\]' "no GitHub callout NOTE"
@@ -97,7 +97,7 @@ echo "  summary-combined.jq (GitLab):"
 OUT=$(jq -r -f "$CI_JQ_DIR/summary-combined.jq" "$FIXTURES/combined.json" 2>&1)
 assert_valid_markdown "$OUT" "produces output"
 assert_contains "$OUT" "Fallow" "has title"
-assert_contains "$OUT" "dead code" "mentions dead code"
+assert_contains "$OUT" "code issues" "mentions code issues"
 assert_contains "$OUT" "Maintainability" "shows vital signs"
 assert_not_contains "$OUT" '!\[NOTE\]' "no GitHub callout NOTE"
 assert_not_contains "$OUT" '!\[TIP\]' "no GitHub callout TIP"
@@ -240,7 +240,7 @@ assert_contains "$SUMMARY" "ui" "summary mentions zone"
 
 echo "  review-body clean state:"
 OUT_CLEAN=$(jq -r -f "$SHARED_JQ_DIR/review-body.jq" "$FIXTURES/combined-clean.json" 2>&1)
-assert_contains "$OUT_CLEAN" "No dead code" "clean: no dead code"
+assert_contains "$OUT_CLEAN" "No code issues" "clean: no code issues"
 assert_contains "$OUT_CLEAN" "No duplication" "clean: no duplication"
 assert_contains "$OUT_CLEAN" "fallow-review" "clean: has marker"
 

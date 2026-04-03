@@ -16,13 +16,13 @@ def rel_path: split("/") | if length > 3 then .[-3:] | join("/") else join("/") 
 if $total == 0 then
   "# :seedling: Fallow\n\n" +
   "> **No issues found**\n\n" +
-  ":white_check_mark: Dead code \u00b7 :white_check_mark: Duplication \u00b7 :white_check_mark: Complexity" +
+  ":white_check_mark: Code issues \u00b7 :white_check_mark: Duplication \u00b7 :white_check_mark: Complexity" +
   (if $vitals.maintainability_avg then "\n\nMaintainability: **\(pct($vitals.maintainability_avg))** / 100" else "" end)
 else
   "# :seedling: Fallow\n\n" +
 
   # One-line status
-  (if $check > 0 then ":warning: **\($check)** dead code" else ":white_check_mark: Dead code" end) +
+  (if $check > 0 then ":warning: **\($check)** code issues" else ":white_check_mark: Code issues" end) +
   " \u00b7 " +
   (if $dupes > 0 then ":warning: **\($dupes)** clone groups" else ":white_check_mark: Duplication" end) +
   " \u00b7 " +
@@ -31,7 +31,7 @@ else
 
   # Dead code breakdown
   (if $check > 0 then
-    "<details>\n<summary><strong>Dead code (\($check) issues)</strong></summary>\n\n" +
+    "<details>\n<summary><strong>Code issues (\($check))</strong></summary>\n\n" +
     "| Category | Count |\n|:---------|------:|\n" +
     ([
       (if (.check.unused_files | length) > 0 then "| Unused files | \(.check.unused_files | length) |" else null end),

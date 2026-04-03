@@ -13,11 +13,11 @@ def section(name; key; header; fmt):
   else "" end;
 
 if .total_issues == 0 then
-  "# Fallow Dead Code Analysis\n\n" +
+  "# Fallow Analysis\n\n" +
   "> [!NOTE]\n> **No issues found** \u00b7 \(.elapsed_ms)ms\n\n" +
-  "All exports are used, all dependencies are declared, and no dead code was detected."
+  "All exports are used, all dependencies are declared, and no issues were detected."
 else
-  "# Fallow Dead Code Analysis\n\n" +
+  "# Fallow Analysis\n\n" +
   "> [!WARNING]\n> **\(.total_issues) issues** found \u00b7 \(.elapsed_ms)ms\n\n" +
   "| Category | Count |\n|----------|------:|\n" +
   ([

@@ -10,7 +10,7 @@ def count(obj; key): obj | if . then .[key] // 0 else 0 end;
 
 "## \ud83c\udf3f Fallow Review\n\n" +
 
-(if $check > 0 then ":warning: **\($check)** dead code" else ":white_check_mark: No dead code" end) +
+(if $check > 0 then ":warning: **\($check)** code issues" else ":white_check_mark: No code issues" end) +
 " \u00b7 " +
 (if $dupes > 0 then ":warning: **\($dupes)** clone groups" else ":white_check_mark: No duplication" end) +
 " \u00b7 " +
