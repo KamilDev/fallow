@@ -11,7 +11,7 @@ These interfaces are covered by semver — breaking changes only happen in major
 - **Config file names**: `.fallowrc.json`, `fallow.toml`, `.fallow.toml`
 - **All documented config fields**: `extends`, `ignorePatterns`, `rules`, `overrides`, `entry`, `ignoreDependencies`, `ignoreExports`, `duplicates`, `production`, `framework`, `workspaces`, `plugins`, `boundaries` (including `boundaries.preset`)
 - **Rule names and severity values**: `unused-files`, `unused-exports`, etc. with `error`/`warn`/`off`
-- **Extends and overrides semantics**: merge behavior, glob matching, override precedence, `npm:` prefix resolution
+- **Extends and overrides semantics**: merge behavior, glob matching, override precedence, `npm:` prefix resolution, `https://` URL resolution
 - **Inline suppression comment syntax**: `fallow-ignore-next-line`, `fallow-ignore-file`
 
 ### JSON output schema
@@ -30,7 +30,7 @@ These interfaces are covered by semver — breaking changes only happen in major
 - **Bare command flags**: `--only`, `--skip` (select which analyses to run)
 - **Health flags**: `--score` (project health score 0-100 with letter grade), `--min-score` (CI quality gate), `--targets` (refactoring recommendations), `--save-snapshot` (saves vital signs snapshot for trend tracking), `--trend` (compare against most recent snapshot)
 - **Init flags**: `--toml`, `--hooks` (scaffold pre-commit git hook), `--base` (base branch for hook)
-- **Environment variables**: `FALLOW_FORMAT`, `FALLOW_QUIET`, `FALLOW_BIN`, `FALLOW_TIMEOUT_SECS`
+- **Environment variables**: `FALLOW_FORMAT`, `FALLOW_QUIET`, `FALLOW_BIN`, `FALLOW_TIMEOUT_SECS`, `FALLOW_EXTENDS_TIMEOUT_SECS`
 
 ### External plugin format
 

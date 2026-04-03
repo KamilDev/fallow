@@ -1,5 +1,6 @@
 use std::io::Read as _;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use rustc_hash::FxHashSet;
 
@@ -15,6 +16,15 @@ pub(super) const MAX_EXTENDS_DEPTH: usize = 10;
 
 /// Prefix for npm package specifiers in the `extends` field.
 const NPM_PREFIX: &str = "npm:";
+
+/// Prefix for HTTPS URL specifiers in the `extends` field.
+const HTTPS_PREFIX: &str = "https://";
+
+/// Prefix for HTTP URL specifiers (rejected with a clear error).
+const HTTP_PREFIX: &str = "http://";
+
+/// Default timeout for fetching remote configs via URL extends.
+const DEFAULT_URL_TIMEOUT_SECS: u64 = 5;
 
 /// Detect config format from file extension.
 pub(super) enum ConfigFormat {
@@ -317,9 +327,201 @@ fn resolve_npm_package(
     ))
 }
 
-pub(super) fn resolve_extends(
+/// Normalize a URL for deduplication.
+///
+/// - Lowercase scheme and host (path casing is preserved — it's server-dependent).
+/// - Strip fragment (`#...`) and query string (`?...`).
+/// - Strip trailing slash from path.
+/// - Normalize default HTTPS port (`:443` → omitted).
+fn normalize_url_for_dedup(url: &str) -> String {
+    // Split at the first `://` to get scheme, then find host boundary.
+    let Some((scheme, rest)) = url.split_once("://") else {
+        return url.to_string();
+    };
+    let scheme = scheme.to_ascii_lowercase();
+
+    // Split host from path at the first `/` after the authority.
+    let (authority, path) = rest.split_once('/').map_or((rest, ""), |(a, p)| (a, p));
+    let authority = authority.to_ascii_lowercase();
+
+    // Strip default HTTPS port.
+    let authority = authority.strip_suffix(":443").unwrap_or(&authority);
+
+    // Strip fragment and query string from path, then trailing slash.
+    let path = path.split_once('#').map_or(path, |(p, _)| p);
+    let path = path.split_once('?').map_or(path, |(p, _)| p);
+    let path = path.strip_suffix('/').unwrap_or(path);
+
+    if path.is_empty() {
+        format!("{scheme}://{authority}")
+    } else {
+        format!("{scheme}://{authority}/{path}")
+    }
+}
+
+/// Read the `FALLOW_EXTENDS_TIMEOUT_SECS` env var, falling back to [`DEFAULT_URL_TIMEOUT_SECS`].
+///
+/// A value of `0` is treated as invalid and falls back to the default (a zero-duration
+/// timeout would make every request fail immediately with an opaque timeout error).
+fn url_timeout() -> Duration {
+    std::env::var("FALLOW_EXTENDS_TIMEOUT_SECS")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok().filter(|&n| n > 0))
+        .map_or(
+            Duration::from_secs(DEFAULT_URL_TIMEOUT_SECS),
+            Duration::from_secs,
+        )
+}
+
+/// Maximum response body size for fetched config files (1 MB).
+/// Config files are never legitimately larger than a few kilobytes.
+const MAX_URL_CONFIG_BYTES: u64 = 1024 * 1024;
+
+/// Fetch a remote JSON config from an HTTPS URL.
+///
+/// Returns the parsed `serde_json::Value`. Only JSON (with optional JSONC comments) is
+/// supported for URL-sourced configs — TOML cannot be detected without a file extension.
+fn fetch_url_config(url: &str, source: &str) -> Result<serde_json::Value, miette::Report> {
+    let timeout = url_timeout();
+    let agent = ureq::Agent::config_builder()
+        .timeout_global(Some(timeout))
+        .https_only(true)
+        .build()
+        .new_agent();
+
+    let mut response = agent.get(url).call().map_err(|e| {
+        miette::miette!(
+            "Failed to fetch remote config from {url} (referenced from {source}): {e}. \
+             If this URL is unavailable, use a local path or npm: specifier instead"
+        )
+    })?;
+
+    let body = response
+        .body_mut()
+        .with_config()
+        .limit(MAX_URL_CONFIG_BYTES)
+        .read_to_string()
+        .map_err(|e| {
+            miette::miette!(
+                "Failed to read response body from {url} (referenced from {source}): {e}"
+            )
+        })?;
+
+    // Strip JSONC comments before parsing.
+    let mut stripped = String::new();
+    json_comments::StripComments::new(body.as_bytes())
+        .read_to_string(&mut stripped)
+        .map_err(|e| {
+            miette::miette!(
+                "Failed to strip comments from remote config {url} (referenced from {source}): {e}"
+            )
+        })?;
+
+    serde_json::from_str(&stripped).map_err(|e| {
+        miette::miette!(
+            "Failed to parse remote config as JSON from {url} (referenced from {source}): {e}. \
+             Only JSON/JSONC is supported for URL-sourced configs"
+        )
+    })
+}
+
+/// Extract the `extends` array from a parsed JSON config value, removing it from the object.
+fn extract_extends(value: &mut serde_json::Value) -> Vec<String> {
+    value
+        .as_object_mut()
+        .and_then(|obj| obj.remove("extends"))
+        .and_then(|v| match v {
+            serde_json::Value::Array(arr) => Some(
+                arr.into_iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect::<Vec<_>>(),
+            ),
+            serde_json::Value::String(s) => Some(vec![s]),
+            _ => None,
+        })
+        .unwrap_or_default()
+}
+
+/// Resolve extends entries from a URL-sourced config.
+///
+/// URL-sourced configs may extend other URLs or `npm:` packages, but NOT relative
+/// paths (there is no filesystem base directory for a URL).
+fn resolve_url_extends(
+    url: &str,
+    visited: &mut FxHashSet<String>,
+    depth: usize,
+) -> Result<serde_json::Value, miette::Report> {
+    if depth >= MAX_EXTENDS_DEPTH {
+        return Err(miette::miette!(
+            "Config extends chain too deep (>={MAX_EXTENDS_DEPTH} levels) at {url}"
+        ));
+    }
+
+    let normalized = normalize_url_for_dedup(url);
+    if !visited.insert(normalized) {
+        return Err(miette::miette!(
+            "Circular extends detected: {url} was already visited in the extends chain"
+        ));
+    }
+
+    let mut value = fetch_url_config(url, url)?;
+    let extends = extract_extends(&mut value);
+
+    if extends.is_empty() {
+        return Ok(value);
+    }
+
+    let mut merged = serde_json::Value::Object(serde_json::Map::new());
+
+    for entry in &extends {
+        let base = if entry.starts_with(HTTPS_PREFIX) {
+            resolve_url_extends(entry, visited, depth + 1)?
+        } else if entry.starts_with(HTTP_PREFIX) {
+            return Err(miette::miette!(
+                "URL extends must use https://, got http:// URL '{}' (in remote config {}). \
+                 Change the URL to use https:// instead",
+                entry,
+                url
+            ));
+        } else if let Some(npm_specifier) = entry.strip_prefix(NPM_PREFIX) {
+            // npm: from URL context — no config_dir to walk up from, so we use the cwd.
+            // This is a best-effort fallback; the npm package must be available in the
+            // working directory's node_modules tree.
+            let cwd = std::env::current_dir().map_err(|e| {
+                miette::miette!(
+                    "Cannot resolve npm: specifier from URL-sourced config: \
+                     failed to determine current directory: {e}"
+                )
+            })?;
+            tracing::warn!(
+                "Resolving npm:{npm_specifier} from URL-sourced config ({url}) using the \
+                 current working directory for node_modules lookup"
+            );
+            let path_placeholder = PathBuf::from(url);
+            let npm_path = resolve_npm_package(&cwd, npm_specifier, &path_placeholder)?;
+            resolve_extends_file(&npm_path, visited, depth + 1)?
+        } else {
+            return Err(miette::miette!(
+                "Relative paths in 'extends' are not supported when the base config was \
+                 fetched from a URL ('{url}'). Use another https:// URL or npm: reference \
+                 instead. Got: '{entry}'"
+            ));
+        };
+        deep_merge_json(&mut merged, base);
+    }
+
+    deep_merge_json(&mut merged, value);
+    Ok(merged)
+}
+
+/// Resolve extends from a local config file.
+///
+/// This is the main recursive resolver for file-based configs. It reads the file,
+/// extracts `extends`, and recursively resolves each entry (relative paths, npm
+/// packages, or HTTPS URLs).
+fn resolve_extends_file(
     path: &Path,
-    visited: &mut FxHashSet<PathBuf>,
+    visited: &mut FxHashSet<String>,
     depth: usize,
 ) -> Result<serde_json::Value, miette::Report> {
     if depth >= MAX_EXTENDS_DEPTH {
@@ -337,7 +539,7 @@ pub(super) fn resolve_extends(
         )
     })?;
 
-    if !visited.insert(canonical) {
+    if !visited.insert(canonical.to_string_lossy().into_owned()) {
         return Err(miette::miette!(
             "Circular extends detected: {} was already visited in the extends chain",
             path.display()
@@ -345,20 +547,7 @@ pub(super) fn resolve_extends(
     }
 
     let mut value = parse_config_to_value(path)?;
-
-    let extends = value
-        .as_object_mut()
-        .and_then(|obj| obj.remove("extends"))
-        .and_then(|v| match v {
-            serde_json::Value::Array(arr) => Some(
-                arr.into_iter()
-                    .filter_map(|v| v.as_str().map(String::from))
-                    .collect::<Vec<_>>(),
-            ),
-            serde_json::Value::String(s) => Some(vec![s]),
-            _ => None,
-        })
-        .unwrap_or_default();
+    let extends = extract_extends(&mut value);
 
     if extends.is_empty() {
         return Ok(value);
@@ -368,8 +557,18 @@ pub(super) fn resolve_extends(
     let mut merged = serde_json::Value::Object(serde_json::Map::new());
 
     for extend_path_str in &extends {
-        let extend_path = if let Some(npm_specifier) = extend_path_str.strip_prefix(NPM_PREFIX) {
-            resolve_npm_package(config_dir, npm_specifier, path)?
+        let base = if extend_path_str.starts_with(HTTPS_PREFIX) {
+            resolve_url_extends(extend_path_str, visited, depth + 1)?
+        } else if extend_path_str.starts_with(HTTP_PREFIX) {
+            return Err(miette::miette!(
+                "URL extends must use https://, got http:// URL '{}' (in {}). \
+                 Change the URL to use https:// instead",
+                extend_path_str,
+                path.display()
+            ));
+        } else if let Some(npm_specifier) = extend_path_str.strip_prefix(NPM_PREFIX) {
+            let npm_path = resolve_npm_package(config_dir, npm_specifier, path)?;
+            resolve_extends_file(&npm_path, visited, depth + 1)?
         } else {
             if Path::new(extend_path_str).is_absolute() {
                 return Err(miette::miette!(
@@ -386,14 +585,24 @@ pub(super) fn resolve_extends(
                     path.display()
                 ));
             }
-            p
+            resolve_extends_file(&p, visited, depth + 1)?
         };
-        let base = resolve_extends(&extend_path, visited, depth + 1)?;
         deep_merge_json(&mut merged, base);
     }
 
     deep_merge_json(&mut merged, value);
     Ok(merged)
+}
+
+/// Public entry point: resolve a config file with all its extends chain.
+///
+/// Delegates to [`resolve_extends_file`] with a fresh visited set.
+pub(super) fn resolve_extends(
+    path: &Path,
+    visited: &mut FxHashSet<String>,
+    depth: usize,
+) -> Result<serde_json::Value, miette::Report> {
+    resolve_extends_file(path, visited, depth)
 }
 
 impl FallowConfig {
@@ -2289,6 +2498,226 @@ minTokens = 100
         assert_eq!(
             config.duplicates.normalization.ignore_string_values,
             Some(false)
+        );
+    }
+
+    // ── URL extends tests ───────────────────────────────────────────
+
+    #[test]
+    fn normalize_url_basic() {
+        assert_eq!(
+            normalize_url_for_dedup("https://example.com/config.json"),
+            "https://example.com/config.json"
+        );
+    }
+
+    #[test]
+    fn normalize_url_trailing_slash() {
+        assert_eq!(
+            normalize_url_for_dedup("https://example.com/config/"),
+            "https://example.com/config"
+        );
+    }
+
+    #[test]
+    fn normalize_url_uppercase_scheme_and_host() {
+        assert_eq!(
+            normalize_url_for_dedup("HTTPS://Example.COM/Config.json"),
+            "https://example.com/Config.json"
+        );
+    }
+
+    #[test]
+    fn normalize_url_root_path() {
+        assert_eq!(
+            normalize_url_for_dedup("https://example.com/"),
+            "https://example.com"
+        );
+        assert_eq!(
+            normalize_url_for_dedup("https://example.com"),
+            "https://example.com"
+        );
+    }
+
+    #[test]
+    fn normalize_url_preserves_path_case() {
+        // Path component casing is significant (server-dependent), only scheme+host lowercase.
+        assert_eq!(
+            normalize_url_for_dedup("https://GitHub.COM/Org/Repo/Fallow.json"),
+            "https://github.com/Org/Repo/Fallow.json"
+        );
+    }
+
+    #[test]
+    fn normalize_url_strips_query_string() {
+        assert_eq!(
+            normalize_url_for_dedup("https://example.com/config.json?v=1"),
+            "https://example.com/config.json"
+        );
+    }
+
+    #[test]
+    fn normalize_url_strips_fragment() {
+        assert_eq!(
+            normalize_url_for_dedup("https://example.com/config.json#section"),
+            "https://example.com/config.json"
+        );
+    }
+
+    #[test]
+    fn normalize_url_strips_query_and_fragment() {
+        assert_eq!(
+            normalize_url_for_dedup("https://example.com/config.json?v=1#section"),
+            "https://example.com/config.json"
+        );
+    }
+
+    #[test]
+    fn normalize_url_default_https_port() {
+        assert_eq!(
+            normalize_url_for_dedup("https://example.com:443/config.json"),
+            "https://example.com/config.json"
+        );
+        // Non-default port is preserved.
+        assert_eq!(
+            normalize_url_for_dedup("https://example.com:8443/config.json"),
+            "https://example.com:8443/config.json"
+        );
+    }
+
+    #[test]
+    fn extends_http_rejected() {
+        let dir = test_dir("http-rejected");
+        std::fs::write(
+            dir.path().join(".fallowrc.json"),
+            r#"{"extends": "http://example.com/config.json"}"#,
+        )
+        .unwrap();
+
+        let result = FallowConfig::load(&dir.path().join(".fallowrc.json"));
+        assert!(result.is_err());
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(
+            err_msg.contains("https://"),
+            "Expected https hint in error, got: {err_msg}"
+        );
+        assert!(
+            err_msg.contains("http://"),
+            "Expected http:// mention in error, got: {err_msg}"
+        );
+    }
+
+    #[test]
+    fn extends_url_circular_detection() {
+        // Verify that the same URL appearing twice in the visited set is detected.
+        let mut visited = FxHashSet::default();
+        let url = "https://example.com/config.json";
+        let normalized = normalize_url_for_dedup(url);
+        visited.insert(normalized.clone());
+
+        // Inserting the same normalized URL should return false.
+        assert!(
+            !visited.insert(normalized),
+            "Same URL should be detected as duplicate"
+        );
+    }
+
+    #[test]
+    fn extends_url_circular_case_insensitive() {
+        // URLs differing only in scheme/host casing should be detected as circular.
+        let mut visited = FxHashSet::default();
+        visited.insert(normalize_url_for_dedup("https://Example.COM/config.json"));
+
+        let normalized = normalize_url_for_dedup("HTTPS://example.com/config.json");
+        assert!(
+            !visited.insert(normalized),
+            "Case-different URLs should normalize to the same key"
+        );
+    }
+
+    #[test]
+    fn extract_extends_array() {
+        let mut value = serde_json::json!({
+            "extends": ["a.json", "b.json"],
+            "entry": ["src/index.ts"]
+        });
+        let extends = extract_extends(&mut value);
+        assert_eq!(extends, vec!["a.json", "b.json"]);
+        // extends should be removed from the value.
+        assert!(value.get("extends").is_none());
+        assert!(value.get("entry").is_some());
+    }
+
+    #[test]
+    fn extract_extends_string_sugar() {
+        let mut value = serde_json::json!({
+            "extends": "base.json",
+            "entry": ["src/index.ts"]
+        });
+        let extends = extract_extends(&mut value);
+        assert_eq!(extends, vec!["base.json"]);
+    }
+
+    #[test]
+    fn extract_extends_none() {
+        let mut value = serde_json::json!({"entry": ["src/index.ts"]});
+        let extends = extract_extends(&mut value);
+        assert!(extends.is_empty());
+    }
+
+    #[test]
+    fn url_timeout_default() {
+        // Without the env var set, should return the default.
+        let timeout = url_timeout();
+        // We can't assert exact value since the env var might be set in the test environment,
+        // but we can assert it's a reasonable duration.
+        assert!(timeout.as_secs() <= 300, "Timeout should be reasonable");
+    }
+
+    #[test]
+    fn extends_url_mixed_with_file_and_npm() {
+        // Test that a config with a mix of file, npm, and URL extends parses correctly
+        // for the non-URL parts, and produces a clear error for the URL part (no server).
+        let dir = test_dir("url-mixed");
+        std::fs::write(
+            dir.path().join("local.json"),
+            r#"{"rules": {"unused-files": "warn"}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join(".fallowrc.json"),
+            r#"{"extends": ["local.json", "https://unreachable.invalid/config.json"]}"#,
+        )
+        .unwrap();
+
+        let result = FallowConfig::load(&dir.path().join(".fallowrc.json"));
+        assert!(result.is_err());
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(
+            err_msg.contains("unreachable.invalid"),
+            "Expected URL in error message, got: {err_msg}"
+        );
+    }
+
+    #[test]
+    fn extends_https_url_unreachable_errors() {
+        let dir = test_dir("url-unreachable");
+        std::fs::write(
+            dir.path().join(".fallowrc.json"),
+            r#"{"extends": "https://unreachable.invalid/config.json"}"#,
+        )
+        .unwrap();
+
+        let result = FallowConfig::load(&dir.path().join(".fallowrc.json"));
+        assert!(result.is_err());
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(
+            err_msg.contains("unreachable.invalid"),
+            "Expected URL in error, got: {err_msg}"
+        );
+        assert!(
+            err_msg.contains("local path or npm:"),
+            "Expected remediation hint, got: {err_msg}"
         );
     }
 }

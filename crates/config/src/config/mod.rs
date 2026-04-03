@@ -54,17 +54,24 @@ pub struct FallowConfig {
 
     /// Base config files to extend from.
     ///
-    /// Supports two resolution strategies:
-    /// - **Relative paths**: resolved relative to the config file containing the `extends`.
-    /// - **npm packages**: prefixed with `npm:`, resolved by walking up `node_modules/`.
+    /// Supports three resolution strategies:
+    /// - **Relative paths**: `"./base.json"` — resolved relative to the config file.
+    /// - **npm packages**: `"npm:@co/config"` — resolved by walking up `node_modules/`.
     ///   Package resolution checks `package.json` `exports`/`main` first, then falls back
     ///   to standard config file names. Subpaths are supported (e.g., `npm:@co/config/strict.json`).
+    /// - **HTTPS URLs**: `"https://example.com/fallow-base.json"` — fetched remotely.
+    ///   Only HTTPS is supported (no plain HTTP). URL-sourced configs may extend other
+    ///   URLs or `npm:` packages, but not relative paths. Only JSON/JSONC format is
+    ///   supported for remote configs. Timeout is configurable via
+    ///   `FALLOW_EXTENDS_TIMEOUT_SECS` (default: 5s).
     ///
     /// Base configs are loaded first, then this config's values override them.
     /// Later entries in the array override earlier ones.
     ///
     /// **Note:** `npm:` resolution uses `node_modules/` directory walk-up and is
     /// incompatible with Yarn Plug'n'Play (PnP), which has no `node_modules/`.
+    /// URL extends fetch on every run (no caching). For reliable CI, prefer `npm:`
+    /// for private or critical configs.
     #[serde(default, skip_serializing)]
     pub extends: Vec<String>,
 

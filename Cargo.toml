@@ -53,6 +53,9 @@ regex = "1"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 rustc-hash = "2"
 
+# HTTP
+ureq = { version = "3", features = ["rustls"] }
+
 # Caching
 bincode = "2"
 
