@@ -313,9 +313,11 @@ mod tests {
                 boundaries: fallow_config::BoundaryConfig::default(),
                 production,
                 plugins: vec![],
+                dynamically_loaded: vec![],
                 overrides: vec![],
                 regression: None,
                 codeowners: None,
+                public_packages: vec![],
             }
             .resolve(root, OutputFormat::Human, 1, true, true)
         }

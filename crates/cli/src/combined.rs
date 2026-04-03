@@ -28,6 +28,7 @@ pub struct CombinedOptions<'a> {
     pub group_by: Option<crate::GroupBy>,
     pub explain: bool,
     pub performance: bool,
+    pub summary: bool,
     pub run_check: bool,
     pub run_dupes: bool,
     pub run_health: bool,
@@ -91,6 +92,7 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
             trace_opts: &trace_opts,
             explain: opts.explain,
             top: None,
+            summary: opts.summary,
             regression_opts: opts.regression_opts,
         };
         match crate::check::execute_check(&check_opts) {
@@ -123,6 +125,7 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
             trace: None,
             changed_since: opts.changed_since,
             explain: opts.explain,
+            summary: opts.summary,
             group_by: opts.group_by,
         };
         match crate::dupes::execute_dupes(&dupes_opts) {
@@ -208,6 +211,9 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
             // Orientation header: vital signs + analysis scope + start-here nudge
             if show_headers && let Some(ref result) = health_result {
                 print_orientation_header(result, check_result.as_ref());
+            } else if show_headers && let Some(ref result) = check_result {
+                // No health results (e.g., --only dead-code): show entry-point summary alone
+                print_entry_point_summary(&result.results);
             }
 
             if let Some(ref result) = check_result {
@@ -231,7 +237,11 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
                     eprintln!();
                     eprintln!("── Duplication ────────────────────────────────────");
                 }
-                let code = crate::dupes::print_dupes_result(result, opts.quiet, opts.explain);
+                let code = crate::dupes::print_dupes_result(
+                    result,
+                    opts.quiet,
+                    opts.explain,
+                );
                 max_exit = max_exit.max(exit_code_to_u8(code));
             }
 
@@ -241,7 +251,12 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
                     eprintln!("── Complexity ─────────────────────────────────────");
                 }
                 let code =
-                    crate::health::print_health_result(result, opts.quiet, opts.explain, None);
+                    crate::health::print_health_result(
+                        result,
+                        opts.quiet,
+                        opts.explain,
+                        None,
+                    );
                 max_exit = max_exit.max(exit_code_to_u8(code));
             }
         }
@@ -265,7 +280,17 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
         if let Some(ref r) = check_result {
             let issues = r.results.total_issues();
             if issues > 0 {
-                parts.push(format!("check ({issues} issues)"));
+                let delta_suffix = r
+                    .baseline_deltas
+                    .as_ref()
+                    .map_or_else(String::new, |d| match d.total_delta.cmp(&0) {
+                        std::cmp::Ordering::Greater => {
+                            format!(", +{} since baseline", d.total_delta)
+                        }
+                        std::cmp::Ordering::Less => format!(", {} since baseline", d.total_delta),
+                        std::cmp::Ordering::Equal => ", \u{00b1}0 since baseline".to_string(),
+                    });
+                parts.push(format!("check ({issues} issues{delta_suffix})"));
             }
         }
         if let Some(ref r) = dupes_result {
@@ -284,9 +309,16 @@ pub fn run_combined(opts: &CombinedOptions<'_>) -> ExitCode {
             // Repeat start-here nudge so it's visible at the bottom of scrolled output
             let nudge = health_result
                 .as_ref()
-                .and_then(|r| r.report.targets.first())
-                .map(|t| {
-                    let name = t
+                .filter(|r| !r.report.targets.is_empty())
+                .map(|r| {
+                    // Prefer non-test target; fall back to first if all are test paths
+                    let top = r
+                        .report
+                        .targets
+                        .iter()
+                        .find(|t| !is_test_path(&t.path))
+                        .unwrap_or(&r.report.targets[0]);
+                    let name = top
                         .path
                         .file_name()
                         .map(|f| f.to_string_lossy().to_string())
@@ -331,6 +363,14 @@ fn print_combined_json(
                     && let serde_json::Value::Object(ref mut map) = json
                 {
                     map.insert("regression".to_string(), outcome.to_json());
+                }
+                if let Some(ref deltas) = result.baseline_deltas
+                    && let serde_json::Value::Object(ref mut map) = json
+                {
+                    map.insert(
+                        "baseline_deltas".to_string(),
+                        report::build_baseline_deltas_json(deltas),
+                    );
                 }
                 combined.insert("check".into(), json);
             }
@@ -513,11 +553,13 @@ fn build_health_opts<'a>(opts: &'a CombinedOptions<'a>) -> HealthOptions<'a> {
         file_scores: true,
         hotspots: true,
         targets: true,
+        effort: None,
         score: false,
         min_score: None,
         since: None,
         min_commits: None,
         explain: opts.explain,
+        summary: opts.summary,
         save_snapshot: None,
         trend: false,
         group_by: opts.group_by,
@@ -535,10 +577,24 @@ fn print_orientation_header(health: &HealthResult, check: Option<&CheckResult>) 
     {
         let mut parts = Vec::new();
         if let Some(dfp) = vs.dead_file_pct {
-            parts.push(format!("dead files {dfp:.1}%"));
+            if let Some(ref c) = vs.counts {
+                parts.push(format!(
+                    "dead files {dfp:.1}% ({} of {})",
+                    c.dead_files, c.total_files
+                ));
+            } else {
+                parts.push(format!("dead files {dfp:.1}%"));
+            }
         }
         if let Some(dep) = vs.dead_export_pct {
-            parts.push(format!("dead exports {dep:.1}%"));
+            if let Some(ref c) = vs.counts {
+                parts.push(format!(
+                    "dead exports {dep:.1}% ({} of {})",
+                    c.dead_exports, c.total_exports
+                ));
+            } else {
+                parts.push(format!("dead exports {dep:.1}%"));
+            }
         }
         if let Some(mi) = vs.maintainability_avg {
             let label = if mi >= 85.0 {
@@ -603,27 +659,104 @@ fn print_orientation_header(health: &HealthResult, check: Option<&CheckResult>) 
         eprintln!("{}", scope.dimmed());
     }
 
+    // Entry-point detection summary
+    if let Some(result) = check {
+        print_entry_point_summary(&result.results);
+    }
+
     // "Start here" nudge: point to top refactoring target
     if !health.report.targets.is_empty() {
         let target_count = health.report.targets.len();
-        let top = &health.report.targets[0];
-        let file_name = top
-            .path
-            .file_name()
-            .map(|f| f.to_string_lossy().to_string())
-            .unwrap_or_default();
-        eprintln!(
-            "{}",
-            format!(
-                "  {target_count} refactoring target{} \u{2014} start with {file_name} ({})",
-                if target_count == 1 { "" } else { "s" },
-                top.category.label()
-            )
-            .dimmed()
-        );
+        let total_issues = check.map_or(0, |c| c.results.total_issues());
+
+        if total_issues > 500 {
+            // Scale-aware: suggest scoping instead of a specific file
+            eprintln!(
+                "{}",
+                format!(
+                    "  {target_count} refactoring target{} \u{2014} try `fallow check --workspace <name>` to scope",
+                    if target_count == 1 { "" } else { "s" },
+                )
+                .dimmed()
+            );
+        } else {
+            // Prefer non-test target; fall back to first target if all are test paths
+            let top = health
+                .report
+                .targets
+                .iter()
+                .find(|t| !is_test_path(&t.path))
+                .unwrap_or(&health.report.targets[0]);
+            let file_name = top
+                .path
+                .file_name()
+                .map(|f| f.to_string_lossy().to_string())
+                .unwrap_or_default();
+            eprintln!(
+                "{}",
+                format!(
+                    "  {target_count} refactoring target{} \u{2014} start with {file_name} ({})",
+                    if target_count == 1 { "" } else { "s" },
+                    top.category.label()
+                )
+                .dimmed()
+            );
+        }
     }
 }
 
+/// Check if a path contains a test directory segment.
+fn is_test_path(path: &std::path::Path) -> bool {
+    path.components().any(|c| {
+        let s = c.as_os_str().to_string_lossy();
+        matches!(
+            s.as_ref(),
+            "test"
+                | "tests"
+                | "__tests__"
+                | "__test__"
+                | "spec"
+                | "specs"
+                | "__mocks__"
+                | "__fixtures__"
+                | "fixtures"
+        )
+    })
+}
+
+/// Print entry-point detection summary to stderr.
+///
+/// Shows a dimmed informational line so users can verify that fallow found the
+/// right entry points. When zero entry points are detected, emits a warning
+/// with a remediation command.
+pub fn print_entry_point_summary(results: &fallow_core::results::AnalysisResults) {
+    let Some(ref summary) = results.entry_point_summary else {
+        return;
+    };
+    if summary.total == 0 {
+        eprintln!(
+            "{}",
+            "  \u{26a0} No entry points detected \u{2014} exports may appear unused. Run: fallow list --entry-points"
+                .yellow()
+        );
+        return;
+    }
+    use std::fmt::Write as _;
+    let mut line = format!(
+        "  {} entry point{} detected",
+        summary.total,
+        if summary.total == 1 { "" } else { "s" }
+    );
+    if !summary.by_source.is_empty() {
+        let parts: Vec<String> = summary
+            .by_source
+            .iter()
+            .map(|(source, count)| format!("{count} {source}"))
+            .collect();
+        let _ = write!(line, " ({})", parts.join(", "));
+    }
+    eprintln!("{}", line.dimmed());
+}
 /// Convert an ExitCode to u8 for comparison.
 /// ExitCode doesn't implement Ord, so we use this workaround.
 fn exit_code_to_u8(code: ExitCode) -> u8 {

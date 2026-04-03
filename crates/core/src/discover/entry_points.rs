@@ -403,6 +403,7 @@ pub fn discover_plugin_entry_points(
         .iter()
         .chain(plugin_result.discovered_always_used.iter())
         .chain(plugin_result.always_used.iter())
+        .chain(plugin_result.fixture_patterns.iter())
     {
         if let Ok(glob) = globset::Glob::new(pattern) {
             builder.add(glob);
@@ -459,6 +460,49 @@ pub fn discover_plugin_entry_points(
     // Deduplicate
     entries.sort_by(|a, b| a.path.cmp(&b.path));
     entries.dedup_by(|a, b| a.path == b.path);
+    entries
+}
+
+/// Discover entry points from `dynamicallyLoaded` config patterns.
+///
+/// Matches the configured glob patterns against the discovered file list and
+/// marks matching files as entry points so they are never flagged as unused.
+#[must_use]
+pub fn discover_dynamically_loaded_entry_points(
+    config: &ResolvedConfig,
+    files: &[DiscoveredFile],
+) -> Vec<EntryPoint> {
+    if config.dynamically_loaded.is_empty() {
+        return Vec::new();
+    }
+
+    let mut builder = globset::GlobSetBuilder::new();
+    for pattern in &config.dynamically_loaded {
+        if let Ok(glob) = globset::Glob::new(pattern) {
+            builder.add(glob);
+        }
+    }
+    let Ok(glob_set) = builder.build() else {
+        return Vec::new();
+    };
+    if glob_set.is_empty() {
+        return Vec::new();
+    }
+
+    let mut entries = Vec::new();
+    for file in files {
+        let rel = file
+            .path
+            .strip_prefix(&config.root)
+            .unwrap_or(&file.path)
+            .to_string_lossy();
+        if glob_set.is_match(rel.as_ref()) {
+            entries.push(EntryPoint {
+                path: file.path.clone(),
+                source: EntryPointSource::DynamicallyLoaded,
+            });
+        }
+    }
     entries
 }
 

@@ -159,6 +159,22 @@ pub fn build_json(
         serde_json::json!(results.total_issues()),
     );
 
+    // Entry-point detection summary (metadata, not serialized via serde)
+    if let Some(ref ep) = results.entry_point_summary {
+        let sources: serde_json::Map<String, serde_json::Value> = ep
+            .by_source
+            .iter()
+            .map(|(k, v)| (k.replace(' ', "_"), serde_json::json!(v)))
+            .collect();
+        map.insert(
+            "entry_points".to_string(),
+            serde_json::json!({
+                "total": ep.total,
+                "sources": sources,
+            }),
+        );
+    }
+
     if let serde_json::Value::Object(results_map) = results_value {
         for (key, value) in results_map {
             map.insert(key, value);
@@ -1004,6 +1020,7 @@ mod tests {
             length: 2,
             line: 1,
             col: 0,
+            is_cross_package: false,
         });
         let elapsed = Duration::from_millis(0);
         let output = build_json(&results, &root, elapsed).expect("should serialize");
@@ -1274,6 +1291,7 @@ mod tests {
             length: 3,
             line: 5,
             col: 0,
+            is_cross_package: false,
         });
         let elapsed = Duration::from_millis(0);
         let output = build_json(&results, &root, elapsed).expect("should serialize");

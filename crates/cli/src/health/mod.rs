@@ -46,6 +46,7 @@ pub struct HealthOptions<'a> {
     pub file_scores: bool,
     pub hotspots: bool,
     pub targets: bool,
+    pub effort: Option<EffortEstimate>,
     pub score: bool,
     pub min_score: Option<f64>,
     pub since: Option<&'a str>,
@@ -303,6 +304,9 @@ fn compute_targets(
         compute_refactoring_targets(file_scores_slice, &target_aux, hotspots);
     if let Some(baseline) = loaded_baseline {
         tgts = filter_new_health_targets(tgts, baseline, config_root);
+    }
+    if let Some(ref effort) = opts.effort {
+        tgts.retain(|t| t.effort == *effort);
     }
     if let Some(top) = opts.top {
         tgts.truncate(top);

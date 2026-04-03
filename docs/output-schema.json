@@ -1262,6 +1262,10 @@
           "type": "integer",
           "description": "0-based byte column offset of the import that starts the cycle."
         },
+        "is_cross_package": {
+          "type": "boolean",
+          "description": "Whether this cycle crosses workspace package boundaries. Only present when true."
+        },
         "actions": {
           "type": "array",
           "items": { "$ref": "#/definitions/Action" },

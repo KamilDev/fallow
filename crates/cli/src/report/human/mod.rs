@@ -86,7 +86,7 @@ fn section_footer_text(title: &str) -> Option<(&'static str, &'static str)> {
             "https://docs.fallow.tools/explanations/dead-code#unused-class-members",
         )),
         "Unresolved imports" => Some((
-            "Import paths that could not be resolved \u{2014} check for missing packages or broken paths",
+            "Import paths that could not be resolved \u{2014} check for missing packages or broken paths. Framework-specific imports may need a plugin: https://docs.fallow.tools/plugins",
             "https://docs.fallow.tools/explanations/dead-code#unresolved-imports",
         )),
         "Unlisted dependencies" => Some((

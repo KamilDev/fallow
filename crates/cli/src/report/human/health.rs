@@ -78,7 +78,7 @@ pub(in crate::report) fn print_health_human(
             .red()
             .bold()
         );
-        if s.average_maintainability.is_some() {
+        if s.average_maintainability.is_some_and(|mi| mi < 85.0) {
             eprintln!(
                 "{}",
                 "  MI scale: good \u{2265}85, moderate \u{2265}65, low <65 (0\u{2013}100)".dimmed()

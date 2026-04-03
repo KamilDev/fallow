@@ -437,6 +437,7 @@ mod tests {
                 line_count: 10,
             }],
             clone_families: vec![],
+            mirrored_directories: vec![],
             stats: DuplicationStats {
                 clone_groups: 1,
                 clone_instances: 2,
@@ -473,6 +474,7 @@ mod tests {
                 line_count: 10,
             }],
             clone_families: vec![],
+            mirrored_directories: vec![],
             stats: DuplicationStats::default(),
         };
         let lines = build_duplication_human_lines(&report, &root);
@@ -513,6 +515,7 @@ mod tests {
                     estimated_savings: 15,
                 }],
             }],
+            mirrored_directories: vec![],
             stats: DuplicationStats::default(),
         };
         let lines = build_duplication_human_lines(&report, &root);
@@ -555,6 +558,7 @@ mod tests {
                     estimated_savings: 0,
                 }],
             }],
+            mirrored_directories: vec![],
             stats: DuplicationStats::default(),
         };
         let lines = build_duplication_human_lines(&report, &root);
@@ -590,6 +594,7 @@ mod tests {
                 total_duplicated_tokens: 30,
                 suggestions: vec![],
             }],
+            mirrored_directories: vec![],
             stats: DuplicationStats::default(),
         };
         let lines = build_duplication_human_lines(&report, &root);
@@ -626,6 +631,7 @@ mod tests {
                 total_duplicated_tokens: 60,
                 suggestions: vec![],
             }],
+            mirrored_directories: vec![],
             stats: DuplicationStats::default(),
         };
         let lines = build_duplication_human_lines(&report, &root);
@@ -650,6 +656,7 @@ mod tests {
                 line_count: 10,
             }],
             clone_families: vec![],
+            mirrored_directories: vec![],
             stats: DuplicationStats::default(),
         };
         let lines = build_duplication_human_lines(&report, &root);

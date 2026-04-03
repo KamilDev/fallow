@@ -389,7 +389,11 @@ pub fn build_codeclimate(
         };
         issues.push(cc_issue(
             "fallow/circular-dependency",
-            &format!("Circular dependency: {}", chain.join(" \u{2192} ")),
+            &format!(
+                "Circular dependency{}: {}",
+                if cycle.is_cross_package { " (cross-package)" } else { "" },
+                chain.join(" \u{2192} ")
+            ),
             level,
             "Bug Risk",
             &path,
@@ -809,6 +813,7 @@ mod tests {
             length: 2,
             line: 3,
             col: 0,
+            is_cross_package: false,
         });
         let rules = RulesConfig::default();
         let output = build_codeclimate(&results, &root, &rules);

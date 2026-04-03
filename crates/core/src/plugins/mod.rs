@@ -24,6 +24,8 @@ pub struct PluginResult {
     pub always_used_files: Vec<String>,
     /// Setup/helper files referenced from config.
     pub setup_files: Vec<PathBuf>,
+    /// Test fixture glob patterns discovered from config.
+    pub fixture_patterns: Vec<String>,
 }
 
 impl PluginResult {
@@ -33,6 +35,7 @@ impl PluginResult {
             && self.referenced_dependencies.is_empty()
             && self.always_used_files.is_empty()
             && self.setup_files.is_empty()
+            && self.fixture_patterns.is_empty()
     }
 }
 
@@ -89,6 +92,14 @@ pub trait Plugin: Send + Sync {
     /// Exports that are always considered used for matching file patterns.
     fn used_exports(&self) -> Vec<(&'static str, &'static [&'static str])> {
         vec![]
+    }
+
+    /// Glob patterns for test fixture files consumed by this framework.
+    /// These files are implicitly used by the test runner and should not be
+    /// flagged as unused. Unlike `always_used()`, this carries semantic intent
+    /// for reporting purposes.
+    fn fixture_glob_patterns(&self) -> &'static [&'static str] {
+        &[]
     }
 
     /// Dependencies that are tooling (used via CLI/config, not source imports).
@@ -148,7 +159,7 @@ pub trait Plugin: Send + Sync {
 ///
 /// Generates a struct and a `Plugin` trait impl with the standard static methods
 /// (`name`, `enablers`, `entry_patterns`, `config_patterns`, `always_used`, `tooling_dependencies`,
-/// `used_exports`).
+/// `fixture_glob_patterns`, `used_exports`).
 ///
 /// For plugins that need custom `resolve_config()` or `is_enabled()`, keep those as
 /// manual `impl Plugin for ...` blocks instead of using this macro.
@@ -199,6 +210,7 @@ macro_rules! define_plugin {
         $(, config_patterns: $config:expr)?
         $(, always_used: $always:expr)?
         $(, tooling_dependencies: $tooling:expr)?
+        $(, fixture_glob_patterns: $fixtures:expr)?
         $(, virtual_module_prefixes: $virtual:expr)?
         $(, used_exports: [$( ($pat:expr, $exports:expr) ),* $(,)?])?
         , resolve_config: imports_only
@@ -219,6 +231,7 @@ macro_rules! define_plugin {
             $( fn config_patterns(&self) -> &'static [&'static str] { $config } )?
             $( fn always_used(&self) -> &'static [&'static str] { $always } )?
             $( fn tooling_dependencies(&self) -> &'static [&'static str] { $tooling } )?
+            $( fn fixture_glob_patterns(&self) -> &'static [&'static str] { $fixtures } )?
             $( fn virtual_module_prefixes(&self) -> &'static [&'static str] { $virtual } )?
 
             $(
@@ -252,6 +265,7 @@ macro_rules! define_plugin {
         $(, config_patterns: $config:expr)?
         $(, always_used: $always:expr)?
         $(, tooling_dependencies: $tooling:expr)?
+        $(, fixture_glob_patterns: $fixtures:expr)?
         $(, virtual_module_prefixes: $virtual:expr)?
         $(, used_exports: [$( ($pat:expr, $exports:expr) ),* $(,)?])?
         $(,)?
@@ -271,6 +285,7 @@ macro_rules! define_plugin {
             $( fn config_patterns(&self) -> &'static [&'static str] { $config } )?
             $( fn always_used(&self) -> &'static [&'static str] { $always } )?
             $( fn tooling_dependencies(&self) -> &'static [&'static str] { $tooling } )?
+            $( fn fixture_glob_patterns(&self) -> &'static [&'static str] { $fixtures } )?
             $( fn virtual_module_prefixes(&self) -> &'static [&'static str] { $virtual } )?
 
             $(
@@ -446,6 +461,15 @@ mod tests {
         assert!(!r.is_empty());
     }
 
+    #[test]
+    fn plugin_result_not_empty_with_fixture_patterns() {
+        let r = PluginResult {
+            fixture_patterns: vec!["**/__fixtures__/**/*".to_string()],
+            ..Default::default()
+        };
+        assert!(!r.is_empty());
+    }
+
     // ── is_enabled_with_deps prefix matching ─────────────────────
 
     #[test]
@@ -561,6 +585,11 @@ mod tests {
     #[test]
     fn default_tooling_dependencies_is_empty() {
         assert!(MinimalPlugin.tooling_dependencies().is_empty());
+    }
+
+    #[test]
+    fn default_fixture_glob_patterns_is_empty() {
+        assert!(MinimalPlugin.fixture_glob_patterns().is_empty());
     }
 
     #[test]

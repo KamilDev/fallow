@@ -122,7 +122,24 @@ pub(in crate::report) fn print_human(
                     .bold()
             );
         } else {
-            let summary = build_summary_footer(results);
+            // Compute suppressed counts so the footer reflects visible items
+            let unused_file_set: FxHashSet<&std::path::Path> = results
+                .unused_files
+                .iter()
+                .map(|f| f.path.as_path())
+                .collect();
+            let suppressed_exports = results
+                .unused_exports
+                .iter()
+                .filter(|e| unused_file_set.contains(e.path.as_path()))
+                .count();
+            let suppressed_types = results
+                .unused_types
+                .iter()
+                .filter(|e| unused_file_set.contains(e.path.as_path()))
+                .count();
+            let summary =
+                build_summary_footer(results, suppressed_exports, suppressed_types);
             eprintln!(
                 "{}",
                 format!("\u{2717} {summary} ({:.2}s)", elapsed.as_secs_f64())
@@ -439,8 +456,53 @@ fn build_dir_rollup_section(
     }
     dir_counts.sort_by(|a, b| b.1.cmp(&a.1));
 
-    let shown = dir_counts.len().min(MAX_FLAT_ITEMS);
-    for (dir, count, is_dir) in &dir_counts[..shown] {
+    // Second-level rollup: when one directory holds >80% of files, expand it
+    // into two-level sub-directories (e.g. `packages/react-query/`) for clarity.
+    let total = unused_files.len();
+    let dominant = dir_counts
+        .iter()
+        .find(|(_, count, is_dir)| *is_dir && count * 100 / total.max(1) > 80)
+        .map(|(dir, _, _)| dir.clone());
+
+    let display_entries: Vec<(String, usize, bool)> = if let Some(ref dom_dir) = dominant {
+        let mut sub_counts: Vec<(String, usize, bool)> = Vec::new();
+        let mut sub_map: FxHashMap<String, usize> = FxHashMap::default();
+        for f in unused_files {
+            let rel = relative_path(&f.path, root);
+            let mut components = rel.components();
+            let first = components
+                .next()
+                .map(|c| c.as_os_str().to_string_lossy().to_string());
+            if first.as_deref() == Some(dom_dir.as_str()) {
+                let sub_key = components
+                    .next()
+                    .map(|c| {
+                        format!("{}/{}", dom_dir, c.as_os_str().to_string_lossy())
+                    })
+                    .unwrap_or_else(|| dom_dir.clone());
+                if let Some(&idx) = sub_map.get(&sub_key) {
+                    sub_counts[idx].1 += 1;
+                } else {
+                    sub_map.insert(sub_key.clone(), sub_counts.len());
+                    sub_counts.push((sub_key, 1, true));
+                }
+            }
+        }
+        sub_counts.sort_by(|a, b| b.1.cmp(&a.1));
+        // Combine: sub-entries for the dominant dir + remaining first-level entries
+        let mut combined = sub_counts;
+        for entry in &dir_counts {
+            if entry.0 != *dom_dir {
+                combined.push(entry.clone());
+            }
+        }
+        combined
+    } else {
+        dir_counts.clone()
+    };
+
+    let shown = display_entries.len().min(MAX_FLAT_ITEMS);
+    for (dir, count, is_dir) in &display_entries[..shown] {
         let label = if *is_dir {
             format!("{dir}/").bold().to_string()
         } else {
@@ -448,8 +510,8 @@ fn build_dir_rollup_section(
         };
         lines.push(format!("  {}  {} file{}", label, count, plural(*count)));
     }
-    if dir_counts.len() > MAX_FLAT_ITEMS {
-        let remaining = dir_counts.len() - MAX_FLAT_ITEMS;
+    if display_entries.len() > MAX_FLAT_ITEMS {
+        let remaining = display_entries.len() - MAX_FLAT_ITEMS;
         // Use directory-specific wording and scoping hint when total issues are high
         let hint = if remaining > SCOPING_HINT_THRESHOLD || total_issues > SCOPING_HINT_THRESHOLD {
             format!(
@@ -695,11 +757,18 @@ fn build_circular_deps_section(
                 String::new()
             };
 
+            let cross_pkg_tag = if cycle.is_cross_package {
+                format!(" {}", "(cross-package)".dimmed())
+            } else {
+                String::new()
+            };
+
             lines.push(format!(
-                "    {} {}{}",
+                "    {} {}{}{}",
                 "\u{2192}".dimmed(),
                 chain_parts.join(&format!(" {} ", "\u{2192}".dimmed())),
                 type_only_tag,
+                cross_pkg_tag,
             ));
         }
         lines.push(String::new());
@@ -862,7 +931,7 @@ pub(in crate::report) fn print_grouped_human(
 
         // Group header: bold cyan key with issue count and per-type breakdown
         let issue_word = if total == 1 { "issue" } else { "issues" };
-        let breakdown = build_summary_footer(&group.results);
+        let breakdown = build_summary_footer(&group.results, 0, 0);
         let header_text = if breakdown.is_empty() {
             format!("{} ({total} {issue_word})", group.key)
         } else {
@@ -894,12 +963,12 @@ pub(in crate::report) fn print_grouped_human(
         }
 
         if group.key == crate::codeowners::UNOWNED_LABEL {
-            println!(
+            eprintln!(
                 "  {}",
                 "Files with no CODEOWNERS entry \u{2014} add ownership or verify before removing"
                     .dimmed()
             );
-            println!();
+            eprintln!();
         }
     }
 
@@ -956,7 +1025,7 @@ fn emit_config_quality_signal(results: &AnalysisResults, root: &Path) {
     let total = results.unused_files.len();
     if let Some((dominant_dir, count)) = dir_counts.iter().max_by_key(|(_, c)| **c) {
         let pct = (*count as f64 / total as f64) * 100.0;
-        if pct > 50.0 {
+        if pct > 80.0 {
             // Source-heavy directories get different advice than test/example dirs
             let is_source_dir =
                 matches!(dominant_dir.as_str(), "packages" | "src" | "lib" | "apps");
@@ -980,7 +1049,15 @@ fn emit_config_quality_signal(results: &AnalysisResults, root: &Path) {
 }
 
 /// Build a one-line summary footer showing counts per issue type.
-fn build_summary_footer(results: &AnalysisResults) -> String {
+///
+/// `suppressed_exports` / `suppressed_types` are subtracted from the raw
+/// counts so the footer reflects the *visible* items when export suppression
+/// is active (exports from unused files are hidden).
+fn build_summary_footer(
+    results: &AnalysisResults,
+    suppressed_exports: usize,
+    suppressed_types: usize,
+) -> String {
     let mut parts = Vec::new();
     let mut add = |count: usize, label: &str| {
         if count > 0 {
@@ -1000,8 +1077,14 @@ fn build_summary_footer(results: &AnalysisResults) -> String {
     };
 
     add(results.unused_files.len(), "file");
-    add(results.unused_exports.len(), "export");
-    add(results.unused_types.len(), "type");
+    add(
+        results.unused_exports.len().saturating_sub(suppressed_exports),
+        "export",
+    );
+    add(
+        results.unused_types.len().saturating_sub(suppressed_types),
+        "type",
+    );
     add(results.unused_dependencies.len(), "unused dep");
     add(
         results.unused_dev_dependencies.len() + results.unused_optional_dependencies.len(),
@@ -1364,6 +1447,7 @@ mod tests {
             length: 3,
             line: 1,
             col: 0,
+            is_cross_package: false,
         });
         let rules = RulesConfig::default();
         let lines = build_human_lines(&results, &root, &rules, None);
@@ -1632,12 +1716,14 @@ mod tests {
             length: 2,
             line: 1,
             col: 0,
+            is_cross_package: false,
         });
         results.circular_dependencies.push(CircularDependency {
             files: vec![root.join("src/hub.ts"), root.join("src/b.ts")],
             length: 2,
             line: 5,
             col: 0,
+            is_cross_package: false,
         });
         let rules = RulesConfig::default();
         let lines = build_human_lines(&results, &root, &rules, None);
@@ -1654,7 +1740,7 @@ mod tests {
     fn summary_footer_uses_short_labels() {
         let root = PathBuf::from("/project");
         let results = sample_results(&root);
-        let footer = build_summary_footer(&results);
+        let footer = build_summary_footer(&results, 0, 0);
         // Should use short labels, not "unused file" etc.
         assert!(footer.contains("1 file"));
         assert!(footer.contains("1 export"));
@@ -1687,7 +1773,7 @@ mod tests {
                 col: 0,
                 kind: MemberKind::ClassMethod,
             });
-        let footer = build_summary_footer(&results);
+        let footer = build_summary_footer(&results, 0, 0);
         // Pre-pluralized labels should be singularized for count=1
         assert!(
             footer.contains("1 enum member"),

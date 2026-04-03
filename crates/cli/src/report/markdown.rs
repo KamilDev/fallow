@@ -167,13 +167,19 @@ pub fn build_markdown(results: &AnalysisResults, root: &Path) -> String {
             if let Some(first) = chain.first() {
                 display_chain.push(first.clone());
             }
+            let cross_pkg_tag = if cycle.is_cross_package {
+                " *(cross-package)*"
+            } else {
+                ""
+            };
             vec![format!(
-                "- {}",
+                "- {}{}",
                 display_chain
                     .iter()
                     .map(|s| format!("`{s}`"))
                     .collect::<Vec<_>>()
-                    .join(" \u{2192} ")
+                    .join(" \u{2192} "),
+                cross_pkg_tag
             )]
         },
     );
@@ -905,6 +911,7 @@ mod tests {
             length: 2,
             line: 3,
             col: 0,
+            is_cross_package: false,
         });
         let md = build_markdown(&results, &root);
         assert!(md.contains("`src/a.ts`"));
@@ -1018,6 +1025,7 @@ mod tests {
                 line_count: 10,
             }],
             clone_families: vec![],
+            mirrored_directories: vec![],
             stats: DuplicationStats {
                 total_files: 10,
                 files_with_clones: 2,
@@ -1064,6 +1072,7 @@ mod tests {
                     estimated_savings: 15,
                 }],
             }],
+            mirrored_directories: vec![],
             stats: DuplicationStats {
                 clone_groups: 1,
                 clone_instances: 1,
@@ -1380,6 +1389,7 @@ mod tests {
                     estimated_savings: 0,
                 }],
             }],
+            mirrored_directories: vec![],
             stats: DuplicationStats {
                 clone_groups: 1,
                 clone_instances: 1,
@@ -1759,6 +1769,7 @@ mod tests {
                 line_count: 5,
             }],
             clone_families: vec![],
+            mirrored_directories: vec![],
             stats: DuplicationStats {
                 clone_groups: 1,
                 clone_instances: 1,

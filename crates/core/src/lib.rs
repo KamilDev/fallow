@@ -22,7 +22,7 @@ use std::path::Path;
 use std::time::Instant;
 
 use errors::FallowError;
-use fallow_config::{PackageJson, ResolvedConfig, discover_workspaces};
+use fallow_config::{PackageJson, ResolvedConfig, discover_workspaces, find_undeclared_workspaces};
 use rayon::prelude::*;
 use results::AnalysisResults;
 use trace::PipelineTimings;
@@ -142,6 +142,14 @@ pub fn analyze_with_parse_result(
         tracing::info!(count = workspaces_vec.len(), "workspaces discovered");
     }
 
+    // Warn about directories with package.json not declared as workspaces
+    if !config.quiet {
+        let undeclared = find_undeclared_workspaces(&config.root, &workspaces_vec);
+        for diag in &undeclared {
+            tracing::warn!("{}", diag.message);
+        }
+    }
+
     // Stage 1: Discover files (cheap — needed for file registry and resolution)
     let t = Instant::now();
     let pb = progress.stage_spinner("Discovering files...");
@@ -172,6 +180,9 @@ pub fn analyze_with_parse_result(
     let entry_points = discover_all_entry_points(config, files, workspaces, &plugin_result);
     let entry_points_ms = t.elapsed().as_secs_f64() * 1000.0;
 
+    // Compute entry-point summary before the graph consumes the entry_points vec
+    let ep_summary = summarize_entry_points(&entry_points);
+
     // Stage 4: Resolve imports to file IDs
     let t = Instant::now();
     let pb = progress.stage_spinner("Resolving imports...");
@@ -196,7 +207,7 @@ pub fn analyze_with_parse_result(
     // Stage 6: Analyze for dead code
     let t = Instant::now();
     let pb = progress.stage_spinner("Analyzing...");
-    let result = analyze::find_dead_code_full(
+    let mut result = analyze::find_dead_code_full(
         &graph,
         config,
         &resolved,
@@ -208,6 +219,8 @@ pub fn analyze_with_parse_result(
     let analyze_ms = t.elapsed().as_secs_f64() * 1000.0;
     pb.finish_and_clear();
     progress.finish();
+
+    result.entry_point_summary = Some(ep_summary);
 
     let total_ms = pipeline_start.elapsed().as_secs_f64() * 1000.0;
 
@@ -306,6 +319,14 @@ fn analyze_full(
         tracing::info!(count = workspaces_vec.len(), "workspaces discovered");
     }
 
+    // Warn about directories with package.json not declared as workspaces
+    if !config.quiet {
+        let undeclared = find_undeclared_workspaces(&config.root, &workspaces_vec);
+        for diag in &undeclared {
+            tracing::warn!("{}", diag.message);
+        }
+    }
+
     // Stage 1: Discover all source files
     let t = Instant::now();
     let pb = progress.stage_spinner("Discovering files...");
@@ -384,10 +405,13 @@ fn analyze_full(
     let graph_ms = t.elapsed().as_secs_f64() * 1000.0;
     pb.finish_and_clear();
 
+    // Compute entry-point summary before the graph consumes the entry_points vec
+    let ep_summary = summarize_entry_points(&entry_points);
+
     // Stage 6: Analyze for dead code (with plugin context and workspace info)
     let t = Instant::now();
     let pb = progress.stage_spinner("Analyzing...");
-    let result = analyze::find_dead_code_full(
+    let mut result = analyze::find_dead_code_full(
         &graph,
         config,
         &resolved,
@@ -399,6 +423,8 @@ fn analyze_full(
     let analyze_ms = t.elapsed().as_secs_f64() * 1000.0;
     pb.finish_and_clear();
     progress.finish();
+
+    result.entry_point_summary = Some(ep_summary);
 
     let total_ms = pipeline_start.elapsed().as_secs_f64() * 1000.0;
 
@@ -548,7 +574,41 @@ fn discover_all_entry_points(
     entry_points.extend(plugin_entries);
     let infra_entries = discover::discover_infrastructure_entry_points(&config.root);
     entry_points.extend(infra_entries);
+
+    // Add dynamically loaded files from config as entry points
+    if !config.dynamically_loaded.is_empty() {
+        let dynamic_entries =
+            discover::discover_dynamically_loaded_entry_points(config, files);
+        entry_points.extend(dynamic_entries);
+    }
+
     entry_points
+}
+
+/// Summarize entry points by source category for user-facing output.
+fn summarize_entry_points(entry_points: &[discover::EntryPoint]) -> results::EntryPointSummary {
+    let mut counts: rustc_hash::FxHashMap<String, usize> = rustc_hash::FxHashMap::default();
+    for ep in entry_points {
+        let category = match &ep.source {
+            discover::EntryPointSource::PackageJsonMain
+            | discover::EntryPointSource::PackageJsonModule
+            | discover::EntryPointSource::PackageJsonExports
+            | discover::EntryPointSource::PackageJsonBin
+            | discover::EntryPointSource::PackageJsonScript => "package.json",
+            discover::EntryPointSource::Plugin { .. } => "plugin",
+            discover::EntryPointSource::TestFile => "test file",
+            discover::EntryPointSource::DefaultIndex => "default index",
+            discover::EntryPointSource::ManualEntry => "manual entry",
+            discover::EntryPointSource::InfrastructureConfig => "config",
+        };
+        *counts.entry(category.to_string()).or_insert(0) += 1;
+    }
+    let mut by_source: Vec<(String, usize)> = counts.into_iter().collect();
+    by_source.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+    results::EntryPointSummary {
+        total: entry_points.len(),
+        by_source,
+    }
 }
 
 /// Run plugins for root project and all workspace packages.
@@ -645,6 +705,11 @@ fn run_plugins(
         for (pat, pname) in &ws_result.discovered_always_used {
             result
                 .discovered_always_used
+                .push((prefix_if_needed(pat), pname.clone()));
+        }
+        for (pat, pname) in &ws_result.fixture_patterns {
+            result
+                .fixture_patterns
                 .push((prefix_if_needed(pat), pname.clone()));
         }
         for (file_pat, exports) in &ws_result.used_exports {

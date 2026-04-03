@@ -52,6 +52,11 @@ pub fn process_static_patterns(
     for (prefix, replacement) in plugin.path_aliases(root) {
         result.path_aliases.push((prefix.to_string(), replacement));
     }
+    for pat in plugin.fixture_glob_patterns() {
+        result
+            .fixture_patterns
+            .push(((*pat).to_string(), pname.clone()));
+    }
 }
 
 /// Process external plugin definitions, checking activation and aggregating patterns.
@@ -186,6 +191,12 @@ pub fn process_config_result(
     result.setup_files.extend(
         plugin_result
             .setup_files
+            .into_iter()
+            .map(|p| (p, pname.clone())),
+    );
+    result.fixture_patterns.extend(
+        plugin_result
+            .fixture_patterns
             .into_iter()
             .map(|p| (p, pname.clone())),
     );

@@ -371,6 +371,11 @@ enum Command {
         #[arg(long)]
         targets: bool,
 
+        /// Filter refactoring targets by effort level (low, medium, high).
+        /// Implies --targets.
+        #[arg(long, value_enum)]
+        effort: Option<EffortFilter>,
+
         /// Show only the project health score (0–100) with letter grade (A/B/C/D/F).
         /// The score is included by default when no section flags are set.
         #[arg(long)]
@@ -477,6 +482,28 @@ pub enum GroupBy {
     Owner,
     /// Group by first directory component of the file path.
     Directory,
+    /// Group by workspace package (monorepo).
+    #[value(alias = "workspace", alias = "pkg")]
+    Package,
+}
+
+/// Filter refactoring targets by effort level.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
+pub enum EffortFilter {
+    Low,
+    Medium,
+    High,
+}
+
+impl EffortFilter {
+    /// Convert to the corresponding `EffortEstimate` for comparison.
+    const fn to_estimate(self) -> health_types::EffortEstimate {
+        match self {
+            Self::Low => health_types::EffortEstimate::Low,
+            Self::Medium => health_types::EffortEstimate::Medium,
+            Self::High => health_types::EffortEstimate::High,
+        }
+    }
 }
 
 // ── Structured error output ──────────────────────────────────────
@@ -544,6 +571,21 @@ fn build_ownership_resolver(
             Err(e) => Err(emit_error(&e, 2, output)),
         },
         GroupBy::Directory => Ok(Some(report::OwnershipResolver::Directory)),
+        GroupBy::Package => {
+            let workspaces = fallow_config::discover_workspaces(root);
+            if workspaces.is_empty() {
+                Err(emit_error(
+                    "--group-by package requires a monorepo with workspace packages \
+                     (package.json workspaces, pnpm-workspace.yaml, or tsconfig references)",
+                    2,
+                    output,
+                ))
+            } else {
+                Ok(Some(report::OwnershipResolver::Package(
+                    report::grouping::PackageResolver::new(root, &workspaces),
+                )))
+            }
+        }
     }
 }
 
@@ -1116,6 +1158,7 @@ fn dispatch_subcommand(
             file_scores,
             hotspots,
             targets,
+            effort,
             score,
             min_score,
             since,
@@ -1137,6 +1180,7 @@ fn dispatch_subcommand(
             file_scores,
             hotspots,
             targets,
+            effort,
             score,
             min_score,
             since.as_deref(),
@@ -1186,6 +1230,7 @@ fn dispatch_health(
     file_scores: bool,
     hotspots: bool,
     targets: bool,
+    effort: Option<EffortFilter>,
     score: bool,
     min_score: Option<f64>,
     since: Option<&str>,
@@ -1200,6 +1245,8 @@ fn dispatch_health(
         quiet,
         cli_format_was_explicit,
     );
+    // --effort implies --targets
+    let targets = targets || effort.is_some();
     // --min-score, --save-snapshot, --trend, and --format badge imply --score
     let badge_format = matches!(output, fallow_config::OutputFormat::Badge);
     let score = score || min_score.is_some() || trend || badge_format;
@@ -1234,6 +1281,7 @@ fn dispatch_health(
         file_scores: eff_file_scores,
         hotspots: eff_hotspots,
         targets: eff_targets,
+        effort: effort.map(EffortFilter::to_estimate),
         score: eff_score,
         min_score,
         since,

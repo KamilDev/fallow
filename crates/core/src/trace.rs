@@ -754,6 +754,7 @@ mod tests {
                 line_count: 11,
             }],
             clone_families: vec![],
+            mirrored_directories: vec![],
             stats: DuplicationStats {
                 total_files: 2,
                 files_with_clones: 2,
@@ -789,6 +790,7 @@ mod tests {
                 line_count: 11,
             }],
             clone_families: vec![],
+            mirrored_directories: vec![],
             stats: DuplicationStats {
                 total_files: 1,
                 files_with_clones: 1,
@@ -833,6 +835,7 @@ mod tests {
                 line_count: 11,
             }],
             clone_families: vec![],
+            mirrored_directories: vec![],
             stats: DuplicationStats {
                 total_files: 2,
                 files_with_clones: 2,

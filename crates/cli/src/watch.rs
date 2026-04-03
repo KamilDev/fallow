@@ -384,9 +384,11 @@ mod tests {
             boundaries: fallow_config::BoundaryConfig::default(),
             production: false,
             plugins: vec![],
+            dynamically_loaded: vec![],
             overrides: vec![],
             regression: None,
             codeowners: None,
+            public_packages: vec![],
         }
         .resolve(root.to_path_buf(), output, threads, false, quiet)
     }

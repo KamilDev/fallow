@@ -445,7 +445,11 @@ pub fn build_sarif(
             SarifFields {
                 rule_id: "fallow/circular-dependency",
                 level: severity_to_sarif_level(rules.circular_dependencies),
-                message: format!("Circular dependency: {}", display_chain.join(" \u{2192} ")),
+                message: format!(
+                    "Circular dependency{}: {}",
+                    if cycle.is_cross_package { " (cross-package)" } else { "" },
+                    display_chain.join(" \u{2192} ")
+                ),
                 uri: first_uri,
                 region: if cycle.line > 0 {
                     Some((cycle.line, cycle.col + 1))
@@ -1336,6 +1340,7 @@ mod tests {
             length: 2,
             line: 0,
             col: 0,
+            is_cross_package: false,
         });
 
         let sarif = build_sarif(&results, &root, &RulesConfig::default());
@@ -1353,6 +1358,7 @@ mod tests {
             length: 2,
             line: 5,
             col: 2,
+            is_cross_package: false,
         });
 
         let sarif = build_sarif(&results, &root, &RulesConfig::default());
@@ -1465,6 +1471,7 @@ mod tests {
                 line_count: 10,
             }],
             clone_families: vec![],
+            mirrored_directories: vec![],
             stats: DuplicationStats::default(),
         };
 

@@ -1474,6 +1474,7 @@ mod tests {
                 length: 2,
                 line: 1,
                 col: 0,
+                is_cross_package: false,
             });
 
         let output = fallow_core::AnalysisOutput {

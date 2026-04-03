@@ -460,9 +460,11 @@ mod tests {
             boundaries: fallow_config::BoundaryConfig::default(),
             production: false,
             plugins: vec![],
+            dynamically_loaded: vec![],
             overrides: vec![],
             regression: None,
             codeowners: None,
+            public_packages: vec![],
         }
         .resolve(
             PathBuf::from("/tmp/test"),
@@ -717,9 +719,11 @@ mod tests {
             boundaries: fallow_config::BoundaryConfig::default(),
             production: false,
             plugins: vec![],
+            dynamically_loaded: vec![],
             overrides: vec![],
             regression: None,
             codeowners: None,
+            public_packages: vec![],
         }
         .resolve(
             PathBuf::from("/tmp/test"),
@@ -748,6 +752,7 @@ mod tests {
             generated_import_patterns: vec![],
             path_aliases: vec![],
             active_plugins: vec![],
+            fixture_patterns: vec![],
         }
     }
 

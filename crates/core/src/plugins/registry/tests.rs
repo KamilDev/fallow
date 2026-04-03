@@ -777,6 +777,7 @@ fn process_config_result_merges_all_fields() {
         referenced_dependencies: vec!["lodash".to_string(), "axios".to_string()],
         always_used_files: vec!["setup.ts".to_string()],
         setup_files: vec![PathBuf::from("/project/test/setup.ts")],
+        fixture_patterns: vec![],
     };
     process_config_result("test-plugin", config_result, &mut aggregated);
 
@@ -817,12 +818,14 @@ fn process_config_result_accumulates_across_multiple_calls() {
         referenced_dependencies: vec!["dep-a".to_string()],
         always_used_files: vec![],
         setup_files: vec![PathBuf::from("/project/setup-a.ts")],
+        fixture_patterns: vec![],
     };
     let result2 = PluginResult {
         entry_patterns: vec!["b.ts".to_string()],
         referenced_dependencies: vec!["dep-b".to_string()],
         always_used_files: vec!["c.ts".to_string()],
         setup_files: vec![],
+        fixture_patterns: vec![],
     };
 
     process_config_result("plugin-a", result1, &mut aggregated);

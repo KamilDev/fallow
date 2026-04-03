@@ -760,9 +760,11 @@ ignoreDependencies = ["autoprefixer", "postcss"]
             boundaries: BoundaryConfig::default(),
             production: false,
             plugins: vec![],
+            dynamically_loaded: vec![],
             overrides: vec![],
             regression: None,
             codeowners: None,
+            public_packages: vec![],
         };
         let resolved = config.resolve(
             PathBuf::from("/tmp/test"),
@@ -799,9 +801,11 @@ ignoreDependencies = ["autoprefixer", "postcss"]
             boundaries: BoundaryConfig::default(),
             production: false,
             plugins: vec![],
+            dynamically_loaded: vec![],
             overrides: vec![],
             regression: None,
             codeowners: None,
+            public_packages: vec![],
         };
         let resolved = config.resolve(
             PathBuf::from("/tmp/test"),
@@ -834,9 +838,11 @@ ignoreDependencies = ["autoprefixer", "postcss"]
             boundaries: BoundaryConfig::default(),
             production: false,
             plugins: vec![],
+            dynamically_loaded: vec![],
             overrides: vec![],
             regression: None,
             codeowners: None,
+            public_packages: vec![],
         };
         let resolved = config.resolve(
             PathBuf::from("/tmp/project"),
@@ -2090,9 +2096,11 @@ minTokens = 100
             boundaries: BoundaryConfig::default(),
             production: true,
             plugins: vec![],
+            dynamically_loaded: vec![],
             overrides: vec![],
             regression: None,
             codeowners: None,
+            public_packages: vec![],
         };
         let resolved = config.resolve(
             PathBuf::from("/tmp/test"),

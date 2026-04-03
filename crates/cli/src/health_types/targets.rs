@@ -98,7 +98,7 @@ pub struct ContributingFactor {
 ///
 /// Surfaces quick wins: high-priority, low-effort targets rank first.
 /// Effort estimate for a refactoring target.
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EffortEstimate {
     /// Small file, few functions, low fan-in — quick to address.

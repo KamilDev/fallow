@@ -97,6 +97,10 @@ fn filter_by_changed_files(
         .retain(|g| g.instances.iter().any(|i| changed.contains(&i.file)));
     report.clone_families =
         fallow_core::duplicates::families::group_into_families(&report.clone_groups, root);
+    report.mirrored_directories = fallow_core::duplicates::families::detect_mirrored_directories(
+        &report.clone_families,
+        root,
+    );
     report.stats = recompute_stats(report);
 }
 
@@ -209,6 +213,11 @@ pub fn execute_dupes(opts: &DupesOptions<'_>) -> Result<DupesResult, ExitCode> {
             &report.clone_groups,
             &config.root,
         );
+        report.mirrored_directories =
+            fallow_core::duplicates::families::detect_mirrored_directories(
+                &report.clone_families,
+                &config.root,
+            );
     }
 
     let elapsed = start.elapsed();
@@ -323,6 +332,7 @@ mod tests {
         DuplicationReport {
             clone_groups: groups,
             clone_families: vec![],
+            mirrored_directories: vec![],
             stats: DuplicationStats {
                 total_files,
                 files_with_clones: 0,

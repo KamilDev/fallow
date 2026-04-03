@@ -96,11 +96,17 @@ pub fn build_compact_lines(results: &AnalysisResults, root: &Path) -> Vec<String
             display_chain.push(first.clone());
         }
         let first_file = chain.first().map_or_else(String::new, Clone::clone);
+        let cross_pkg_tag = if cycle.is_cross_package {
+            " (cross-package)"
+        } else {
+            ""
+        };
         lines.push(format!(
-            "circular-dependency:{}:{}:{}",
+            "circular-dependency:{}:{}:{}{}",
             first_file,
             cycle.line,
-            display_chain.join(" \u{2192} ")
+            display_chain.join(" \u{2192} "),
+            cross_pkg_tag
         ));
     }
     for v in &results.boundary_violations {
@@ -536,6 +542,7 @@ mod tests {
             length: 2,
             line: 3,
             col: 0,
+            is_cross_package: false,
         });
 
         let lines = build_compact_lines(&results, &root);
@@ -560,6 +567,7 @@ mod tests {
             length: 3,
             line: 1,
             col: 0,
+            is_cross_package: false,
         });
 
         let lines = build_compact_lines(&results, &root);

@@ -358,6 +358,11 @@ pub fn run_check(opts: &CheckOptions<'_>) -> ExitCode {
         Err(code) => return code,
     };
 
+    // Entry-point summary (standalone check mode; combined mode uses orientation header)
+    if !opts.quiet && matches!(opts.output, OutputFormat::Human) {
+        crate::combined::print_entry_point_summary(&result.results);
+    }
+
     let resolver = match crate::build_ownership_resolver(
         opts.group_by,
         opts.root,
@@ -649,6 +654,7 @@ mod tests {
                 length: 2,
                 line: 1,
                 col: 0,
+                is_cross_package: false,
             });
         let mut f = no_filters();
         f.circular_deps = true;

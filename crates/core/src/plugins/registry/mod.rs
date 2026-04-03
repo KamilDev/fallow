@@ -57,6 +57,8 @@ pub struct AggregatedPluginResult {
     pub path_aliases: Vec<(String, String)>,
     /// Names of active plugins.
     pub active_plugins: Vec<String>,
+    /// Test fixture glob patterns from active plugins: (pattern, plugin_name).
+    pub fixture_patterns: Vec<(String, String)>,
 }
 
 impl PluginRegistry {

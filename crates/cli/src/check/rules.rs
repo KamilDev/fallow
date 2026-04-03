@@ -310,9 +310,11 @@ mod tests {
             boundaries: fallow_config::BoundaryConfig::default(),
             production: false,
             plugins: vec![],
+            dynamically_loaded: vec![],
             overrides: vec![],
             regression: None,
             codeowners: None,
+            public_packages: vec![],
         }
         .resolve(
             PathBuf::from("/project"),
@@ -551,8 +553,10 @@ mod tests {
             boundaries: fallow_config::BoundaryConfig::default(),
             production: false,
             plugins: vec![],
+            dynamically_loaded: vec![],
             regression: None,
             codeowners: None,
+            public_packages: vec![],
             overrides: vec![fallow_config::ConfigOverride {
                 files: vec!["**/*.test.ts".to_string()],
                 rules: fallow_config::PartialRulesConfig {
@@ -767,6 +771,7 @@ mod tests {
             length: 2,
             line: 1,
             col: 0,
+            is_cross_package: false,
         });
         let rules = RulesConfig::default();
         assert!(has_error_severity_issues(&results, &rules, None));
@@ -783,6 +788,7 @@ mod tests {
             length: 2,
             line: 1,
             col: 0,
+            is_cross_package: false,
         });
         let rules = RulesConfig {
             circular_dependencies: Severity::Warn,

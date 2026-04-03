@@ -408,6 +408,10 @@ pub fn filter_new_clone_groups(
     // Re-generate families from the filtered groups
     report.clone_families =
         fallow_core::duplicates::families::group_into_families(&report.clone_groups, root);
+    report.mirrored_directories = fallow_core::duplicates::families::detect_mirrored_directories(
+        &report.clone_families,
+        root,
+    );
 
     // Re-compute stats for the filtered groups
     report.stats = recompute_stats(&report);
@@ -790,6 +794,7 @@ mod tests {
         DuplicationReport {
             clone_groups: groups,
             clone_families: vec![],
+            mirrored_directories: vec![],
             stats: DuplicationStats {
                 total_files: 10,
                 files_with_clones: 2,
@@ -914,6 +919,7 @@ mod tests {
         let report = DuplicationReport {
             clone_groups: vec![],
             clone_families: vec![],
+            mirrored_directories: vec![],
             stats: DuplicationStats {
                 total_files: 0,
                 files_with_clones: 0,
@@ -996,12 +1002,14 @@ mod tests {
             length: 2,
             line: 1,
             col: 0,
+            is_cross_package: false,
         };
         let dep_ba = CircularDependency {
             files: vec![PathBuf::from("src/b.ts"), PathBuf::from("src/a.ts")],
             length: 2,
             line: 1,
             col: 0,
+            is_cross_package: false,
         };
         assert_eq!(
             super::circular_dep_key(&dep_ab),
@@ -1019,12 +1027,14 @@ mod tests {
             length: 2,
             line: 1,
             col: 0,
+            is_cross_package: false,
         };
         let dep2 = CircularDependency {
             files: vec![PathBuf::from("src/a.ts"), PathBuf::from("src/c.ts")],
             length: 2,
             line: 1,
             col: 0,
+            is_cross_package: false,
         };
         assert_ne!(
             super::circular_dep_key(&dep1),
@@ -1045,6 +1055,7 @@ mod tests {
             length: 3,
             line: 1,
             col: 0,
+            is_cross_package: false,
         };
         let dep_cab = CircularDependency {
             files: vec![
@@ -1055,6 +1066,7 @@ mod tests {
             length: 3,
             line: 1,
             col: 0,
+            is_cross_package: false,
         };
         assert_eq!(
             super::circular_dep_key(&dep_abc),

@@ -116,6 +116,7 @@ fn sample_results(root: &Path) -> AnalysisResults {
         length: 2,
         line: 3,
         col: 0,
+        is_cross_package: false,
     });
 
     r
@@ -1284,6 +1285,7 @@ fn codeclimate_circular_deps_only_snapshot() {
         length: 2,
         line: 3,
         col: 0,
+        is_cross_package: false,
     });
     let cc = build_codeclimate(&results, &root, &RulesConfig::default());
     let json_str = serde_json::to_string_pretty(&cc).expect("should serialize");
@@ -1352,6 +1354,7 @@ fn json_circular_deps_only_snapshot() {
         length: 2,
         line: 3,
         col: 0,
+        is_cross_package: false,
     });
     let value = build_json(&results, &root, Duration::ZERO).expect("JSON build should succeed");
     let json_str = serde_json::to_string_pretty(&value).expect("should serialize");
@@ -1367,6 +1370,7 @@ fn sarif_circular_deps_only_snapshot() {
         length: 2,
         line: 3,
         col: 0,
+        is_cross_package: false,
     });
     let sarif = build_sarif(&results, &root, &RulesConfig::default());
     let json_str = serde_json::to_string_pretty(&sarif).expect("should serialize");
@@ -1382,6 +1386,7 @@ fn compact_circular_deps_only_snapshot() {
         length: 2,
         line: 3,
         col: 0,
+        is_cross_package: false,
     });
     let lines = build_compact_lines(&results, &root);
     insta::assert_snapshot!("compact_circular_deps_only", lines.join("\n"));
@@ -1694,6 +1699,7 @@ fn markdown_circular_deps_only_snapshot() {
         length: 2,
         line: 3,
         col: 0,
+        is_cross_package: false,
     });
     let output = build_markdown(&results, &root);
     insta::assert_snapshot!("markdown_circular_deps_only", output);
@@ -2058,6 +2064,7 @@ fn sample_duplication_report(root: &Path) -> DuplicationReport {
             line_count: 11,
         }],
         clone_families: vec![],
+        mirrored_directories: vec![],
         stats: DuplicationStats {
             total_files: 100,
             files_with_clones: 2,

@@ -306,6 +306,9 @@ fn extract_from_source<T>(
 /// - `export default { ... }`
 /// - `export default defineConfig({ ... })`
 /// - `export default defineConfig(async () => ({ ... }))`
+/// - `export default { ... } satisfies Config` / `export default { ... } as Config`
+/// - `const config = { ... }; export default config;`
+/// - `const config: Config = { ... }; export default config;`
 /// - `module.exports = { ... }`
 /// - Top-level JSON object (for .json files)
 fn find_config_object<'a>(program: &'a Program) -> Option<&'a ObjectExpression<'a>> {
@@ -318,15 +321,18 @@ fn find_config_object<'a>(program: &'a Program) -> Option<&'a ObjectExpression<'
                     ExportDefaultDeclarationKind::ObjectExpression(obj) => {
                         return Some(obj);
                     }
-                    ExportDefaultDeclarationKind::CallExpression(_)
-                    | ExportDefaultDeclarationKind::ParenthesizedExpression(_) => {
-                        // Convert to expression reference for further extraction
-                        decl.declaration.as_expression()
-                    }
-                    _ => None,
+                    _ => decl.declaration.as_expression(),
                 };
                 if let Some(expr) = expr {
-                    return extract_object_from_expression(expr);
+                    // Try direct extraction (handles defineConfig(), parens, TS annotations)
+                    if let Some(obj) = extract_object_from_expression(expr) {
+                        return Some(obj);
+                    }
+                    // Fallback: resolve identifier reference to variable declaration
+                    // Handles: const config: Type = { ... }; export default config;
+                    if let Some(name) = unwrap_to_identifier_name(expr) {
+                        return find_variable_init_object(program, name);
+                    }
                 }
             }
             // module.exports = { ... }
@@ -392,6 +398,11 @@ fn extract_object_from_expression<'a>(
         Expression::ParenthesizedExpression(paren) => {
             extract_object_from_expression(&paren.expression)
         }
+        // TS type annotations: `{ ... } satisfies Config` or `{ ... } as Config`
+        Expression::TSSatisfiesExpression(ts_sat) => {
+            extract_object_from_expression(&ts_sat.expression)
+        }
+        Expression::TSAsExpression(ts_as) => extract_object_from_expression(&ts_as.expression),
         _ => None,
     }
 }
@@ -404,6 +415,41 @@ fn is_module_exports_target(target: &AssignmentTarget) -> bool {
         return obj.name == "module" && member.property.name == "exports";
     }
     false
+}
+
+/// Unwrap TS annotations and return the identifier name if the expression resolves to one.
+///
+/// Handles `config`, `config satisfies Type`, `config as Type`.
+fn unwrap_to_identifier_name<'a>(expr: &'a Expression<'a>) -> Option<&'a str> {
+    match expr {
+        Expression::Identifier(id) => Some(&id.name),
+        Expression::TSSatisfiesExpression(ts_sat) => unwrap_to_identifier_name(&ts_sat.expression),
+        Expression::TSAsExpression(ts_as) => unwrap_to_identifier_name(&ts_as.expression),
+        _ => None,
+    }
+}
+
+/// Find a top-level variable declaration by name and extract its init as an object expression.
+///
+/// Handles `const config = { ... }`, `const config: Type = { ... }`,
+/// and `const config = defineConfig({ ... })`.
+fn find_variable_init_object<'a>(
+    program: &'a Program,
+    name: &str,
+) -> Option<&'a ObjectExpression<'a>> {
+    for stmt in &program.body {
+        if let Statement::VariableDeclaration(decl) = stmt {
+            for declarator in &decl.declarations {
+                if let BindingPattern::BindingIdentifier(id) = &declarator.id
+                    && id.name == name
+                    && let Some(init) = &declarator.init
+                {
+                    return extract_object_from_expression(init);
+                }
+            }
+        }
+    }
+    None
 }
 
 /// Find a named property in an object expression.
@@ -1373,5 +1419,75 @@ mod tests {
         let source = r#"export default { level1: "not-an-object" };"#;
         let val = extract_config_string(source, &js_path(), &["level1", "level2"]);
         assert!(val.is_none());
+    }
+
+    // ── Variable reference resolution ───────────────────────────
+
+    #[test]
+    fn variable_reference_untyped() {
+        let source = r#"
+            const config = {
+                testDir: "./tests"
+            };
+            export default config;
+        "#;
+        let val = extract_config_string(source, &js_path(), &["testDir"]);
+        assert_eq!(val, Some("./tests".to_string()));
+    }
+
+    #[test]
+    fn variable_reference_with_type_annotation() {
+        let source = r#"
+            import type { StorybookConfig } from '@storybook/react-vite';
+            const config: StorybookConfig = {
+                addons: ["@storybook/addon-a11y", "@storybook/addon-docs"],
+                framework: "@storybook/react-vite"
+            };
+            export default config;
+        "#;
+        let addons = extract_config_shallow_strings(source, &ts_path(), "addons");
+        assert_eq!(addons, vec!["@storybook/addon-a11y", "@storybook/addon-docs"]);
+
+        let framework = extract_config_string(source, &ts_path(), &["framework"]);
+        assert_eq!(framework, Some("@storybook/react-vite".to_string()));
+    }
+
+    #[test]
+    fn variable_reference_with_define_config() {
+        let source = r#"
+            import { defineConfig } from 'vitest/config';
+            const config = defineConfig({
+                test: {
+                    include: ["**/*.test.ts"]
+                }
+            });
+            export default config;
+        "#;
+        let include = extract_config_string_array(source, &ts_path(), &["test", "include"]);
+        assert_eq!(include, vec!["**/*.test.ts"]);
+    }
+
+    // ── TS type annotation wrappers ─────────────────────────────
+
+    #[test]
+    fn ts_satisfies_direct_export() {
+        let source = r#"
+            export default {
+                testDir: "./tests"
+            } satisfies PlaywrightTestConfig;
+        "#;
+        let val = extract_config_string(source, &ts_path(), &["testDir"]);
+        assert_eq!(val, Some("./tests".to_string()));
+    }
+
+    #[test]
+    fn ts_as_direct_export() {
+        let source = r#"
+            export default {
+                testDir: "./tests"
+            } as const;
+        "#;
+        let val = extract_config_string(source, &ts_path(), &["testDir"]);
+        assert_eq!(val, Some("./tests".to_string()));
     }
 }

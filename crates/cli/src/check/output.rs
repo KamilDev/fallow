@@ -216,9 +216,11 @@ mod tests {
             production: false,
             quiet: true,
             external_plugins: vec![],
+            dynamically_loaded: vec![],
             overrides: vec![],
             regression: None,
             codeowners: None,
+            public_packages: vec![],
         }
     }
 
