@@ -1662,6 +1662,51 @@ mod tests {
         assert!(!footer.contains("unused file"));
     }
 
+    #[test]
+    fn summary_footer_singularizes_pre_pluralized_labels_for_count_1() {
+        let root = PathBuf::from("/project");
+        let mut results = AnalysisResults::default();
+        // Add exactly 1 of each pre-pluralized category
+        results
+            .unused_enum_members
+            .push(fallow_core::results::UnusedMember {
+                path: root.join("src/types.ts"),
+                parent_name: "Status".to_string(),
+                member_name: "Unused".to_string(),
+                line: 10,
+                col: 0,
+                kind: MemberKind::EnumMember,
+            });
+        results
+            .unused_class_members
+            .push(fallow_core::results::UnusedMember {
+                path: root.join("src/foo.ts"),
+                parent_name: "Foo".to_string(),
+                member_name: "bar".to_string(),
+                line: 5,
+                col: 0,
+                kind: MemberKind::ClassMethod,
+            });
+        let footer = build_summary_footer(&results);
+        // Pre-pluralized labels should be singularized for count=1
+        assert!(
+            footer.contains("1 enum member"),
+            "Expected '1 enum member' but got: {footer}"
+        );
+        assert!(
+            !footer.contains("1 enum members"),
+            "Should not contain '1 enum members': {footer}"
+        );
+        assert!(
+            footer.contains("1 class member"),
+            "Expected '1 class member' but got: {footer}"
+        );
+        assert!(
+            !footer.contains("1 class members"),
+            "Should not contain '1 class members': {footer}"
+        );
+    }
+
     // ── Section footers with docs links ──
 
     #[test]
