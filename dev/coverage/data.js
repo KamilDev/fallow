@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775197730726,
+  "lastUpdate": 1775198834336,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -4808,6 +4808,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/f7fda81f4d9c7739dce649f4f5e614dcc2fc7657"
         },
         "date": 1775197730199,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 94.5,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "8d9b44e90867d2f9a146ca7ce76e2d42d6e6883b",
+          "message": "feat: improve PR comment vital signs clarity and clickable commit links\n\nMake the commit hash in \"Scoped to files changed since\" clickable,\nadd \"Codebase health\" section header above metrics table, show scoped\nmaintainability for changed files, remove dead_export_pct from PR\ncomments (graph-level metric not actionable per-PR), and disambiguate\nfooter to clarify what is scoped vs codebase-wide.",
+          "timestamp": "2026-04-03T08:46:06+02:00",
+          "tree_id": "025d02c510c6d1134e10720d12f4917b5a95c257",
+          "url": "https://github.com/fallow-rs/fallow/commit/8d9b44e90867d2f9a146ca7ce76e2d42d6e6883b"
+        },
+        "date": 1775198833787,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
