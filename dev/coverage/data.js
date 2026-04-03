@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775194047214,
+  "lastUpdate": 1775196952938,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -4692,6 +4692,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/e62239363b17b9627f6dc869754c6e96e281292d"
         },
         "date": 1775194045967,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 94.5,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "d84deb133ed620a2182920f7db9e7c838aec8dbf",
+          "message": "fix: work around npm self-upgrade crash in release CI\n\nnpm 10.9.7 (bundled with Node 22.22.2) crashes with \"Cannot find module\npromise-retry\" when upgrading to npm@latest (npm/cli#9151). Two-step\nupgrade via 10.9.8 (which has the eager-require fix) avoids the issue.",
+          "timestamp": "2026-04-03T08:14:39+02:00",
+          "tree_id": "1d16e34f6e6b2102de235cf59689ef8eb0115ba5",
+          "url": "https://github.com/fallow-rs/fallow/commit/d84deb133ed620a2182920f7db9e7c838aec8dbf"
+        },
+        "date": 1775196952440,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
