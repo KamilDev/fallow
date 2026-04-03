@@ -110,7 +110,7 @@
       {
         "instances": [
           {
-            "file": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/content-parser.ts",
+            "file": "src/helpers/content-parser.ts",
             "start_line": 27,
             "end_line": 50,
             "start_col": 13,
@@ -118,7 +118,7 @@
             "fragment": "parseContentBlocks = (\n    blocks: ContentBlock[],\n    options: Partial<ParseOptions> = {},\n): string => {\n    const opts: ParseOptions = {\n        allowHtml: options.allowHtml ?? false,\n        maxDepth: options.maxDepth ?? 10,\n        stripEmptyBlocks: options.stripEmptyBlocks ?? true,\n        transformUrls: options.transformUrls ?? false,\n        baseUrl: options.baseUrl ?? '',\n        lazyLoadImages: options.lazyLoadImages ?? true,\n        addAnchors: options.addAnchors ?? false,\n        wrapTables: options.wrapTables ?? true,\n    };\n\n    const results: string[] = [];\n\n    for (const block of blocks) {\n        if (opts.stripEmptyBlocks && !block.content && !block.src && !block.items && !block.rows) {\n            continue;\n        }\n\n        switch (block.type) {\n            case 'heading'"
           },
           {
-            "file": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/content-parser.ts",
+            "file": "src/helpers/content-parser.ts",
             "start_line": 168,
             "end_line": 191,
             "start_col": 13,
@@ -132,7 +132,7 @@
       {
         "instances": [
           {
-            "file": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/api.ts",
+            "file": "src/helpers/api.ts",
             "start_line": 3,
             "end_line": 11,
             "start_col": 13,
@@ -140,7 +140,7 @@
             "fragment": "fetchFromApi = async <T>(endpoint: string): Promise<T> => {\n    const response = await fetch(`${API_URL}/${endpoint}`);\n\n    if (!response.ok) {\n        throw new Error(`API error: ${response.status}`);\n    }\n\n    return response.json() as Promise<T>;\n}"
           },
           {
-            "file": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/api.ts",
+            "file": "src/helpers/api.ts",
             "start_line": 22,
             "end_line": 30,
             "start_col": 13,
@@ -155,13 +155,13 @@
     "clone_families": [
       {
         "files": [
-          "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/content-parser.ts"
+          "src/helpers/content-parser.ts"
         ],
         "groups": [
           {
             "instances": [
               {
-                "file": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/content-parser.ts",
+                "file": "src/helpers/content-parser.ts",
                 "start_line": 27,
                 "end_line": 50,
                 "start_col": 13,
@@ -169,7 +169,7 @@
                 "fragment": "parseContentBlocks = (\n    blocks: ContentBlock[],\n    options: Partial<ParseOptions> = {},\n): string => {\n    const opts: ParseOptions = {\n        allowHtml: options.allowHtml ?? false,\n        maxDepth: options.maxDepth ?? 10,\n        stripEmptyBlocks: options.stripEmptyBlocks ?? true,\n        transformUrls: options.transformUrls ?? false,\n        baseUrl: options.baseUrl ?? '',\n        lazyLoadImages: options.lazyLoadImages ?? true,\n        addAnchors: options.addAnchors ?? false,\n        wrapTables: options.wrapTables ?? true,\n    };\n\n    const results: string[] = [];\n\n    for (const block of blocks) {\n        if (opts.stripEmptyBlocks && !block.content && !block.src && !block.items && !block.rows) {\n            continue;\n        }\n\n        switch (block.type) {\n            case 'heading'"
               },
               {
-                "file": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/content-parser.ts",
+                "file": "src/helpers/content-parser.ts",
                 "start_line": 168,
                 "end_line": 191,
                 "start_col": 13,
@@ -193,13 +193,13 @@
       },
       {
         "files": [
-          "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/api.ts"
+          "src/helpers/api.ts"
         ],
         "groups": [
           {
             "instances": [
               {
-                "file": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/api.ts",
+                "file": "src/helpers/api.ts",
                 "start_line": 3,
                 "end_line": 11,
                 "start_col": 13,
@@ -207,7 +207,7 @@
                 "fragment": "fetchFromApi = async <T>(endpoint: string): Promise<T> => {\n    const response = await fetch(`${API_URL}/${endpoint}`);\n\n    if (!response.ok) {\n        throw new Error(`API error: ${response.status}`);\n    }\n\n    return response.json() as Promise<T>;\n}"
               },
               {
-                "file": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/api.ts",
+                "file": "src/helpers/api.ts",
                 "start_line": 22,
                 "end_line": 30,
                 "start_col": 13,
@@ -245,7 +245,7 @@
   "health": {
     "findings": [
       {
-        "path": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/content-parser.ts",
+        "path": "src/helpers/content-parser.ts",
         "name": "parseContentBlocks",
         "line": 27,
         "col": 34,
@@ -255,7 +255,7 @@
         "exceeded": "both"
       },
       {
-        "path": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/content-parser.ts",
+        "path": "src/helpers/content-parser.ts",
         "name": "parseContentToText",
         "line": 168,
         "col": 34,
@@ -286,7 +286,7 @@
     },
     "file_scores": [
       {
-        "path": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/content-parser.ts",
+        "path": "src/helpers/content-parser.ts",
         "fan_in": 1,
         "fan_out": 0,
         "dead_code_ratio": 0.5,
@@ -298,7 +298,7 @@
         "lines": 224
       },
       {
-        "path": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/format.ts",
+        "path": "src/helpers/format.ts",
         "fan_in": 1,
         "fan_out": 0,
         "dead_code_ratio": 0.75,
@@ -310,7 +310,7 @@
         "lines": 33
       },
       {
-        "path": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/api.ts",
+        "path": "src/helpers/api.ts",
         "fan_in": 1,
         "fan_out": 0,
         "dead_code_ratio": 0.75,
@@ -322,7 +322,7 @@
         "lines": 31
       },
       {
-        "path": "/Users/bartwaardenburg/Sites/acorn/website/src/app/page.tsx",
+        "path": "src/app/page.tsx",
         "fan_in": 0,
         "fan_out": 3,
         "dead_code_ratio": 0.0,
@@ -334,7 +334,7 @@
         "lines": 21
       },
       {
-        "path": "/Users/bartwaardenburg/Sites/acorn/website/src/app/layout.tsx",
+        "path": "src/app/layout.tsx",
         "fan_in": 0,
         "fan_out": 1,
         "dead_code_ratio": 0.0,
@@ -346,7 +346,7 @@
         "lines": 18
       },
       {
-        "path": "/Users/bartwaardenburg/Sites/acorn/website/next.config.ts",
+        "path": "next.config.ts",
         "fan_in": 0,
         "fan_out": 0,
         "dead_code_ratio": 0.0,
@@ -367,7 +367,7 @@
     },
     "targets": [
       {
-        "path": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/content-parser.ts",
+        "path": "src/helpers/content-parser.ts",
         "priority": 26.8,
         "efficiency": 13.4,
         "recommendation": "Extract parseContentBlocks (cognitive: 107) into smaller functions",
@@ -399,7 +399,7 @@
         }
       },
       {
-        "path": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/format.ts",
+        "path": "src/helpers/format.ts",
         "priority": 24.3,
         "efficiency": 12.2,
         "recommendation": "Remove 3 unused exports to reduce surface area (75% dead)",
@@ -423,7 +423,7 @@
         }
       },
       {
-        "path": "/Users/bartwaardenburg/Sites/acorn/website/src/helpers/api.ts",
+        "path": "src/helpers/api.ts",
         "priority": 23.7,
         "efficiency": 11.9,
         "recommendation": "Remove 3 unused exports to reduce surface area (75% dead)",

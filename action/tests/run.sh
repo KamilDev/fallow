@@ -113,8 +113,23 @@ assert_contains "$OUT" "Fallow" "has title"
 assert_contains "$OUT" "dead code" "mentions dead code"
 assert_contains "$OUT" "Maintainability" "shows vital signs"
 
+assert_contains "$OUT" "Codebase health" "has codebase health header"
+assert_not_contains "$OUT" "Dead exports" "no dead_export_pct in PR comment"
+
+echo "  summary-combined.jq (scoped maintainability):"
+# Simulate --changed-since filtering: keep only 1 file_score (76.2) vs codebase avg (86.8)
+OUT_SCOPED=$(jq '.health.file_scores = [.health.file_scores[0]]' "$FIXTURES/combined.json" | jq -r -f "$JQ_DIR/summary-combined.jq" 2>&1)
+assert_contains "$OUT_SCOPED" "changed files" "scoped: shows changed files maintainability row"
+assert_contains "$OUT_SCOPED" "76.2" "scoped: shows scoped maintainability value"
+assert_contains "$OUT_SCOPED" "86.8" "scoped: still shows codebase maintainability"
+
+echo "  summary-combined.jq (no scoped row when unfiltered):"
+assert_not_contains "$OUT" "changed files" "unfiltered: no scoped maintainability row"
+
+echo "  summary-combined.jq (clean state):"
 OUT_CLEAN=$(jq -r -f "$JQ_DIR/summary-combined.jq" "$FIXTURES/combined-clean.json" 2>&1)
 assert_contains "$OUT_CLEAN" "No issues found" "clean: no issues"
+assert_contains "$OUT_CLEAN" "Maintainability" "clean: shows maintainability"
 
 # --- Annotation jq tests ---
 
