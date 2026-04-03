@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775233128187,
+  "lastUpdate": 1775236077336,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -5127,6 +5127,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/bb63249facab554d9c0fa171a193bb70a1c38502"
         },
         "date": 1775233127052,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 93.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "08fe2a5d910096cbf6f360093f9009bc466c772f",
+          "message": "feat: add docs links, conditional tips, and consistent labels to CI summaries\n\n- Link every category name to its docs.fallow.tools explanation page\n- Make tip block conditional: only show fix/suppress hints when relevant\n  categories are present, omit entirely for non-fixable issues\n- Unify clean-state labels to \"No code issues · No duplication · No\n  complex functions\" across all surfaces\n- Link Maintainability score to health docs, normalize clean state to\n  table format\n- Clarify filtered findings message with actionable guidance\n- Fix review-body.jq empty inline comments fallback\n- Wire up dupes_docs link in duplication heading",
+          "timestamp": "2026-04-03T18:52:27+02:00",
+          "tree_id": "adbf5f975382977613c8a852aeb59293b27868ea",
+          "url": "https://github.com/fallow-rs/fallow/commit/08fe2a5d910096cbf6f360093f9009bc466c772f"
+        },
+        "date": 1775236076157,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
