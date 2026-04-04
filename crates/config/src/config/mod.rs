@@ -49,7 +49,6 @@ use crate::workspace::WorkspaceConfig;
 pub struct FallowConfig {
     /// JSON Schema reference (ignored during deserialization).
     #[serde(rename = "$schema", default, skip_serializing)]
-    #[schemars(skip)]
     pub schema: Option<String>,
 
     /// Base config files to extend from.
@@ -91,7 +90,11 @@ pub struct FallowConfig {
     #[serde(default)]
     pub workspaces: Option<WorkspaceConfig>,
 
-    /// Dependencies to ignore (always considered used).
+    /// Dependencies to ignore (always considered used and always considered available).
+    ///
+    /// Listed dependencies are excluded from both unused dependency and unlisted
+    /// dependency detection. Useful for runtime-provided packages like `bun:sqlite`
+    /// or implicitly available dependencies.
     #[serde(default)]
     pub ignore_dependencies: Vec<String>,
 

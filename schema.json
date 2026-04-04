@@ -4,6 +4,14 @@
   "description": "User-facing configuration loaded from `.fallowrc.json` or `fallow.toml`.\n\n# Examples\n\n```\nuse fallow_config::FallowConfig;\n\n// Default config has sensible defaults\nlet config = FallowConfig::default();\nassert!(config.entry.is_empty());\nassert!(!config.production);\n\n// Deserialize from JSON\nlet config: FallowConfig = serde_json::from_str(r#\"{\n    \"entry\": [\"src/main.ts\"],\n    \"production\": true\n}\"#).unwrap();\nassert_eq!(config.entry, vec![\"src/main.ts\"]);\nassert!(config.production);\n```",
   "type": "object",
   "properties": {
+    "$schema": {
+      "description": "JSON Schema reference (ignored during deserialization).",
+      "type": [
+        "string",
+        "null"
+      ],
+      "writeOnly": true
+    },
     "extends": {
       "description": "Base config files to extend from.\n\nSupports three resolution strategies:\n- **Relative paths**: `\"./base.json\"` — resolved relative to the config file.\n- **npm packages**: `\"npm:@co/config\"` — resolved by walking up `node_modules/`.\n  Package resolution checks `package.json` `exports`/`main` first, then falls back\n  to standard config file names. Subpaths are supported (e.g., `npm:@co/config/strict.json`).\n- **HTTPS URLs**: `\"https://example.com/fallow-base.json\"` — fetched remotely.\n  Only HTTPS is supported (no plain HTTP). URL-sourced configs may extend other\n  URLs or `npm:` packages, but not relative paths. Only JSON/JSONC format is\n  supported for remote configs. Timeout is configurable via\n  `FALLOW_EXTENDS_TIMEOUT_SECS` (default: 5s).\n\nBase configs are loaded first, then this config's values override them.\nLater entries in the array override earlier ones.\n\n**Note:** `npm:` resolution uses `node_modules/` directory walk-up and is\nincompatible with Yarn Plug'n'Play (PnP), which has no `node_modules/`.\nURL extends fetch on every run (no caching). For reliable CI, prefer `npm:`\nfor private or critical configs.",
       "type": "array",
@@ -49,7 +57,7 @@
       "default": null
     },
     "ignoreDependencies": {
-      "description": "Dependencies to ignore (always considered used).",
+      "description": "Dependencies to ignore (always considered used and always considered available).\n\nListed dependencies are excluded from both unused dependency and unlisted\ndependency detection. Useful for runtime-provided packages like `bun:sqlite`\nor implicitly available dependencies.",
       "type": "array",
       "items": {
         "type": "string"
