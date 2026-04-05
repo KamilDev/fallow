@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775297105309,
+  "lastUpdate": 1775395468456,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -6325,6 +6325,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15863,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534716,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5821,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "h.raza1164@yahoo.com",
+            "name": "Muhammad Hassan Raza",
+            "username": "M-Hassan-Raza"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "71790b18bec1f38a36bd3ecb7ae7e69a8b5d96ae",
+          "message": "fix: align init hook CLI names (#43)",
+          "timestamp": "2026-04-05T15:23:06+02:00",
+          "tree_id": "d39c2898c45bf580390a370231e2231c4028fce4",
+          "url": "https://github.com/fallow-rs/fallow/commit/71790b18bec1f38a36bd3ecb7ae7e69a8b5d96ae"
+        },
+        "date": 1775395467903,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3573098,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15837,
             "unit": "allocations"
           },
           {
