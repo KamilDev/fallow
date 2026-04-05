@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775396531659,
+  "lastUpdate": 1775411886860,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -3532,6 +3532,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/0d88519cb64edfca6142a28a772ac8c3aae0b012"
         },
         "date": 1775396531072,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 142791680,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "3a61a3e4d421bedd3f99e542c3a6df1df0d024b2",
+          "message": "fix: use dead-code instead of check in Failed summary line",
+          "timestamp": "2026-04-05T19:54:55+02:00",
+          "tree_id": "a0c5570162f534bd5392ad2022d9f3fa834bc18b",
+          "url": "https://github.com/fallow-rs/fallow/commit/3a61a3e4d421bedd3f99e542c3a6df1df0d024b2"
+        },
+        "date": 1775411885564,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
