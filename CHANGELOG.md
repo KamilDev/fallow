@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.13.3] - 2026-04-05
+
+### Changed
+
+- **Human output readability** -- all abbreviations spelled out in user-facing output: "deps" → "dependencies", "MI" → "maintainability", "dep" → "dependency". Affects health vital signs, dead-code summary footer, combined orientation header, markdown tables, and score deductions.
+- **Section headers in dead-code output** -- human format now groups findings under `── Unused Code ──`, `── Dependencies ──`, and `── Structure ──` headers for faster scanning.
+- **Labeled metrics and deductions** -- health score deductions line now prefixed with "Deductions:", metrics lines prefixed with "Metrics:" across health, combined, and audit commands.
+
+### Fixed
+
+- **Boundaries excluded from default `fallow list`** -- `fallow list` no longer shows "Boundaries: not configured" noise; use `--boundaries` to inspect zones and rules. ([#49](https://github.com/fallow-rs/fallow/pull/49) by [@M-Hassan-Raza](https://github.com/M-Hassan-Raza))
+- **Ecosystem runner error handling** -- `install_deps()` no longer swallows failures via `|| true`, and stderr is separated from JSON output files. Also uses canonical `dead-code` command with `--quiet`. ([#48](https://github.com/fallow-rs/fallow/pull/48) by [@M-Hassan-Raza](https://github.com/M-Hassan-Raza))
+- **Audit vital signs labeled** -- the audit command's vital signs line now includes a "Metrics:" prefix, consistent with health and combined commands.
+- **Stale `fallow check` in scripts** -- replaced legacy command name in `bench-ci.sh` and `conformance/run.sh`.
+
 ## [2.13.2] - 2026-04-05
 
 ### Fixed
@@ -821,7 +836,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--changed-since` and `--fail-on-issues` for CI
 - Cross-workspace resolution for npm/yarn/pnpm workspaces
 
-[Unreleased]: https://github.com/fallow-rs/fallow/compare/v2.13.2...HEAD
+[Unreleased]: https://github.com/fallow-rs/fallow/compare/v2.13.3...HEAD
+[2.13.3]: https://github.com/fallow-rs/fallow/compare/v2.13.2...v2.13.3
 [2.13.2]: https://github.com/fallow-rs/fallow/compare/v2.13.1...v2.13.2
 [2.13.1]: https://github.com/fallow-rs/fallow/compare/v2.13.0...v2.13.1
 [2.13.0]: https://github.com/fallow-rs/fallow/compare/v2.12.1...v2.13.0
