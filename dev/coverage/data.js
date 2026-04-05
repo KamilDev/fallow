@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775411769488,
+  "lastUpdate": 1775413517615,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -5649,6 +5649,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/3a61a3e4d421bedd3f99e542c3a6df1df0d024b2"
         },
         "date": 1775411768189,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 92.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "raihassanraza10@gmail.com",
+            "name": "Muhammad Hassan Raza",
+            "username": "M-Hassan-Raza"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1e34ecafce6d55684b82f396eaca4e518d38682b",
+          "message": "docs: fix cargo run examples (#44)\n\n* docs: fix cargo run examples\n\n* docs: fix cargo run examples in CLAUDE.md\n\nSame fix as CONTRIBUTING.md — add --bin fallow for multi-binary\nworkspace, update check → dead-code.\n\n---------\n\nCo-authored-by: Bart Waardenburg <bart@waardenburg.dev>",
+          "timestamp": "2026-04-05T20:24:12+02:00",
+          "tree_id": "59ce8b4657574f5a4b95a841856f53bc422b27f5",
+          "url": "https://github.com/fallow-rs/fallow/commit/1e34ecafce6d55684b82f396eaca4e518d38682b"
+        },
+        "date": 1775413516998,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
