@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775413517615,
+  "lastUpdate": 1775413847091,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -5678,6 +5678,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/1e34ecafce6d55684b82f396eaca4e518d38682b"
         },
         "date": 1775413516998,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 92.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "raihassanraza10@gmail.com",
+            "name": "Muhammad Hassan Raza",
+            "username": "M-Hassan-Raza"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "48ee537e6dfdaa8c382024acc72070862b2ba466",
+          "message": "fix: include plugin entry points in list mode (#45)",
+          "timestamp": "2026-04-05T20:29:43+02:00",
+          "tree_id": "4cb4f03b3faf49df4641fb44a2a1d928a794c2cd",
+          "url": "https://github.com/fallow-rs/fallow/commit/48ee537e6dfdaa8c382024acc72070862b2ba466"
+        },
+        "date": 1775413846329,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
