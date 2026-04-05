@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775420067606,
+  "lastUpdate": 1775420450714,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -5968,6 +5968,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/5045d6cb72ad88570d7263331c7d829d12844a3d"
         },
         "date": 1775420066849,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 93.4,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "c535f6dd6c8448e54843b143826a8f287ca13e9f",
+          "message": "fix: correct plugin count to 84 (from registry, not file count)",
+          "timestamp": "2026-04-05T22:19:36+02:00",
+          "tree_id": "7c71a6155faa25ae81e7f423aefe818e5cf3a5cd",
+          "url": "https://github.com/fallow-rs/fallow/commit/c535f6dd6c8448e54843b143826a8f287ca13e9f"
+        },
+        "date": 1775420449373,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
