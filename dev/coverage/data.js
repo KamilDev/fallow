@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775415188698,
+  "lastUpdate": 1775416465912,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -5765,6 +5765,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/61c8cb97b5271f83ca4d4513c858b1b239720baa"
         },
         "date": 1775415187945,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 92.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "dca8c3017f7d2bfb056c1308ab5fa79f1262689b",
+          "message": "fix: spell out maintainability instead of MI in all user-facing output",
+          "timestamp": "2026-04-05T21:13:03+02:00",
+          "tree_id": "2288463488835f884ca25a528766ab9ec6793602",
+          "url": "https://github.com/fallow-rs/fallow/commit/dca8c3017f7d2bfb056c1308ab5fa79f1262689b"
+        },
+        "date": 1775416465348,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
