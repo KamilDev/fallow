@@ -34,6 +34,10 @@ fn list_show_all_json_includes_plugins_files_and_entry_points() {
         json.get("entry_point_count").is_some(),
         "missing 'entry_point_count' key"
     );
+    assert!(
+        json.get("boundaries").is_none(),
+        "show_all mode should omit 'boundaries' unless --boundaries is requested"
+    );
 }
 
 #[test]
@@ -112,6 +116,44 @@ fn list_entry_points_only_json_omits_plugins_and_files() {
     assert!(
         json.get("entry_point_count").is_some(),
         "should include 'entry_point_count'"
+    );
+}
+
+#[test]
+fn list_show_all_json_omits_boundaries_even_when_configured() {
+    let output = run_list("boundary-violations", &["--format", "json"]);
+    assert_eq!(output.code, 0);
+
+    let json = parse_json(&output);
+    assert!(
+        json.get("boundaries").is_none(),
+        "show_all mode should not include boundaries without --boundaries"
+    );
+    assert!(
+        json.get("files").is_some(),
+        "show_all mode should still include files"
+    );
+    assert!(
+        json.get("entry_points").is_some(),
+        "show_all mode should still include entry points"
+    );
+}
+
+#[test]
+fn list_boundaries_only_json_omits_plugins_files_and_entry_points() {
+    let output = run_list("boundary-violations", &["--boundaries", "--format", "json"]);
+    assert_eq!(output.code, 0);
+
+    let json = parse_json(&output);
+    assert!(json.get("plugins").is_none(), "should omit 'plugins'");
+    assert!(json.get("files").is_none(), "should omit 'files'");
+    assert!(
+        json.get("entry_points").is_none(),
+        "should omit 'entry_points'"
+    );
+    assert!(
+        json.get("boundaries").is_some(),
+        "should include 'boundaries'"
     );
 }
 
@@ -361,6 +403,67 @@ fn list_workspace_project_discovers_entry_points_from_multiple_packages() {
     );
 }
 
+#[test]
+fn list_boundaries_json_reports_zone_and_rule_counts() {
+    let output = run_list("boundary-violations", &["--boundaries", "--format", "json"]);
+    assert_eq!(output.code, 0);
+
+    let json = parse_json(&output);
+    let boundaries = &json["boundaries"];
+
+    assert_eq!(
+        boundaries["configured"].as_bool(),
+        Some(true),
+        "boundary fixture should report configured=true"
+    );
+    assert_eq!(
+        boundaries["zone_count"].as_u64(),
+        Some(3),
+        "boundary fixture should expose 3 zones"
+    );
+    assert_eq!(
+        boundaries["rule_count"].as_u64(),
+        Some(2),
+        "boundary fixture should expose 2 rules"
+    );
+
+    let zones = boundaries["zones"].as_array().unwrap();
+    let ui_zone = zones
+        .iter()
+        .find(|zone| zone["name"].as_str() == Some("ui"))
+        .expect("should include ui zone");
+    assert_eq!(
+        ui_zone["file_count"].as_u64(),
+        Some(1),
+        "ui zone should match one file in the fixture"
+    );
+}
+
+#[test]
+fn list_boundaries_json_reports_not_configured_when_absent() {
+    let output = run_list("basic-project", &["--boundaries", "--format", "json"]);
+    assert_eq!(output.code, 0);
+
+    let json = parse_json(&output);
+    let boundaries = &json["boundaries"];
+
+    assert_eq!(
+        boundaries["configured"].as_bool(),
+        Some(false),
+        "projects without boundaries should report configured=false"
+    );
+    assert_eq!(
+        boundaries["zones"].as_array().map(std::vec::Vec::len),
+        Some(0),
+        "projects without boundaries should expose an empty zones array"
+    );
+    assert_eq!(
+        boundaries["rules"].as_array().map(std::vec::Vec::len),
+        Some(0),
+        "projects without boundaries should expose an empty rules array"
+    );
+}
+
 // ── Human output format ──────────────────────────────────────────
 
 #[test]
@@ -439,6 +542,50 @@ fn list_human_output_entry_points_section() {
         output.stdout.contains("package.json main"),
         "human output should include entry point source. Got: {}",
         output.stdout
+    );
+}
+
+#[test]
+fn list_human_show_all_omits_boundaries_when_not_requested() {
+    let output = run_list("boundary-violations", &[]);
+    assert_eq!(output.code, 0);
+
+    assert!(
+        !output.stderr.contains("Boundaries:"),
+        "show_all human output should omit boundaries without --boundaries. Got stderr: {}",
+        output.stderr
+    );
+    assert!(
+        output.stderr.contains("Discovered"),
+        "show_all human output should still include the files section. Got stderr: {}",
+        output.stderr
+    );
+    assert!(
+        output.stderr.contains("Found"),
+        "show_all human output should still include the entry points section. Got stderr: {}",
+        output.stderr
+    );
+}
+
+#[test]
+fn list_human_output_boundaries_section() {
+    let output = run_list("boundary-violations", &["--boundaries"]);
+    assert_eq!(output.code, 0);
+
+    assert!(
+        output.stderr.contains("Boundaries: 3 zones, 2 rules"),
+        "human output should summarize configured boundaries. Got stderr: {}",
+        output.stderr
+    );
+    assert!(
+        output.stderr.contains("Zones:"),
+        "human output should include a zones section. Got stderr: {}",
+        output.stderr
+    );
+    assert!(
+        output.stderr.contains("Rules:"),
+        "human output should include a rules section. Got stderr: {}",
+        output.stderr
     );
 }
 
