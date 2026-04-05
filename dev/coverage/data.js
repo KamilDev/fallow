@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775395597361,
+  "lastUpdate": 1775395865732,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -5562,6 +5562,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/bed6d5b2a00e22565c3aa52493579dcc7fcc2730"
         },
         "date": 1775395596518,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 92.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "f704663f6934ef7e8f522227c27285bc820fdb56",
+          "message": "fix: replace legacy fallow check with fallow dead-code in user-facing messages",
+          "timestamp": "2026-04-05T15:29:52+02:00",
+          "tree_id": "eb693f7db712f487d194542b03750770e3daa0c1",
+          "url": "https://github.com/fallow-rs/fallow/commit/f704663f6934ef7e8f522227c27285bc820fdb56"
+        },
+        "date": 1775395865230,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
