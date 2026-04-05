@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775418647650,
+  "lastUpdate": 1775418766418,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -5852,6 +5852,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/e004c98ae162291e935879551bab015fc67007c8"
         },
         "date": 1775418646890,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 93.4,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "1161701ca1866f3e00c27033fe5355f01e845032",
+          "message": "docs: sync roadmap version and date to v2.13.2",
+          "timestamp": "2026-04-05T21:51:38+02:00",
+          "tree_id": "253efacaf78a3893ca347ea167b6b7e19a314132",
+          "url": "https://github.com/fallow-rs/fallow/commit/1161701ca1866f3e00c27033fe5355f01e845032"
+        },
+        "date": 1775418765883,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
