@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775414080813,
+  "lastUpdate": 1775415188698,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -5736,6 +5736,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/d6fa214ed900fe1009c08ffe8a194e452e1946b8"
         },
         "date": 1775414079930,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 92.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "61c8cb97b5271f83ca4d4513c858b1b239720baa",
+          "message": "fix: label health score deductions and metrics lines for clarity",
+          "timestamp": "2026-04-05T20:51:48+02:00",
+          "tree_id": "ba7fa121fee167c25f8595307a2f3568f1a9a007",
+          "url": "https://github.com/fallow-rs/fallow/commit/61c8cb97b5271f83ca4d4513c858b1b239720baa"
+        },
+        "date": 1775415187945,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
