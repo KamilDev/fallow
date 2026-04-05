@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775416465912,
+  "lastUpdate": 1775417329767,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -5794,6 +5794,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/dca8c3017f7d2bfb056c1308ab5fa79f1262689b"
         },
         "date": 1775416465348,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 92.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "fda33d3ec9971efb55bbdd8af7b5a3692b2f76c7",
+          "message": "fix: spell out dependencies instead of deps in all user-facing output",
+          "timestamp": "2026-04-05T21:27:35+02:00",
+          "tree_id": "adad5ce3ef8769a12289dd302573302f9014f466",
+          "url": "https://github.com/fallow-rs/fallow/commit/fda33d3ec9971efb55bbdd8af7b5a3692b2f76c7"
+        },
+        "date": 1775417328611,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
