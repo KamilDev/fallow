@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775395468456,
+  "lastUpdate": 1775395879361,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -6369,6 +6369,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15837,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534716,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5821,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "f704663f6934ef7e8f522227c27285bc820fdb56",
+          "message": "fix: replace legacy fallow check with fallow dead-code in user-facing messages",
+          "timestamp": "2026-04-05T15:29:52+02:00",
+          "tree_id": "eb693f7db712f487d194542b03750770e3daa0c1",
+          "url": "https://github.com/fallow-rs/fallow/commit/f704663f6934ef7e8f522227c27285bc820fdb56"
+        },
+        "date": 1775395878620,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3591570,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15871,
             "unit": "allocations"
           },
           {
