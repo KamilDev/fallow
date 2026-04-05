@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775414088262,
+  "lastUpdate": 1775415204977,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -6589,6 +6589,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15833,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534716,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5821,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "61c8cb97b5271f83ca4d4513c858b1b239720baa",
+          "message": "fix: label health score deductions and metrics lines for clarity",
+          "timestamp": "2026-04-05T20:51:48+02:00",
+          "tree_id": "ba7fa121fee167c25f8595307a2f3568f1a9a007",
+          "url": "https://github.com/fallow-rs/fallow/commit/61c8cb97b5271f83ca4d4513c858b1b239720baa"
+        },
+        "date": 1775415203752,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3584402,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15855,
             "unit": "allocations"
           },
           {
