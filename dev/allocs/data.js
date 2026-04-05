@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775415204977,
+  "lastUpdate": 1775416472619,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -6633,6 +6633,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15855,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534716,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5821,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "dca8c3017f7d2bfb056c1308ab5fa79f1262689b",
+          "message": "fix: spell out maintainability instead of MI in all user-facing output",
+          "timestamp": "2026-04-05T21:13:03+02:00",
+          "tree_id": "2288463488835f884ca25a528766ab9ec6793602",
+          "url": "https://github.com/fallow-rs/fallow/commit/dca8c3017f7d2bfb056c1308ab5fa79f1262689b"
+        },
+        "date": 1775416471818,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3576866,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15843,
             "unit": "allocations"
           },
           {
