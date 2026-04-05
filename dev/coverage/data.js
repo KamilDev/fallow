@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775297085164,
+  "lastUpdate": 1775395597361,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -5533,6 +5533,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/31ad2b795659f758b0815386fdacc05d56844e61"
         },
         "date": 1775297084434,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 92.9,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "bed6d5b2a00e22565c3aa52493579dcc7fcc2730",
+          "message": "fix(ci): trigger cross-arch on workflow file changes",
+          "timestamp": "2026-04-05T15:25:25+02:00",
+          "tree_id": "8cd267742be95efcb600767b9b7c96561db93db7",
+          "url": "https://github.com/fallow-rs/fallow/commit/bed6d5b2a00e22565c3aa52493579dcc7fcc2730"
+        },
+        "date": 1775395596518,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
