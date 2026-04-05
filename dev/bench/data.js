@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775417497009,
+  "lastUpdate": 1775418802530,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Benchmarks": [
@@ -16511,6 +16511,102 @@ window.BENCHMARK_DATA = {
             "name": "dupe_detect_2x5000_identical",
             "value": 2510086,
             "range": "± 6992",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "raihassanraza10@gmail.com",
+            "name": "Muhammad Hassan Raza",
+            "username": "M-Hassan-Raza"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "35b80aaa34bf80ee10bd23b4cced2f19b0eb7162",
+          "message": "fix: label combined metrics line (#46)\n\n* fix: label combined metrics line\n\n* test: tighten combined metrics regression",
+          "timestamp": "2026-04-05T21:49:32+02:00",
+          "tree_id": "2e750c905180aa0c886a3144036e780c2b72d59d",
+          "url": "https://github.com/fallow-rs/fallow/commit/35b80aaa34bf80ee10bd23b4cced2f19b0eb7162"
+        },
+        "date": 1775418801962,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_single_file",
+            "value": 47171,
+            "range": "± 437",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_10_files",
+            "value": 1614842,
+            "range": "± 60540",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_100_files",
+            "value": 2999562,
+            "range": "± 18199",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "full_pipeline_1000_files",
+            "value": 15607246,
+            "range": "± 174160",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "resolve_re_export_chains",
+            "value": 108218,
+            "range": "± 778",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache_round_trip",
+            "value": 1980,
+            "range": "± 8",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x500_identical",
+            "value": 201991,
+            "range": "± 3512",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x2000_identical",
+            "value": 899483,
+            "range": "± 9267",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_10x500_identical",
+            "value": 1709941,
+            "range": "± 17003",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_50x200_diverse",
+            "value": 516489,
+            "range": "± 21392",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_100x200_mixed",
+            "value": 4197211,
+            "range": "± 27874",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "dupe_detect_2x5000_identical",
+            "value": 2502769,
+            "range": "± 5096",
             "unit": "ns/iter"
           }
         ]
