@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775396434446,
+  "lastUpdate": 1775411788874,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -6457,6 +6457,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15879,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534716,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5821,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "3a61a3e4d421bedd3f99e542c3a6df1df0d024b2",
+          "message": "fix: use dead-code instead of check in Failed summary line",
+          "timestamp": "2026-04-05T19:54:55+02:00",
+          "tree_id": "a0c5570162f534bd5392ad2022d9f3fa834bc18b",
+          "url": "https://github.com/fallow-rs/fallow/commit/3a61a3e4d421bedd3f99e542c3a6df1df0d024b2"
+        },
+        "date": 1775411788079,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3595338,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15877,
             "unit": "allocations"
           },
           {
