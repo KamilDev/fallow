@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775416472619,
+  "lastUpdate": 1775417348417,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -6677,6 +6677,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15843,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534716,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5821,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "fda33d3ec9971efb55bbdd8af7b5a3692b2f76c7",
+          "message": "fix: spell out dependencies instead of deps in all user-facing output",
+          "timestamp": "2026-04-05T21:27:35+02:00",
+          "tree_id": "adad5ce3ef8769a12289dd302573302f9014f466",
+          "url": "https://github.com/fallow-rs/fallow/commit/fda33d3ec9971efb55bbdd8af7b5a3692b2f76c7"
+        },
+        "date": 1775417347211,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3581890,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15851,
             "unit": "allocations"
           },
           {
