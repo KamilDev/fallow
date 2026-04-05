@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775411788874,
+  "lastUpdate": 1775413869684,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -6501,6 +6501,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15877,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534716,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5821,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "raihassanraza10@gmail.com",
+            "name": "Muhammad Hassan Raza",
+            "username": "M-Hassan-Raza"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "48ee537e6dfdaa8c382024acc72070862b2ba466",
+          "message": "fix: include plugin entry points in list mode (#45)",
+          "timestamp": "2026-04-05T20:29:43+02:00",
+          "tree_id": "4cb4f03b3faf49df4641fb44a2a1d928a794c2cd",
+          "url": "https://github.com/fallow-rs/fallow/commit/48ee537e6dfdaa8c382024acc72070862b2ba466"
+        },
+        "date": 1775413868898,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3597666,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15883,
             "unit": "allocations"
           },
           {
