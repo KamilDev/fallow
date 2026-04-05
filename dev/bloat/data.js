@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775297192418,
+  "lastUpdate": 1775395575278,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Binary Size": [
@@ -3445,6 +3445,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/31ad2b795659f758b0815386fdacc05d56844e61"
         },
         "date": 1775297191648,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Binary Size (fallow)",
+            "value": 142787136,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "h.raza1164@yahoo.com",
+            "name": "Muhammad Hassan Raza",
+            "username": "M-Hassan-Raza"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "71790b18bec1f38a36bd3ecb7ae7e69a8b5d96ae",
+          "message": "fix: align init hook CLI names (#43)",
+          "timestamp": "2026-04-05T15:23:06+02:00",
+          "tree_id": "d39c2898c45bf580390a370231e2231c4028fce4",
+          "url": "https://github.com/fallow-rs/fallow/commit/71790b18bec1f38a36bd3ecb7ae7e69a8b5d96ae"
+        },
+        "date": 1775395574538,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
