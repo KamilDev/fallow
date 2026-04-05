@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.13.2] - 2026-04-05
+
+### Fixed
+
+- **Plugin entry points included in `--entry-points` mode** -- `fallow list --entry-points` now includes plugin-discovered entry points, matching the behavior of the default `fallow list` output. Previously, plugin detection was skipped when `--entry-points` was used without `--plugins`. ([#45](https://github.com/fallow-rs/fallow/pull/45) by [@M-Hassan-Raza](https://github.com/M-Hassan-Raza))
+- **`Failed` summary line uses canonical command name** -- the summary line printed on analysis failure now says `fallow dead-code` instead of the legacy `fallow check`.
+- **Documentation `cargo run` examples** -- all `cargo run` examples in CONTRIBUTING.md and CLAUDE.md now include `--bin fallow` (required for multi-binary workspaces) and use `dead-code` instead of the legacy `check` command. ([#44](https://github.com/fallow-rs/fallow/pull/44) by [@M-Hassan-Raza](https://github.com/M-Hassan-Raza))
+
 ## [2.13.1] - 2026-04-05
 
 ### Fixed
@@ -813,7 +821,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--changed-since` and `--fail-on-issues` for CI
 - Cross-workspace resolution for npm/yarn/pnpm workspaces
 
-[Unreleased]: https://github.com/fallow-rs/fallow/compare/v2.12.1...HEAD
+[Unreleased]: https://github.com/fallow-rs/fallow/compare/v2.13.2...HEAD
+[2.13.2]: https://github.com/fallow-rs/fallow/compare/v2.13.1...v2.13.2
 [2.13.1]: https://github.com/fallow-rs/fallow/compare/v2.13.0...v2.13.1
 [2.13.0]: https://github.com/fallow-rs/fallow/compare/v2.12.1...v2.13.0
 [2.12.1]: https://github.com/fallow-rs/fallow/compare/v2.12.0...v2.12.1
