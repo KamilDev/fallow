@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775419195756,
+  "lastUpdate": 1775419670796,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Allocations": [
@@ -6809,6 +6809,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Total Allocations",
             "value": 15825,
+            "unit": "allocations"
+          },
+          {
+            "name": "Peak Memory",
+            "value": 534716,
+            "unit": "bytes"
+          },
+          {
+            "name": "Peak Allocations",
+            "value": 5821,
+            "unit": "allocations"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "committer": {
+            "email": "bart@waardenburg.dev",
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg"
+          },
+          "distinct": true,
+          "id": "8950c4c74a6d26e1bac8568f22c563e6a8fc1547",
+          "message": "feat: add section headers to dead-code human output\n\nVisually separates issue types into three categories:\n- Unused Code (files, exports, types, enum/class members)\n- Dependencies (unused, unlisted, unresolved, type-only, test-only)\n- Structure (duplicate exports, circular dependencies, boundary violations)\n\nAlso updates the dead-code command description to reflect all three categories.",
+          "timestamp": "2026-04-05T22:06:12+02:00",
+          "tree_id": "0742bcdb9d86917d42f0e3efb66e25f0de0fb334",
+          "url": "https://github.com/fallow-rs/fallow/commit/8950c4c74a6d26e1bac8568f22c563e6a8fc1547"
+        },
+        "date": 1775419669597,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Total Bytes Allocated",
+            "value": 3590418,
+            "unit": "bytes"
+          },
+          {
+            "name": "Total Allocations",
+            "value": 15871,
             "unit": "allocations"
           },
           {
