@@ -17,6 +17,7 @@ Non-obvious implementation details for each detection feature. These are NOT dis
 - **TypeScript overload dedup**: `export function foo(): void; export function foo(x: string): string;` treated as single export
 - **Class instance members**: `const svc = new MyService(); svc.greet()` tracks `greet` as used. Scope-unaware — false matches produce false negatives, not false positives.
 - **Type-level member access**: `TSQualifiedName` (e.g., `type X = Status.Active`) tracked as member access. Mapped type constraints (`{ [K in Enum]: ... }`, `{ [K in keyof typeof Enum]: ... }`) and `Record<Enum, T>` mark all enum members as used via whole-object use.
+- **TypeScript namespace exports**: `export namespace Foo { export function bar() {} }` extracts `Foo` as a single export with inner declarations as `NamespaceMember` entries, not as separate top-level exports. Runtime namespaces (no `declare`) are NOT type-only. `declare namespace`/`declare module` remain type-only. Nested namespaces flatten members into the outermost namespace.
 
 ## Resolution-level
 - **Package.json `exports` subpath**: output dirs (dist/build/out/esm/cjs) mapped back to src/ with source extension fallback, including nested subdirs

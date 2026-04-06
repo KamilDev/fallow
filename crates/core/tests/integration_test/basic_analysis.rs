@@ -156,6 +156,38 @@ fn namespace_import_makes_all_exports_used() {
     );
 }
 
+// ── Namespace exports (issue #52) ────────────────────────────
+
+#[test]
+fn namespace_export_members_not_reported_as_unused() {
+    let root = fixture_path("namespace-exports");
+    let config = create_config(root);
+    let results = fallow_core::analyze(&config).expect("analysis should succeed");
+
+    // The namespace export `BusinessHelper` is imported and its members
+    // accessed via `BusinessHelper.inviteSupplier()` etc. Neither the
+    // namespace nor its inner functions should be reported as unused.
+    assert!(
+        results.unused_exports.is_empty(),
+        "No unused exports expected, got: {:?}",
+        results
+            .unused_exports
+            .iter()
+            .map(|e| e.export_name.as_str())
+            .collect::<Vec<_>>()
+    );
+    assert!(
+        results.unused_types.is_empty(),
+        "No unused types expected, got: {:?}",
+        results
+            .unused_types
+            .iter()
+            .map(|e| e.export_name.as_str())
+            .collect::<Vec<_>>()
+    );
+    assert!(results.unused_files.is_empty(), "No unused files expected");
+}
+
 // ── Duplicate exports ─────────────────────────────────────────
 
 #[test]

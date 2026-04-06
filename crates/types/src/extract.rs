@@ -155,17 +155,17 @@ pub struct ExportInfo {
     /// Source span of the export declaration.
     #[serde(serialize_with = "serialize_span")]
     pub span: Span,
-    /// Members of this export (for enums and classes).
+    /// Members of this export (for enums, classes, and namespaces).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub members: Vec<MemberInfo>,
 }
 
-/// A member of an enum or class.
+/// A member of an enum, class, or namespace.
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct MemberInfo {
     /// Member name.
     pub name: String,
-    /// Whether this is an enum member, class method, or class property.
+    /// The kind of member (enum, class method/property, or namespace member).
     pub kind: MemberKind,
     /// Source span of the member declaration.
     #[serde(serialize_with = "serialize_span")]
@@ -198,6 +198,8 @@ pub enum MemberKind {
     ClassMethod,
     /// A class property.
     ClassProperty,
+    /// A member exported from a TypeScript namespace.
+    NamespaceMember,
 }
 
 /// A static member access expression (e.g., `Status.Active`, `MyClass.create()`).
@@ -617,8 +619,10 @@ mod tests {
         assert_eq!(MemberKind::EnumMember, MemberKind::EnumMember);
         assert_eq!(MemberKind::ClassMethod, MemberKind::ClassMethod);
         assert_eq!(MemberKind::ClassProperty, MemberKind::ClassProperty);
+        assert_eq!(MemberKind::NamespaceMember, MemberKind::NamespaceMember);
         assert_ne!(MemberKind::EnumMember, MemberKind::ClassMethod);
         assert_ne!(MemberKind::ClassMethod, MemberKind::ClassProperty);
+        assert_ne!(MemberKind::NamespaceMember, MemberKind::EnumMember);
     }
 
     // ── MemberKind bincode roundtrip ────────────────────────────
@@ -629,6 +633,7 @@ mod tests {
             MemberKind::EnumMember,
             MemberKind::ClassMethod,
             MemberKind::ClassProperty,
+            MemberKind::NamespaceMember,
         ];
         let config = bincode::config::standard();
         for kind in &kinds {

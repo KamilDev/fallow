@@ -110,6 +110,13 @@ pub fn find_unused_members(
             let file_self_accesses = self_accessed_members.get(&module.file_id);
 
             for member in &export.members {
+                // Skip namespace members for now — individual namespace member
+                // unused detection is a future enhancement. The namespace as a
+                // whole is already tracked via unused export detection.
+                if matches!(member.kind, MemberKind::NamespaceMember) {
+                    continue;
+                }
+
                 // Check if this member is accessed anywhere via external import
                 if accessed_members
                     .get(&export_name)
@@ -160,6 +167,7 @@ pub fn find_unused_members(
                     MemberKind::ClassMethod | MemberKind::ClassProperty => {
                         IssueKind::UnusedClassMember
                     }
+                    MemberKind::NamespaceMember => unreachable!(),
                 };
                 if let Some(supps) = suppressions_by_file.get(&module.file_id)
                     && suppress::is_suppressed(supps, line, issue_kind)
@@ -181,6 +189,7 @@ pub fn find_unused_members(
                     MemberKind::ClassMethod | MemberKind::ClassProperty => {
                         unused_class_members.push(unused);
                     }
+                    MemberKind::NamespaceMember => unreachable!(),
                 }
             }
         }

@@ -73,6 +73,23 @@ impl<'a> Visit<'a> for ModuleInfoExtractor {
     }
 
     fn visit_export_named_declaration(&mut self, decl: &ExportNamedDeclaration<'a>) {
+        let is_namespace = matches!(&decl.declaration, Some(Declaration::TSModuleDeclaration(_)));
+
+        // Inside a namespace body: collect as member, not top-level export
+        if self.namespace_depth > 0 {
+            if let Some(declaration) = &decl.declaration {
+                self.extract_namespace_members(declaration);
+            }
+            if is_namespace {
+                self.namespace_depth += 1;
+            }
+            walk::walk_export_named_declaration(self, decl);
+            if is_namespace {
+                self.namespace_depth -= 1;
+            }
+            return;
+        }
+
         let is_type_only = decl.export_kind.is_type();
 
         if let Some(source) = &decl.source {
@@ -102,7 +119,19 @@ impl<'a> Visit<'a> for ModuleInfoExtractor {
             }
         }
 
+        // For namespace declarations: walk the body while tracking depth,
+        // then attach collected members to the namespace export.
+        if is_namespace {
+            self.namespace_depth += 1;
+            self.pending_namespace_members.clear();
+        }
         walk::walk_export_named_declaration(self, decl);
+        if is_namespace {
+            self.namespace_depth -= 1;
+            if let Some(ns_export) = self.exports.last_mut() {
+                ns_export.members = std::mem::take(&mut self.pending_namespace_members);
+            }
+        }
     }
 
     fn visit_export_default_declaration(&mut self, decl: &ExportDefaultDeclaration<'a>) {
