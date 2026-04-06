@@ -275,8 +275,8 @@ fn compute_filtered_file_scores(
                 });
             }
             filter_coverage_gaps(
-                &mut output.coverage_gaps,
-                &mut output.coverage_runtime_paths,
+                &mut output.coverage.report,
+                &mut output.coverage.runtime_paths,
                 config,
                 changed_files,
                 ws_root,
@@ -517,7 +517,7 @@ fn assemble_health_report(
     health_trend: Option<crate::health_types::HealthTrend>,
 ) -> HealthReport {
     let coverage_gaps = if opts.coverage_gaps {
-        score_output.as_ref().map(|o| o.coverage_gaps.clone())
+        score_output.as_ref().map(|o| o.coverage.report.clone())
     } else {
         None
     };

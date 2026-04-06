@@ -2,13 +2,16 @@ use crate::health_types::{
     CoverageGapSummary, CoverageGaps, FileHealthScore, UntestedExport, UntestedFile,
 };
 
+pub(super) struct CoverageGapData {
+    pub report: CoverageGaps,
+    pub runtime_paths: Vec<std::path::PathBuf>,
+}
+
 /// Output from `compute_file_scores`, including auxiliary data for refactoring targets.
 pub(super) struct FileScoreOutput {
     pub scores: Vec<FileHealthScore>,
     /// Static coverage gaps derived from runtime-vs-test reachability.
-    pub coverage_gaps: CoverageGaps,
-    /// Runtime-reachable paths used to recompute scoped coverage summaries.
-    pub coverage_runtime_paths: Vec<std::path::PathBuf>,
+    pub coverage: CoverageGapData,
     /// Files participating in circular dependencies (absolute paths).
     pub circular_files: rustc_hash::FxHashSet<std::path::PathBuf>,
     /// Top 3 functions by cognitive complexity per file (name, line, cognitive score).
@@ -128,7 +131,7 @@ fn compute_coverage_gaps(
         fallow_core::discover::FileId,
         &fallow_core::extract::ModuleInfo,
     >,
-) -> (CoverageGaps, Vec<std::path::PathBuf>) {
+) -> CoverageGapData {
     let mut runtime_files = 0usize;
     let mut covered_files = 0usize;
     let mut runtime_paths = Vec::new();
@@ -195,8 +198,8 @@ fn compute_coverage_gaps(
             .then_with(|| a.line.cmp(&b.line))
     });
 
-    (
-        CoverageGaps {
+    CoverageGapData {
+        report: CoverageGaps {
             summary: build_coverage_summary(
                 runtime_files,
                 covered_files,
@@ -207,7 +210,7 @@ fn compute_coverage_gaps(
             exports,
         },
         runtime_paths,
-    )
+    }
 }
 
 /// Compute the maintainability index for a single file.
@@ -327,8 +330,7 @@ pub(super) fn compute_file_scores(
         fallow_core::discover::FileId,
         &fallow_core::extract::ModuleInfo,
     > = modules.iter().map(|m| (m.file_id, m)).collect();
-    let (coverage_gaps, coverage_runtime_paths) =
-        compute_coverage_gaps(&graph, file_paths, &module_by_id);
+    let coverage = compute_coverage_gaps(&graph, file_paths, &module_by_id);
 
     let mut scores = Vec::with_capacity(graph.modules.len());
 
@@ -441,8 +443,7 @@ pub(super) fn compute_file_scores(
 
     Ok(FileScoreOutput {
         scores,
-        coverage_gaps,
-        coverage_runtime_paths,
+        coverage,
         circular_files,
         top_complex_fns,
         entry_points,

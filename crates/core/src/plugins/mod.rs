@@ -13,6 +13,59 @@ use std::path::{Path, PathBuf};
 
 use fallow_config::{EntryPointRole, PackageJson};
 
+const TEST_ENTRY_POINT_PLUGINS: &[&str] = &[
+    "ava",
+    "cucumber",
+    "cypress",
+    "jest",
+    "mocha",
+    "playwright",
+    "vitest",
+    "webdriverio",
+];
+
+const RUNTIME_ENTRY_POINT_PLUGINS: &[&str] = &[
+    "angular",
+    "astro",
+    "docusaurus",
+    "electron",
+    "expo",
+    "gatsby",
+    "nestjs",
+    "next-intl",
+    "nextjs",
+    "nitro",
+    "nuxt",
+    "react-native",
+    "react-router",
+    "remix",
+    "rolldown",
+    "rollup",
+    "rsbuild",
+    "rspack",
+    "sanity",
+    "sveltekit",
+    "tanstack-router",
+    "tsdown",
+    "tsup",
+    "vite",
+    "vitepress",
+    "webpack",
+    "wrangler",
+];
+
+#[cfg(test)]
+const SUPPORT_ENTRY_POINT_PLUGINS: &[&str] = &[
+    "drizzle",
+    "i18next",
+    "knex",
+    "kysely",
+    "msw",
+    "prisma",
+    "storybook",
+    "typeorm",
+];
+
 /// Result of resolving a plugin's config file.
 #[derive(Debug, Default)]
 pub struct PluginResult {
@@ -164,16 +217,12 @@ pub trait Plugin: Send + Sync {
 }
 
 fn builtin_entry_point_role(name: &str) -> EntryPointRole {
-    match name {
-        "ava" | "cucumber" | "cypress" | "jest" | "mocha" | "playwright" | "vitest"
-        | "webdriverio" => EntryPointRole::Test,
-        "angular" | "astro" | "docusaurus" | "electron" | "expo" | "gatsby" | "nestjs"
-        | "next-intl" | "nextjs" | "nitro" | "nuxt" | "react-native" | "react-router" | "remix"
-        | "rolldown" | "rollup" | "rsbuild" | "rspack" | "sanity" | "sveltekit"
-        | "tanstack-router" | "tsdown" | "tsup" | "vite" | "vitepress" | "webpack" | "wrangler" => {
-            EntryPointRole::Runtime
-        }
-        _ => EntryPointRole::Support,
+    if TEST_ENTRY_POINT_PLUGINS.contains(&name) {
+        EntryPointRole::Test
+    } else if RUNTIME_ENTRY_POINT_PLUGINS.contains(&name) {
+        EntryPointRole::Runtime
+    } else {
+        EntryPointRole::Support
     }
 }
 
@@ -451,6 +500,28 @@ mod tests {
             EntryPointRole::Support
         );
         assert_eq!(knex::KnexPlugin.entry_point_role(), EntryPointRole::Support);
+    }
+
+    #[test]
+    fn plugins_with_entry_patterns_have_explicit_role_intent() {
+        let runtime_or_test_or_support: rustc_hash::FxHashSet<&'static str> =
+            TEST_ENTRY_POINT_PLUGINS
+                .iter()
+                .chain(RUNTIME_ENTRY_POINT_PLUGINS.iter())
+                .chain(SUPPORT_ENTRY_POINT_PLUGINS.iter())
+                .copied()
+                .collect();
+
+        for plugin in crate::plugins::registry::builtin::create_builtin_plugins() {
+            if plugin.entry_patterns().is_empty() {
+                continue;
+            }
+            assert!(
+                runtime_or_test_or_support.contains(plugin.name()),
+                "plugin '{}' exposes entry patterns but is missing from the entry-point role map",
+                plugin.name()
+            );
+        }
     }
 
     // ── PluginResult::is_empty ───────────────────────────────────

@@ -633,6 +633,7 @@ pub fn compile_glob_set(patterns: &[String]) -> Option<globset::GlobSet> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use fallow_config::{FallowConfig, OutputFormat, RulesConfig};
     use fallow_types::discover::FileId;
     use proptest::prelude::*;
 
@@ -688,6 +689,117 @@ mod tests {
         assert!(set.is_match("src/foo.ts"));
         assert!(set.is_match("src/bar.js"));
         assert!(!set.is_match("src/bar.py"));
+    }
+
+    #[test]
+    fn plugin_entry_point_sets_preserve_runtime_test_and_support_roles() {
+        let dir = tempfile::tempdir().expect("create temp dir");
+        let root = dir.path();
+        std::fs::create_dir_all(root.join("src")).unwrap();
+        std::fs::create_dir_all(root.join("tests")).unwrap();
+        std::fs::write(root.join("src/runtime.ts"), "export const runtime = 1;").unwrap();
+        std::fs::write(root.join("src/setup.ts"), "export const setup = 1;").unwrap();
+        std::fs::write(root.join("tests/app.test.ts"), "export const test = 1;").unwrap();
+
+        let config = FallowConfig {
+            schema: None,
+            extends: vec![],
+            entry: vec![],
+            ignore_patterns: vec![],
+            framework: vec![],
+            workspaces: None,
+            ignore_dependencies: vec![],
+            ignore_exports: vec![],
+            duplicates: fallow_config::DuplicatesConfig::default(),
+            health: fallow_config::HealthConfig::default(),
+            rules: RulesConfig::default(),
+            boundaries: fallow_config::BoundaryConfig::default(),
+            production: false,
+            plugins: vec![],
+            dynamically_loaded: vec![],
+            overrides: vec![],
+            regression: None,
+            codeowners: None,
+            public_packages: vec![],
+        }
+        .resolve(root.to_path_buf(), OutputFormat::Human, 4, true, true);
+
+        let files = vec![
+            DiscoveredFile {
+                id: FileId(0),
+                path: root.join("src/runtime.ts"),
+                size_bytes: 1,
+            },
+            DiscoveredFile {
+                id: FileId(1),
+                path: root.join("src/setup.ts"),
+                size_bytes: 1,
+            },
+            DiscoveredFile {
+                id: FileId(2),
+                path: root.join("tests/app.test.ts"),
+                size_bytes: 1,
+            },
+        ];
+
+        let mut plugin_result = crate::plugins::AggregatedPluginResult::default();
+        plugin_result
+            .entry_patterns
+            .push(("src/runtime.ts".to_string(), "runtime-plugin".to_string()));
+        plugin_result
+            .entry_patterns
+            .push(("tests/app.test.ts".to_string(), "test-plugin".to_string()));
+        plugin_result
+            .always_used
+            .push(("src/setup.ts".to_string(), "support-plugin".to_string()));
+        plugin_result
+            .entry_point_roles
+            .insert("runtime-plugin".to_string(), EntryPointRole::Runtime);
+        plugin_result
+            .entry_point_roles
+            .insert("test-plugin".to_string(), EntryPointRole::Test);
+        plugin_result
+            .entry_point_roles
+            .insert("support-plugin".to_string(), EntryPointRole::Support);
+
+        let entries = discover_plugin_entry_point_sets(&plugin_result, &config, &files);
+
+        assert_eq!(entries.runtime.len(), 1, "expected one runtime entry");
+        assert!(
+            entries.runtime[0].path.ends_with("src/runtime.ts"),
+            "runtime entry should stay runtime-only"
+        );
+        assert_eq!(entries.test.len(), 1, "expected one test entry");
+        assert!(
+            entries.test[0].path.ends_with("tests/app.test.ts"),
+            "test entry should stay test-only"
+        );
+        assert_eq!(
+            entries.all.len(),
+            3,
+            "support entries should stay in all entries"
+        );
+        assert!(
+            entries
+                .all
+                .iter()
+                .any(|entry| entry.path.ends_with("src/setup.ts")),
+            "support entries should remain in the overall entry-point set"
+        );
+        assert!(
+            !entries
+                .runtime
+                .iter()
+                .any(|entry| entry.path.ends_with("src/setup.ts")),
+            "support entries should not bleed into runtime reachability"
+        );
+        assert!(
+            !entries
+                .test
+                .iter()
+                .any(|entry| entry.path.ends_with("src/setup.ts")),
+            "support entries should not bleed into test reachability"
+        );
     }
 
     // resolve_entry_path unit tests
