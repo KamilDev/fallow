@@ -11,7 +11,60 @@
 
 use std::path::{Path, PathBuf};
 
-use fallow_config::PackageJson;
+use fallow_config::{EntryPointRole, PackageJson};
+
+const TEST_ENTRY_POINT_PLUGINS: &[&str] = &[
+    "ava",
+    "cucumber",
+    "cypress",
+    "jest",
+    "mocha",
+    "playwright",
+    "vitest",
+    "webdriverio",
+];
+
+const RUNTIME_ENTRY_POINT_PLUGINS: &[&str] = &[
+    "angular",
+    "astro",
+    "docusaurus",
+    "electron",
+    "expo",
+    "gatsby",
+    "nestjs",
+    "next-intl",
+    "nextjs",
+    "nitro",
+    "nuxt",
+    "react-native",
+    "react-router",
+    "remix",
+    "rolldown",
+    "rollup",
+    "rsbuild",
+    "rspack",
+    "sanity",
+    "sveltekit",
+    "tanstack-router",
+    "tsdown",
+    "tsup",
+    "vite",
+    "vitepress",
+    "webpack",
+    "wrangler",
+];
+
+#[cfg(test)]
+const SUPPORT_ENTRY_POINT_PLUGINS: &[&str] = &[
+    "drizzle",
+    "i18next",
+    "knex",
+    "kysely",
+    "msw",
+    "prisma",
+    "storybook",
+    "typeorm",
+];
 
 /// Result of resolving a plugin's config file.
 #[derive(Debug, Default)]
@@ -77,6 +130,14 @@ pub trait Plugin: Send + Sync {
     /// Default glob patterns for entry point files.
     fn entry_patterns(&self) -> &'static [&'static str] {
         &[]
+    }
+
+    /// How this plugin's entry patterns should contribute to coverage reachability.
+    ///
+    /// `Support` roots keep files alive for dead-code analysis but do not count
+    /// as runtime or test reachability for static coverage gaps.
+    fn entry_point_role(&self) -> EntryPointRole {
+        builtin_entry_point_role(self.name())
     }
 
     /// Glob patterns for config files this plugin can parse.
@@ -152,6 +213,16 @@ pub trait Plugin: Send + Sync {
     /// JSON content if no standalone config file was found.
     fn package_json_config_key(&self) -> Option<&'static str> {
         None
+    }
+}
+
+fn builtin_entry_point_role(name: &str) -> EntryPointRole {
+    if TEST_ENTRY_POINT_PLUGINS.contains(&name) {
+        EntryPointRole::Test
+    } else if RUNTIME_ENTRY_POINT_PLUGINS.contains(&name) {
+        EntryPointRole::Runtime
+    } else {
+        EntryPointRole::Support
     }
 }
 
@@ -415,6 +486,42 @@ mod tests {
         let plugin = nextjs::NextJsPlugin;
         let deps: Vec<String> = vec![];
         assert!(!plugin.is_enabled_with_deps(&deps, Path::new("/project")));
+    }
+
+    #[test]
+    fn entry_point_role_defaults_are_centralized() {
+        assert_eq!(vite::VitePlugin.entry_point_role(), EntryPointRole::Runtime);
+        assert_eq!(
+            vitest::VitestPlugin.entry_point_role(),
+            EntryPointRole::Test
+        );
+        assert_eq!(
+            storybook::StorybookPlugin.entry_point_role(),
+            EntryPointRole::Support
+        );
+        assert_eq!(knex::KnexPlugin.entry_point_role(), EntryPointRole::Support);
+    }
+
+    #[test]
+    fn plugins_with_entry_patterns_have_explicit_role_intent() {
+        let runtime_or_test_or_support: rustc_hash::FxHashSet<&'static str> =
+            TEST_ENTRY_POINT_PLUGINS
+                .iter()
+                .chain(RUNTIME_ENTRY_POINT_PLUGINS.iter())
+                .chain(SUPPORT_ENTRY_POINT_PLUGINS.iter())
+                .copied()
+                .collect();
+
+        for plugin in crate::plugins::registry::builtin::create_builtin_plugins() {
+            if plugin.entry_patterns().is_empty() {
+                continue;
+            }
+            assert!(
+                runtime_or_test_or_support.contains(plugin.name()),
+                "plugin '{}' exposes entry patterns but is missing from the entry-point role map",
+                plugin.name()
+            );
+        }
     }
 
     // ── PluginResult::is_empty ───────────────────────────────────
