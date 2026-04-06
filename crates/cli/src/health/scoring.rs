@@ -157,6 +157,17 @@ fn compute_coverage_gaps(
             continue;
         }
 
+        // Check inline suppression: // fallow-ignore-file coverage-gaps
+        let module = module_by_id.get(&node.file_id);
+        if module.is_some_and(|m| {
+            fallow_core::suppress::is_file_suppressed(
+                &m.suppressions,
+                fallow_types::suppress::IssueKind::CoverageGaps,
+            )
+        }) {
+            continue;
+        }
+
         runtime_paths.push((*path).clone());
 
         runtime_files += 1;
@@ -169,7 +180,7 @@ fn compute_coverage_gaps(
             });
         }
 
-        let Some(module) = module_by_id.get(&node.file_id) else {
+        let Some(module) = module else {
             continue;
         };
 
