@@ -111,6 +111,66 @@ fn health_file_scores_flag() {
     );
 }
 
+#[test]
+fn health_coverage_gaps_flag_reports_runtime_gaps() {
+    let output = run_fallow(
+        "health",
+        "coverage-gaps",
+        &["--coverage-gaps", "--format", "json", "--quiet"],
+    );
+    assert_eq!(
+        output.code, 1,
+        "health --coverage-gaps should exit 1 when gaps are present"
+    );
+
+    let json = parse_json(&output);
+    let coverage = json
+        .get("coverage_gaps")
+        .expect("health --coverage-gaps should include coverage_gaps");
+    let files = coverage["files"]
+        .as_array()
+        .expect("coverage_gaps.files should be an array");
+    let exports = coverage["exports"]
+        .as_array()
+        .expect("coverage_gaps.exports should be an array");
+
+    let file_names: Vec<_> = files
+        .iter()
+        .filter_map(|item| item.get("path").and_then(serde_json::Value::as_str))
+        .collect();
+    assert!(
+        file_names
+            .iter()
+            .any(|path| path.ends_with("src/setup-only.ts")),
+        "setup-only.ts should remain untested even when referenced by test setup: {file_names:?}"
+    );
+    assert!(
+        file_names
+            .iter()
+            .any(|path| path.ends_with("src/fixture-only.ts")),
+        "fixture-only.ts should remain untested even when referenced by a fixture: {file_names:?}"
+    );
+    assert!(
+        !file_names
+            .iter()
+            .any(|path| path.ends_with("src/covered.ts")),
+        "covered.ts should not be reported as an untested file: {file_names:?}"
+    );
+
+    let export_names: Vec<_> = exports
+        .iter()
+        .filter_map(|item| item.get("export_name").and_then(serde_json::Value::as_str))
+        .collect();
+    assert!(
+        export_names.contains(&"indirectlyCovered"),
+        "indirectlyCovered should be reported as an untested export: {export_names:?}"
+    );
+    assert!(
+        !export_names.contains(&"covered"),
+        "covered should not be reported as an untested export: {export_names:?}"
+    );
+}
+
 // ---------------------------------------------------------------------------
 // Human output snapshot
 // ---------------------------------------------------------------------------
