@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775420732841,
+  "lastUpdate": 1775456917153,
   "repoUrl": "https://github.com/fallow-rs/fallow",
   "entries": {
     "Fallow Coverage": [
@@ -6026,6 +6026,35 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/fallow-rs/fallow/commit/d6206bfed89d0109df56dbbc35bc73b23b4fdca0"
         },
         "date": 1775420731440,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Code Coverage",
+            "value": 93.4,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "raihassanraza10@gmail.com",
+            "name": "Muhammad Hassan Raza",
+            "username": "M-Hassan-Raza"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "628c8db924d10eed320430184edaf6727965fdad",
+          "message": "fix: keep unreachable subtrees dead in unused file analysis (#51)\n\n* fix: keep unreachable subtrees dead in unused file analysis\n\n* test: cover unreachable subtree edge cases",
+          "timestamp": "2026-04-06T08:27:17+02:00",
+          "tree_id": "b9ad3f1b02c24e54504db1e198ad3b5f5797ded5",
+          "url": "https://github.com/fallow-rs/fallow/commit/628c8db924d10eed320430184edaf6727965fdad"
+        },
+        "date": 1775456915807,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
