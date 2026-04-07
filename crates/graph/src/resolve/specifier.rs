@@ -74,10 +74,15 @@ pub(super) fn resolve_specifier(
             if let Some(&file_id) = ctx.raw_path_to_id.get(resolved_path) {
                 return ResolveResult::InternalModule(file_id);
             }
-            if let Ok(canonical) = dunce::canonicalize(resolved_path)
-                && let Some(&file_id) = ctx.path_to_id.get(canonical.as_path())
-            {
-                return ResolveResult::InternalModule(file_id);
+            if let Ok(canonical) = dunce::canonicalize(resolved_path) {
+                if let Some(&file_id) = ctx.path_to_id.get(canonical.as_path()) {
+                    return ResolveResult::InternalModule(file_id);
+                }
+                if let Some(fallback) = ctx.canonical_fallback
+                    && let Some(file_id) = fallback.get(&canonical)
+                {
+                    return ResolveResult::InternalModule(file_id);
+                }
             }
         }
         return ResolveResult::Unresolvable(specifier.to_string());

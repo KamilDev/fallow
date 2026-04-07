@@ -103,3 +103,66 @@ fn html_entry_no_unresolved_imports() {
         "HTML asset references should resolve, got unresolved: {html_unresolved:?}"
     );
 }
+
+// ── HTML root-relative path resolution ─────────────────────
+
+#[test]
+fn html_root_relative_script_is_reachable() {
+    let root = fixture_path("html-root-relative");
+    let config = create_config(root);
+    let results = fallow_core::analyze(&config).expect("analysis should succeed");
+
+    let unused_file_names: Vec<String> = results
+        .unused_files
+        .iter()
+        .map(|f| f.path.file_name().unwrap().to_string_lossy().to_string())
+        .collect();
+
+    // entry.ts is referenced by index.html via root-relative <script src="/src/entry.ts">
+    assert!(
+        !unused_file_names.contains(&"entry.ts".to_string()),
+        "entry.ts should be reachable via root-relative HTML script src, unused files: {unused_file_names:?}"
+    );
+
+    // helper.ts is transitively imported by entry.ts
+    assert!(
+        !unused_file_names.contains(&"helper.ts".to_string()),
+        "helper.ts should be transitively reachable, unused files: {unused_file_names:?}"
+    );
+}
+
+#[test]
+fn html_root_relative_stylesheet_is_reachable() {
+    let root = fixture_path("html-root-relative");
+    let config = create_config(root);
+    let results = fallow_core::analyze(&config).expect("analysis should succeed");
+
+    let unused_file_names: Vec<String> = results
+        .unused_files
+        .iter()
+        .map(|f| f.path.file_name().unwrap().to_string_lossy().to_string())
+        .collect();
+
+    assert!(
+        !unused_file_names.contains(&"global.css".to_string()),
+        "global.css should be reachable via root-relative HTML link href, unused files: {unused_file_names:?}"
+    );
+}
+
+#[test]
+fn html_root_relative_no_unresolved_imports() {
+    let root = fixture_path("html-root-relative");
+    let config = create_config(root);
+    let results = fallow_core::analyze(&config).expect("analysis should succeed");
+
+    let html_unresolved: Vec<&str> = results
+        .unresolved_imports
+        .iter()
+        .filter(|u| u.path.to_string_lossy().ends_with(".html"))
+        .map(|u| u.specifier.as_str())
+        .collect();
+    assert!(
+        html_unresolved.is_empty(),
+        "root-relative HTML asset references should resolve, got unresolved: {html_unresolved:?}"
+    );
+}
