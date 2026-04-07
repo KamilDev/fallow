@@ -4,7 +4,7 @@
 
 use oxc_ast::ast::{
     Argument, ArrayExpressionElement, BinaryExpression, Class, ClassElement, Expression,
-    ObjectPropertyKind,
+    ObjectPropertyKind, Statement,
 };
 
 use crate::{MemberInfo, MemberKind};
@@ -224,6 +224,67 @@ pub(super) fn regex_pattern_to_suffix(pattern: &str) -> Option<String> {
         return Some(format!(".{p}"));
     }
 
+    None
+}
+
+/// Try to extract a class name from a factory function argument.
+///
+/// Matches patterns where a call argument is an arrow function or function
+/// expression whose body returns a `new ClassName(...)` expression:
+///
+/// - `() => new Foo()`  (arrow expression body)
+/// - `() => { return new Foo(); }` (arrow block body)
+/// - `function() { return new Foo(); }` (function expression)
+///
+/// Returns the class name if found and it's not a built-in constructor.
+pub(super) fn try_extract_factory_new_class(arguments: &[Argument<'_>]) -> Option<String> {
+    for arg in arguments {
+        let class_name = match arg {
+            Argument::ArrowFunctionExpression(arrow) => {
+                if arrow.expression {
+                    // Expression body: `() => new Foo()`
+                    extract_new_class_from_statement(arrow.body.statements.first()?)
+                } else {
+                    // Block body: `() => { return new Foo(); }`
+                    extract_new_class_from_return_body(&arrow.body.statements)
+                }
+            }
+            Argument::FunctionExpression(func) => {
+                // `function() { return new Foo(); }`
+                extract_new_class_from_return_body(&func.body.as_ref()?.statements)
+            }
+            _ => None,
+        };
+        if let Some(name) = class_name
+            && !is_builtin_constructor(&name)
+        {
+            return Some(name);
+        }
+    }
+    None
+}
+
+/// Extract a class name from a `new ClassName(...)` in an expression statement.
+fn extract_new_class_from_statement(stmt: &Statement<'_>) -> Option<String> {
+    if let Statement::ExpressionStatement(expr_stmt) = stmt
+        && let Expression::NewExpression(new_expr) = &expr_stmt.expression
+        && let Expression::Identifier(callee) = &new_expr.callee
+    {
+        return Some(callee.name.to_string());
+    }
+    None
+}
+
+/// Extract a class name from the last `return new ClassName(...)` in a function body.
+fn extract_new_class_from_return_body(stmts: &[Statement<'_>]) -> Option<String> {
+    for stmt in stmts.iter().rev() {
+        if let Statement::ReturnStatement(ret) = stmt
+            && let Some(Expression::NewExpression(new_expr)) = &ret.argument
+            && let Expression::Identifier(callee) = &new_expr.callee
+        {
+            return Some(callee.name.to_string());
+        }
+    }
     None
 }
 

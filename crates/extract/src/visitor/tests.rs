@@ -460,6 +460,133 @@ fn multiple_instances_same_class() {
     );
 }
 
+// ── Factory initializer instance tracking ──────────────────
+
+#[test]
+fn array_destructured_factory_arrow_expression_body() {
+    let info = parse(
+        r"
+            import { MyService } from './service';
+            const [svc] = useState(() => new MyService());
+            svc.process();
+            ",
+    );
+    assert!(
+        info.member_accesses
+            .iter()
+            .any(|a| a.object == "MyService" && a.member == "process"),
+        "svc.process() should be mapped to MyService.process, found: {:?}",
+        info.member_accesses
+    );
+}
+
+#[test]
+fn array_destructured_factory_arrow_block_body() {
+    let info = parse(
+        r"
+            import { MyService } from './service';
+            const [svc, setSvc] = useState(() => { return new MyService(); });
+            svc.greet();
+            ",
+    );
+    assert!(
+        info.member_accesses
+            .iter()
+            .any(|a| a.object == "MyService" && a.member == "greet"),
+        "svc.greet() should be mapped to MyService.greet, found: {:?}",
+        info.member_accesses
+    );
+}
+
+#[test]
+fn array_destructured_factory_function_expression() {
+    let info = parse(
+        r"
+            import { MyService } from './service';
+            const [svc] = useMemo(function() { return new MyService(); }, []);
+            svc.run();
+            ",
+    );
+    assert!(
+        info.member_accesses
+            .iter()
+            .any(|a| a.object == "MyService" && a.member == "run"),
+        "svc.run() should be mapped to MyService.run, found: {:?}",
+        info.member_accesses
+    );
+}
+
+#[test]
+fn array_destructured_factory_builtin_not_tracked() {
+    let info = parse(
+        r"
+            const [m] = useState(() => new Map());
+            m.get('key');
+            ",
+    );
+    assert!(
+        !info.member_accesses.iter().any(|a| a.object == "Map"),
+        "new Map() through factory should not create instance binding, found: {:?}",
+        info.member_accesses
+    );
+}
+
+#[test]
+fn array_destructured_factory_whole_object_use() {
+    let info = parse(
+        r"
+            import { Config } from './config';
+            const [cfg] = useState(() => new Config());
+            Object.keys(cfg);
+            ",
+    );
+    assert!(
+        info.whole_object_uses.contains(&"Config".to_string()),
+        "Object.keys(cfg) should map to whole-object use of Config, found: {:?}",
+        info.whole_object_uses
+    );
+}
+
+#[test]
+fn non_array_destructured_call_not_tracked() {
+    let info = parse(
+        r"
+            import { Foo } from './foo';
+            const result = someFunc(() => new Foo());
+            result.bar();
+            ",
+    );
+    // Without array destructuring, the factory pattern should not create a binding
+    assert!(
+        !info
+            .member_accesses
+            .iter()
+            .any(|a| a.object == "Foo" && a.member == "bar"),
+        "non-array-destructured call should not create instance binding, found: {:?}",
+        info.member_accesses
+    );
+}
+
+#[test]
+fn array_destructured_no_factory_not_tracked() {
+    let info = parse(
+        r"
+            import { Foo } from './foo';
+            const [x] = someFunc(42);
+            x.bar();
+            ",
+    );
+    // No factory argument — should not create instance binding
+    assert!(
+        !info
+            .member_accesses
+            .iter()
+            .any(|a| a.object == "Foo" && a.member == "bar"),
+        "array destructuring without factory should not map to Foo, found: {:?}",
+        info.member_accesses
+    );
+}
+
 // ── this.field chained member access ────────────────────────
 
 #[test]

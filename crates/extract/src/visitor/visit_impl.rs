@@ -266,6 +266,20 @@ impl<'a> Visit<'a> for ModuleInfoExtractor {
                 // won't match NewExpression) and then the loop continues.
             }
 
+            // `const [x] = wrapper(() => new ClassName(...))` — instance creation
+            // through a wrapper function with a factory initializer (e.g., React's
+            // `useState`, `useMemo`). The first array-destructured element is bound
+            // to the class returned by the factory.
+            if let Expression::CallExpression(call) = init
+                && let BindingPattern::ArrayPattern(arr_pat) = &declarator.id
+                && let Some(Some(BindingPattern::BindingIdentifier(id))) = arr_pat.elements.first()
+                && let Some(class_name) =
+                    super::helpers::try_extract_factory_new_class(&call.arguments)
+            {
+                self.instance_binding_names
+                    .insert(id.name.to_string(), class_name);
+            }
+
             // `const { a, b } = ns` — namespace destructuring for member narrowing.
             // Scope-unaware: consistent with flat member_accesses approach.
             if let Expression::Identifier(ident) = init
