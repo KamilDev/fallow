@@ -17,8 +17,43 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      rust: ${{ steps.filter.outputs.rust }}
+      vscode: ${{ steps.filter.outputs.vscode }}
+      actions: ${{ steps.filter.outputs.actions }}
+      ci-scripts: ${{ steps.filter.outputs.ci-scripts }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        id: filter
+        with:
+          filters: |
+            rust:
+              - 'crates/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'deny.toml'
+              - '.clippy.toml'
+              - 'rust-toolchain.toml'
+            vscode:
+              - 'editors/vscode/**'
+            actions:
+              - '.github/**'
+            ci-scripts:
+              - 'ci/**'
+              - 'action/**'
+
   check:
     name: Check (${{ matrix.os }})
+    needs: changes
+    if: needs.changes.outputs.rust == 'true' || github.event_name == 'push'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     permissions:
@@ -49,6 +84,8 @@ jobs:
 
   doc:
     name: Documentation
+    needs: changes
+    if: needs.changes.outputs.rust == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -73,6 +110,8 @@ jobs:
 
   vscode:
     name: VS Code Extension
+    needs: changes
+    if: needs.changes.outputs.vscode == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -88,6 +127,7 @@ jobs:
           cache: pnpm
           cache-dependency-path: editors/vscode/pnpm-lock.yaml
       - run: cd editors/vscode && pnpm install --frozen-lockfile
+      - run: cd editors/vscode && pnpm audit
       - run: cd editors/vscode && pnpm lint
       - run: cd editors/vscode && pnpm build
       - run: cd editors/vscode && pnpm test:unit
@@ -95,6 +135,8 @@ jobs:
 
   test-gitlab-ci:
     name: Test GitLab CI scripts
+    needs: changes
+    if: needs.changes.outputs.ci-scripts == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -107,6 +149,8 @@ jobs:
 
   audit:
     name: Security Audit
+    needs: changes
+    if: needs.changes.outputs.rust == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -118,6 +162,8 @@ jobs:
 
   deny:
     name: Cargo Deny
+    needs: changes
+    if: needs.changes.outputs.rust == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -128,6 +174,8 @@ jobs:
 
   shear:
     name: Unused Dependencies
+    needs: changes
+    if: needs.changes.outputs.rust == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -139,6 +187,8 @@ jobs:
 
   zizmor:
     name: Actions Security
+    needs: changes
+    if: needs.changes.outputs.actions == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -150,6 +200,8 @@ jobs:
 
   msrv:
     name: MSRV (1.92)
+    needs: changes
+    if: needs.changes.outputs.rust == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -162,3 +214,21 @@ jobs:
           cache-key: msrv
       - name: Check compilation
         run: cargo check --workspace
+
+  ci-ok:
+    name: CI
+    if: always()
+    needs: [check, doc, typos, vscode, test-gitlab-ci, audit, deny, shear, zizmor, msrv]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: All checks passed
+        run: |
+          results='${{ toJSON(needs.*.result) }}'
+          for result in $(echo "$results" | jq -r '.[]'); do
+            if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
+              echo "::error::Job failed with result: $result"
+              exit 1
+            fi
+          done
