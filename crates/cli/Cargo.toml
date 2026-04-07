@@ -47,5 +47,8 @@ fallow-types = { workspace = true }
 oxc_span = { workspace = true }
 proptest = { workspace = true }
 
+[package.metadata.cargo-shear]
+ignored = ["miette"] # feature-only dep: activates fancy rendering for fallow-config's miette::Report
+
 [lints]
 workspace = true
