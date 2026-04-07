@@ -242,6 +242,17 @@ pub(super) fn compute_refactoring_targets(
                 detail: format!("{name} has cognitive complexity {cog}"),
             });
         }
+        if score.crap_above_threshold >= 2 && score.crap_max >= super::scoring::CRAP_THRESHOLD {
+            factors.push(ContributingFactor {
+                metric: "crap_max",
+                value: score.crap_max,
+                threshold: super::scoring::CRAP_THRESHOLD,
+                detail: format!(
+                    "{} functions with untested complexity risk",
+                    score.crap_above_threshold,
+                ),
+            });
+        }
 
         // Skip if no factors triggered
         if factors.is_empty() {
@@ -408,7 +419,18 @@ fn try_match_rules(
         ));
     }
 
-    // Rule 7: Circular dependency (low fan-in fallback)
+    // Rule 7: High untested complexity risk (multiple high-CRAP functions)
+    if score.crap_above_threshold >= 2 && score.complexity_density > 0.3 {
+        return Some((
+            RecommendationCategory::AddTestCoverage,
+            format!(
+                "{} complex functions lack test coverage path, add tests before modifying",
+                score.crap_above_threshold
+            ),
+        ));
+    }
+
+    // Rule 8: Circular dependency (low fan-in fallback)
     if is_circular {
         return Some((
             RecommendationCategory::BreakCircularDependency,
@@ -425,7 +447,8 @@ const fn confidence_for_category(category: &RecommendationCategory) -> Confidenc
         // Deterministic: graph analysis (dead code, cycles) + AST analysis (complexity)
         RecommendationCategory::RemoveDeadCode
         | RecommendationCategory::BreakCircularDependency
-        | RecommendationCategory::ExtractComplexFunctions => Confidence::High,
+        | RecommendationCategory::ExtractComplexFunctions
+        | RecommendationCategory::AddTestCoverage => Confidence::High,
         // Heuristic thresholds (fan-in/fan-out coupling)
         RecommendationCategory::SplitHighImpact | RecommendationCategory::ExtractDependencies => {
             Confidence::Medium
@@ -524,6 +547,30 @@ fn build_evidence(
                 })
             }
         }
+        RecommendationCategory::AddTestCoverage => {
+            // Reuse top complex functions as evidence: these are the functions
+            // that need test coverage most urgently (highest cognitive complexity).
+            let functions = top_fns
+                .map(|fns| {
+                    fns.iter()
+                        .map(|(name, line, cog)| EvidenceFunction {
+                            name: name.clone(),
+                            line: *line,
+                            cognitive: *cog,
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+            if functions.is_empty() {
+                None
+            } else {
+                Some(TargetEvidence {
+                    unused_exports: vec![],
+                    complex_functions: functions,
+                    cycle_path: vec![],
+                })
+            }
+        }
         _ => None,
     }
 }
@@ -546,6 +593,8 @@ mod tests {
             total_cognitive: 0,
             function_count: 1,
             lines: 100,
+            crap_max: 0.0,
+            crap_above_threshold: 0,
         };
         overrides(&mut s);
         s
@@ -745,6 +794,10 @@ mod tests {
             confidence_for_category(&RecommendationCategory::UrgentChurnComplexity),
             Confidence::Low
         ));
+        assert!(matches!(
+            confidence_for_category(&RecommendationCategory::AddTestCoverage),
+            Confidence::High
+        ));
     }
 
     // --- efficiency ---
@@ -841,6 +894,34 @@ mod tests {
             cat,
             RecommendationCategory::BreakCircularDependency
         ));
+    }
+
+    #[test]
+    fn rule_add_test_coverage() {
+        let score = make_score(|s| {
+            s.crap_above_threshold = 2;
+            s.crap_max = 72.0;
+            s.complexity_density = 0.5;
+        });
+        let t = default_thresholds();
+        let result = try_match_rules(&score, None, false, false, None, 0, &t);
+        assert!(result.is_some());
+        let (cat, rec) = result.unwrap();
+        assert!(matches!(cat, RecommendationCategory::AddTestCoverage));
+        assert!(rec.contains("2 complex functions"));
+    }
+
+    #[test]
+    fn rule_add_test_coverage_below_density_threshold() {
+        // crap_above >= 2 but density <= 0.3 -> rule does not fire
+        let score = make_score(|s| {
+            s.crap_above_threshold = 3;
+            s.crap_max = 72.0;
+            s.complexity_density = 0.2;
+        });
+        let t = default_thresholds();
+        let result = try_match_rules(&score, None, false, false, None, 0, &t);
+        assert!(result.is_none());
     }
 
     #[test]

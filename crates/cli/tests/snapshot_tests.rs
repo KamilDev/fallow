@@ -1774,6 +1774,7 @@ fn sample_health_report(root: &Path) -> HealthReport {
             max_cognitive_threshold: 15,
             files_scored: None,
             average_maintainability: None,
+            coverage_model: None,
         },
         vital_signs: None,
         health_score: None,
@@ -1799,6 +1800,7 @@ const fn empty_health_report() -> HealthReport {
             max_cognitive_threshold: 15,
             files_scored: None,
             average_maintainability: None,
+            coverage_model: None,
         },
         vital_signs: None,
         health_score: None,
@@ -1971,6 +1973,7 @@ fn health_report_with_trend(root: &Path) -> HealthReport {
             git_sha: Some("abc1234".into()),
             score: Some(72.0),
             grade: Some("B".into()),
+            coverage_model: None,
         },
         metrics: vec![
             TrendMetric {

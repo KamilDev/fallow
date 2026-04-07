@@ -534,13 +534,31 @@ fn render_file_scores(
         // Line 1: MI score + path
         lines.push(format!("  {}    {}{}", mi_colored, dir.dimmed(), filename,));
 
-        // Line 2: metrics (indented, dimmed)
+        // Line 2: metrics (indented, dimmed) with optional CRAP risk
+        let risk_suffix = if score.crap_max > 0.0 {
+            let risk_str = if score.crap_max > 999.0 {
+                ">999".to_string()
+            } else {
+                format!("{:.1}", score.crap_max)
+            };
+            let risk_colored = if score.crap_max >= 30.0 {
+                risk_str.red().bold().to_string()
+            } else if score.crap_max >= 15.0 {
+                risk_str.yellow().to_string()
+            } else {
+                risk_str.dimmed().to_string()
+            };
+            format!("  {risk_colored} risk")
+        } else {
+            String::new()
+        };
         lines.push(format!(
-            "         {} fan-in  {} fan-out  {} dead  {} density",
+            "         {} fan-in  {} fan-out  {} dead  {} density{}",
             format!("{:>3}", score.fan_in).dimmed(),
             format!("{:>3}", score.fan_out).dimmed(),
             format!("{:>3.0}%", score.dead_code_ratio * 100.0).dimmed(),
             format!("{:.2}", score.complexity_density).dimmed(),
+            risk_suffix,
         ));
 
         // Blank line between entries
@@ -559,7 +577,7 @@ fn render_file_scores(
     }
     lines.push(format!(
         "  {}",
-        format!("Composite file quality scores based on complexity, coupling, and dead code \u{2014} {DOCS_HEALTH}#file-health-scores").dimmed()
+        format!("Composite file quality scores based on complexity, coupling, and dead code. Risk: low <15, moderate 15-30, high >=30. Untested files scored CC\u{00b2}+CC instead of CC \u{2014} {DOCS_HEALTH}#file-health-scores").dimmed()
     ));
     lines.push(String::new());
 }
@@ -1022,6 +1040,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,
@@ -1061,6 +1080,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,
@@ -1105,6 +1125,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,
@@ -1156,6 +1177,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,
@@ -1187,6 +1209,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,
@@ -1459,6 +1482,7 @@ mod tests {
                 git_sha: Some("abc1234".into()),
                 score: Some(72.0),
                 grade: Some("B".into()),
+                coverage_model: None,
             },
             metrics: vec![
                 crate::health_types::TrendMetric {
@@ -1509,6 +1533,7 @@ mod tests {
                 git_sha: None,
                 score: None,
                 grade: None,
+                coverage_model: None,
             },
             metrics: vec![crate::health_types::TrendMetric {
                 name: "unused_deps",
@@ -1540,6 +1565,7 @@ mod tests {
                 git_sha: Some("def5678".into()),
                 score: Some(80.0),
                 grade: Some("B".into()),
+                coverage_model: None,
             },
             metrics: vec![
                 crate::health_types::TrendMetric {
@@ -1586,6 +1612,7 @@ mod tests {
                 git_sha: None,
                 score: None,
                 grade: None,
+                coverage_model: None,
             },
             metrics: vec![crate::health_types::TrendMetric {
                 name: "score",
@@ -1660,6 +1687,7 @@ mod tests {
                 git_sha: None,
                 score: None,
                 grade: None,
+                coverage_model: None,
             },
             metrics: vec![],
             snapshots_loaded: 1,
@@ -1763,6 +1791,8 @@ mod tests {
             total_cognitive: 8,
             function_count: 4,
             lines: 200,
+            crap_max: 0.0,
+            crap_above_threshold: 0,
         }];
         let lines = build_health_human_lines(&report, &root);
         let text = plain(&lines);
@@ -1791,6 +1821,8 @@ mod tests {
                 total_cognitive: 1,
                 function_count: 1,
                 lines: 50,
+                crap_max: 0.0,
+                crap_above_threshold: 0,
             },
             crate::health_types::FileHealthScore {
                 path: root.join("src/okay.ts"),
@@ -1803,6 +1835,8 @@ mod tests {
                 total_cognitive: 5,
                 function_count: 3,
                 lines: 100,
+                crap_max: 0.0,
+                crap_above_threshold: 0,
             },
             crate::health_types::FileHealthScore {
                 path: root.join("src/bad.ts"),
@@ -1815,6 +1849,8 @@ mod tests {
                 total_cognitive: 30,
                 function_count: 10,
                 lines: 500,
+                crap_max: 0.0,
+                crap_above_threshold: 0,
             },
         ];
         let lines = build_health_human_lines(&report, &root);
@@ -1844,6 +1880,8 @@ mod tests {
                     total_cognitive: 1,
                     function_count: 1,
                     lines: 50,
+                    crap_max: 0.0,
+                    crap_above_threshold: 0,
                 });
         }
         let lines = build_health_human_lines(&report, &root);
@@ -1873,6 +1911,8 @@ mod tests {
             total_cognitive: 1,
             function_count: 1,
             lines: 50,
+            crap_max: 0.0,
+            crap_above_threshold: 0,
         }];
         let lines = build_health_human_lines(&report, &root);
         let text = plain(&lines);
@@ -2184,6 +2224,10 @@ mod tests {
                 crate::health_types::RecommendationCategory::ExtractDependencies,
                 "coupling",
             ),
+            (
+                crate::health_types::RecommendationCategory::AddTestCoverage,
+                "untested risk",
+            ),
         ];
         for (i, (cat, _label)) in categories.iter().enumerate() {
             report.targets.push(crate::health_types::RefactoringTarget {
@@ -2296,6 +2340,8 @@ mod tests {
             total_cognitive: 10,
             function_count: 3,
             lines: 200,
+            crap_max: 0.0,
+            crap_above_threshold: 0,
         }];
         report.hotspots = vec![crate::health_types::HotspotEntry {
             path: root.join("src/complex.ts"),

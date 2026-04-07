@@ -173,13 +173,15 @@ pub(super) fn print_health_compact(report: &crate::health_types::HealthReport, r
     for score in &report.file_scores {
         let relative = normalize_uri(&relative_path(&score.path, root).display().to_string());
         println!(
-            "file-score:{}:mi={:.1},fan_in={},fan_out={},dead={:.2},density={:.2}",
+            "file-score:{}:mi={:.1},fan_in={},fan_out={},dead={:.2},density={:.2},crap_max={:.1},crap_above={}",
             relative,
             score.maintainability_index,
             score.fan_in,
             score.fan_out,
             score.dead_code_ratio,
             score.complexity_density,
+            score.crap_max,
+            score.crap_above_threshold,
         );
     }
     if let Some(ref gaps) = report.coverage_gaps {

@@ -322,6 +322,12 @@ pub fn health_meta() -> Value {
                 "description": "Project-level aggregate score computed from vital signs: dead code, complexity, maintainability, hotspots, unused dependencies, and circular dependencies. Penalties subtracted from 100. Missing metrics (from pipelines that didn't run) don't penalize. Use --score to force full pipeline for maximum accuracy.",
                 "range": "[0, 100]",
                 "interpretation": "higher is better; A (85\u{2013}100), B (70\u{2013}84), C (55\u{2013}69), D (40\u{2013}54), F (0\u{2013}39)"
+            },
+            "crap_max": {
+                "name": "Untested Complexity Risk (CRAP)",
+                "description": "Change Risk Anti-Patterns score (Savoia & Evans, 2007). Static binary model: test-reachable file = CC, untested file = CC\u{00b2} + CC. Considers test-graph reachability from the module graph, not runtime code coverage. Files not imported by any test file are treated as 0% covered regardless of actual test execution.",
+                "range": "[1, \u{221e})",
+                "interpretation": "lower is better; >=30 is high-risk (CC >= 5 without test path)"
             }
         }
     })

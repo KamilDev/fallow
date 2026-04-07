@@ -652,19 +652,20 @@ fn write_file_scores_section(
         "### File Health Scores ({} files)\n",
         report.file_scores.len(),
     );
-    out.push_str("| File | Maintainability | Fan-in | Fan-out | Dead Code | Density |\n");
-    out.push_str("|:-----|:---------------|:-------|:--------|:----------|:--------|\n");
+    out.push_str("| File | Maintainability | Fan-in | Fan-out | Dead Code | Density | Risk |\n");
+    out.push_str("|:-----|:---------------|:-------|:--------|:----------|:--------|:-----|\n");
 
     for score in &report.file_scores {
         let file_str = rel(&score.path);
         let _ = writeln!(
             out,
-            "| `{file_str}` | {mi:.1} | {fi} | {fan_out} | {dead:.0}% | {density:.2} |",
+            "| `{file_str}` | {mi:.1} | {fi} | {fan_out} | {dead:.0}% | {density:.2} | {crap:.1} |",
             mi = score.maintainability_index,
             fi = score.fan_in,
             fan_out = score.fan_out,
             dead = score.dead_code_ratio * 100.0,
             density = score.complexity_density,
+            crap = score.crap_max,
         );
     }
 
@@ -1164,6 +1165,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,
@@ -1202,6 +1204,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,
@@ -1245,6 +1248,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,
@@ -1278,6 +1282,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,
@@ -1351,6 +1356,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,
@@ -1535,6 +1541,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: Some(crate::health_types::VitalSigns {
                 avg_cyclomatic: 3.5,
@@ -1594,6 +1601,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: Some(1),
                 average_maintainability: Some(65.0),
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,
@@ -1608,6 +1616,8 @@ mod tests {
                 total_cognitive: 30,
                 function_count: 10,
                 lines: 200,
+                crap_max: 0.0,
+                crap_above_threshold: 0,
             }],
             coverage_gaps: None,
             hotspots: vec![],
@@ -1647,6 +1657,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,
@@ -1704,6 +1715,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: Some(1),
                 average_maintainability: Some(70.0),
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,
@@ -1718,6 +1730,8 @@ mod tests {
                 total_cognitive: 8,
                 function_count: 2,
                 lines: 50,
+                crap_max: 0.0,
+                crap_above_threshold: 0,
             }],
             coverage_gaps: None,
             hotspots: vec![],
@@ -1757,6 +1771,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,
@@ -1844,6 +1859,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,

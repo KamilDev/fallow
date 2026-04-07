@@ -560,6 +560,15 @@ fn assemble_health_report(
             } else {
                 None
             },
+            coverage_model: if opts.file_scores
+                || effective_coverage_gaps
+                || opts.hotspots
+                || opts.targets
+            {
+                Some(crate::health_types::CoverageModel::StaticBinary)
+            } else {
+                None
+            },
         },
         vital_signs: Some(vital_signs),
         health_score,

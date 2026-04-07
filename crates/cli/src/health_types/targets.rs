@@ -36,6 +36,8 @@ pub enum RecommendationCategory {
     ExtractComplexFunctions,
     /// Excessive imports reduce testability and increase coupling.
     ExtractDependencies,
+    /// Multiple complex functions lack test dependency path.
+    AddTestCoverage,
 }
 
 impl RecommendationCategory {
@@ -49,6 +51,7 @@ impl RecommendationCategory {
             Self::RemoveDeadCode => "dead code",
             Self::ExtractComplexFunctions => "complexity",
             Self::ExtractDependencies => "coupling",
+            Self::AddTestCoverage => "untested risk",
         }
     }
 
@@ -62,6 +65,7 @@ impl RecommendationCategory {
             Self::RemoveDeadCode => "dead_code",
             Self::ExtractComplexFunctions => "complexity",
             Self::ExtractDependencies => "coupling",
+            Self::AddTestCoverage => "untested_risk",
         }
     }
 }
@@ -228,6 +232,7 @@ mod tests {
             RecommendationCategory::RemoveDeadCode,
             RecommendationCategory::ExtractComplexFunctions,
             RecommendationCategory::ExtractDependencies,
+            RecommendationCategory::AddTestCoverage,
         ];
         for cat in &categories {
             assert!(!cat.label().is_empty(), "{cat:?} should have a label");
@@ -243,6 +248,7 @@ mod tests {
             RecommendationCategory::RemoveDeadCode,
             RecommendationCategory::ExtractComplexFunctions,
             RecommendationCategory::ExtractDependencies,
+            RecommendationCategory::AddTestCoverage,
         ];
         let labels: Vec<&str> = categories
             .iter()
@@ -332,6 +338,7 @@ mod tests {
             RecommendationCategory::RemoveDeadCode,
             RecommendationCategory::ExtractComplexFunctions,
             RecommendationCategory::ExtractDependencies,
+            RecommendationCategory::AddTestCoverage,
         ];
         for cat in &categories {
             assert!(
@@ -350,6 +357,7 @@ mod tests {
             RecommendationCategory::RemoveDeadCode,
             RecommendationCategory::ExtractComplexFunctions,
             RecommendationCategory::ExtractDependencies,
+            RecommendationCategory::AddTestCoverage,
         ];
         let labels: Vec<&str> = categories
             .iter()
@@ -368,6 +376,7 @@ mod tests {
             RecommendationCategory::RemoveDeadCode,
             RecommendationCategory::ExtractComplexFunctions,
             RecommendationCategory::ExtractDependencies,
+            RecommendationCategory::AddTestCoverage,
         ];
         for cat in &categories {
             assert!(

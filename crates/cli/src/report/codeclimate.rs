@@ -1046,6 +1046,7 @@ mod tests {
                 max_cognitive_threshold: 15,
                 files_scored: None,
                 average_maintainability: None,
+                coverage_model: None,
             },
             vital_signs: None,
             health_score: None,

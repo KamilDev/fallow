@@ -423,6 +423,8 @@ pub fn compute_trend(
         git_sha: prev.git_sha.clone(),
         score: prev.score,
         grade: prev.grade.clone(),
+        // Snapshots don't yet store coverage_model; populated when schema adds it.
+        coverage_model: None,
     };
 
     let mut metrics = Vec::new();

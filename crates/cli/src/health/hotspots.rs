@@ -313,6 +313,8 @@ mod tests {
             total_cognitive: 10,
             function_count: 3,
             lines: 20,
+            crap_max: 0.0,
+            crap_above_threshold: 0,
         }];
         let mut churn_files: rustc_hash::FxHashMap<
             std::path::PathBuf,
@@ -348,6 +350,8 @@ mod tests {
             total_cognitive: 10,
             function_count: 3,
             lines: 20,
+            crap_max: 0.0,
+            crap_above_threshold: 0,
         }];
         let mut churn_files: rustc_hash::FxHashMap<
             std::path::PathBuf,
@@ -384,6 +388,8 @@ mod tests {
             total_cognitive: 0,
             function_count: 1,
             lines: 10,
+            crap_max: 0.0,
+            crap_above_threshold: 0,
         }];
         let mut churn_files: rustc_hash::FxHashMap<
             std::path::PathBuf,
@@ -462,6 +468,8 @@ mod tests {
                 total_cognitive: 5,
                 function_count: 2,
                 lines: 50,
+                crap_max: 0.0,
+                crap_above_threshold: 0,
             },
             FileHealthScore {
                 path: std::path::PathBuf::from("/src/b.ts"),
@@ -474,6 +482,8 @@ mod tests {
                 total_cognitive: 20,
                 function_count: 5,
                 lines: 100,
+                crap_max: 0.0,
+                crap_above_threshold: 0,
             },
             FileHealthScore {
                 path: std::path::PathBuf::from("/src/c.ts"),
@@ -486,6 +496,8 @@ mod tests {
                 total_cognitive: 15,
                 function_count: 4,
                 lines: 80,
+                crap_max: 0.0,
+                crap_above_threshold: 0,
             },
         ];
         let mut churn_files: rustc_hash::FxHashMap<
@@ -547,6 +559,8 @@ mod tests {
                 total_cognitive: 4,
                 function_count: 2,
                 lines: 40,
+                crap_max: 0.0,
+                crap_above_threshold: 0,
             },
             FileHealthScore {
                 path: std::path::PathBuf::from("/src/rare.ts"),
@@ -559,6 +573,8 @@ mod tests {
                 total_cognitive: 30,
                 function_count: 8,
                 lines: 200,
+                crap_max: 0.0,
+                crap_above_threshold: 0,
             },
         ];
         let mut churn_files: rustc_hash::FxHashMap<
@@ -608,6 +624,8 @@ mod tests {
             total_cognitive: 80,
             function_count: 20,
             lines: 500,
+            crap_max: 0.0,
+            crap_above_threshold: 0,
         }];
         let churn_files: rustc_hash::FxHashMap<std::path::PathBuf, fallow_core::churn::FileChurn> =
             rustc_hash::FxHashMap::default();
@@ -631,6 +649,8 @@ mod tests {
             total_cognitive: 2,
             function_count: 1,
             lines: 10,
+            crap_max: 0.0,
+            crap_above_threshold: 0,
         }];
         let mut churn_files: rustc_hash::FxHashMap<
             std::path::PathBuf,
@@ -668,6 +688,8 @@ mod tests {
             total_cognitive: 18,
             function_count: 5,
             lines: 120,
+            crap_max: 0.0,
+            crap_above_threshold: 0,
         }];
         let mut churn_files: rustc_hash::FxHashMap<
             std::path::PathBuf,
