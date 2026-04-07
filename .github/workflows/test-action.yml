@@ -159,6 +159,7 @@ jobs:
           root: /tmp/clean-project
           format: json
           fail-on-issues: true
+          auto-changed-since: false
 
       - name: Verify zero issues
         env:
