@@ -1,5 +1,22 @@
 use super::common::{create_config, fixture_path};
 
+/// Create a symlink, removing any existing entry (file, directory, or stale symlink) first.
+/// This makes symlink setup idempotent across repeated test runs.
+fn force_symlink(target: &std::path::Path, link: &std::path::Path) {
+    // Remove existing entry at the link path (regular dir, file, or broken symlink)
+    if link.symlink_metadata().is_ok() {
+        if link.is_dir() && !link.is_symlink() {
+            let _ = std::fs::remove_dir_all(link);
+        } else {
+            let _ = std::fs::remove_file(link);
+        }
+    }
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(target, link).expect("symlink creation should succeed");
+    #[cfg(windows)]
+    std::os::windows::fs::symlink_dir(target, link).expect("symlink creation should succeed");
+}
+
 #[test]
 fn workspace_patterns_from_package_json() {
     let pkg: fallow_config::PackageJson =
@@ -24,23 +41,12 @@ fn workspace_patterns_yarn_format() {
 fn workspace_project_discovers_workspace_packages() {
     let root = fixture_path("workspace-project");
 
-    // Set up node_modules symlinks for cross-workspace resolution (like npm/pnpm install would)
+    // Set up node_modules symlinks for cross-workspace resolution (like npm/pnpm install would).
+    // Uses force_symlink to handle stale directories from prior runs.
     let nm = root.join("node_modules");
     let _ = std::fs::create_dir_all(nm.join("@workspace"));
-    #[cfg(unix)]
-    {
-        let _ = std::os::unix::fs::symlink(root.join("packages/shared"), nm.join("shared"));
-        let _ =
-            std::os::unix::fs::symlink(root.join("packages/utils"), nm.join("@workspace/utils"));
-    }
-    #[cfg(windows)]
-    {
-        let _ = std::os::windows::fs::symlink_dir(root.join("packages/shared"), nm.join("shared"));
-        let _ = std::os::windows::fs::symlink_dir(
-            root.join("packages/utils"),
-            nm.join("@workspace/utils"),
-        );
-    }
+    force_symlink(&root.join("packages/shared"), &nm.join("shared"));
+    force_symlink(&root.join("packages/utils"), &nm.join("@workspace/utils"));
 
     let config = create_config(root);
     let results = fallow_core::analyze(&config).expect("analysis should succeed");
@@ -167,13 +173,11 @@ fn project_state_workspace_queries() {
 fn workspace_exports_map_resolves_subpath_imports() {
     let root = fixture_path("workspace-exports-map");
 
-    // Set up node_modules symlinks for cross-workspace resolution
+    // Set up node_modules symlinks for cross-workspace resolution.
+    // Uses force_symlink to handle stale directories from prior runs.
     let nm = root.join("node_modules");
     let _ = std::fs::create_dir_all(nm.join("@workspace"));
-    #[cfg(unix)]
-    {
-        let _ = std::os::unix::fs::symlink(root.join("packages/ui"), nm.join("@workspace/ui"));
-    }
+    force_symlink(&root.join("packages/ui"), &nm.join("@workspace/ui"));
 
     let config = create_config(root);
     let results = fallow_core::analyze(&config).expect("analysis should succeed");
@@ -247,18 +251,11 @@ fn workspace_exports_map_resolves_subpath_imports() {
 fn workspace_nested_exports_resolves_dist_to_source() {
     let root = fixture_path("workspace-nested-exports");
 
-    // Set up node_modules symlinks for cross-workspace resolution
+    // Set up node_modules symlinks for cross-workspace resolution.
+    // Uses force_symlink to handle stale directories from prior runs.
     let nm = root.join("node_modules");
     let _ = std::fs::create_dir_all(nm.join("@workspace"));
-    #[cfg(unix)]
-    {
-        let _ = std::os::unix::fs::symlink(root.join("packages/ui"), nm.join("@workspace/ui"));
-    }
-    #[cfg(windows)]
-    {
-        let _ =
-            std::os::windows::fs::symlink_dir(root.join("packages/ui"), nm.join("@workspace/ui"));
-    }
+    force_symlink(&root.join("packages/ui"), &nm.join("@workspace/ui"));
 
     let config = create_config(root);
     let results = fallow_core::analyze(&config).expect("analysis should succeed");
