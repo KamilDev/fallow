@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.18.0] - 2026-04-07
+
+### Added
+
+- **`--score`, `--trend`, `--save-snapshot` on combined command** -- the bare `fallow` command (all analyses) now supports health score computation, snapshot saving, and trend comparison. Previously these flags were only available on the `health` subcommand. Enables the health delta header in CI PR/MR comments for combined runs.
+- **Health delta header uses metric labels** -- the trend delta line now uses the metric's own label (e.g., "avg complexity" from the trend data) instead of hardcoded text, making the output more robust and descriptive.
+- **First-run progressive disclosure** -- when `--score` is enabled but no snapshot exists for trend comparison, the PR comment shows a hint: "Enable `save-snapshot: true` to track score trends over time."
+- **Fixture accuracy** -- test fixtures now include `crap_max` and `crap_above_threshold` fields on all `file_scores` entries, matching the actual CLI output schema.
+
+### Fixed
+
+- **GitLab CI `FALLOW_SCORE` and `FALLOW_TREND` wiring** -- both env vars now work for the combined (empty command) case, not just the `health` subcommand.
+- **`signed(0)` formatting consistency** -- zero deltas now display as "0.0" instead of "0", consistent with non-zero values like "7.2".
+- **GitLab test parity** -- dead export delta assertion (`(-3.8%)`) added to GitLab CI tests, matching the GitHub Action test coverage.
+- **CI input descriptions** -- `action.yml` descriptions for `score`, `trend`, and `save-snapshot` now mention bare command support and snapshot storage location.
+
 ## [2.17.1] - 2026-04-07
 
 ### Added
@@ -945,7 +961,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--changed-since` and `--fail-on-issues` for CI
 - Cross-workspace resolution for npm/yarn/pnpm workspaces
 
-[Unreleased]: https://github.com/fallow-rs/fallow/compare/v2.17.1...HEAD
+[Unreleased]: https://github.com/fallow-rs/fallow/compare/v2.18.0...HEAD
+[2.18.0]: https://github.com/fallow-rs/fallow/compare/v2.17.1...v2.18.0
 [2.17.1]: https://github.com/fallow-rs/fallow/compare/v2.17.0...v2.17.1
 [2.17.0]: https://github.com/fallow-rs/fallow/compare/v2.16.0...v2.17.0
 [2.16.0]: https://github.com/fallow-rs/fallow/compare/v2.15.0...v2.16.0
