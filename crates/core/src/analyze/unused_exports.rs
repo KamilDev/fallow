@@ -225,8 +225,15 @@ pub fn find_duplicate_exports(
         }
     }
 
-    let mut export_locations: FxHashMap<String, Vec<(usize, std::path::PathBuf, FileId, u32)>> =
-        FxHashMap::default();
+    struct ExportEntry {
+        module_idx: usize,
+        path: std::path::PathBuf,
+        file_id: FileId,
+        span_start: u32,
+        is_type_only: bool,
+    }
+
+    let mut export_locations: FxHashMap<String, Vec<ExportEntry>> = FxHashMap::default();
 
     for (idx, module) in graph.modules.iter().enumerate() {
         if !module.is_reachable() || module.is_entry_point() {
@@ -251,12 +258,13 @@ pub fn find_duplicate_exports(
                 continue;
             }
             let name = export.name.to_string();
-            export_locations.entry(name).or_default().push((
-                idx,
-                module.path.clone(),
-                module.file_id,
-                export.span.start,
-            ));
+            export_locations.entry(name).or_default().push(ExportEntry {
+                module_idx: idx,
+                path: module.path.clone(),
+                file_id: module.file_id,
+                span_start: export.span.start,
+                is_type_only: export.is_type_only,
+            });
         }
     }
 
@@ -271,25 +279,52 @@ pub fn find_duplicate_exports(
             if locations.len() <= 1 {
                 return None;
             }
+
+            // TypeScript declaration merging: a value export (`export const X`) and
+            // a type export (`export type X`) sharing the same name are distinct in
+            // TS's value/type namespace split. This is idiomatic with Zod, Prisma,
+            // class+interface merging, etc. Skip groups that mix value and type exports.
+            let has_value = locations.iter().any(|e| !e.is_type_only);
+            let has_type = locations.iter().any(|e| e.is_type_only);
+            if has_value && has_type {
+                // Deduplicate within each namespace: keep only value-only or type-only
+                // entries and check if either namespace alone has duplicates.
+                let value_modules: FxHashSet<usize> = locations
+                    .iter()
+                    .filter(|e| !e.is_type_only)
+                    .map(|e| e.module_idx)
+                    .collect();
+                let type_modules: FxHashSet<usize> = locations
+                    .iter()
+                    .filter(|e| e.is_type_only)
+                    .map(|e| e.module_idx)
+                    .collect();
+                // If neither namespace alone has cross-file duplicates, skip entirely
+                if value_modules.len() <= 1 && type_modules.len() <= 1 {
+                    return None;
+                }
+            }
+
             // Remove entries where one module re-exports from another in the set.
             // For each pair (A, B), if A re-exports from B or B re-exports from A,
             // they are part of the same export chain, not true duplicates.
-            let module_indices: FxHashSet<usize> =
-                locations.iter().map(|(idx, _, _, _)| *idx).collect();
+            let module_indices: FxHashSet<usize> = locations.iter().map(|e| e.module_idx).collect();
             let independent: Vec<DuplicateLocation> = locations
                 .into_iter()
-                .filter(|(idx, _, _, _)| {
-                    // Keep this module only if it doesn't re-export from another module in the set
-                    // AND no other module in the set re-exports from it (unless both are sources)
-                    let sources = re_export_sources.get(idx);
+                .filter(|e| {
+                    let sources = re_export_sources.get(&e.module_idx);
                     let has_source_in_set =
                         sources.is_some_and(|s| s.iter().any(|src| module_indices.contains(src)));
                     !has_source_in_set
                 })
-                .map(|(_, path, file_id, span_start)| {
+                .map(|e| {
                     let (line, col) =
-                        byte_offset_to_line_col(line_offsets_by_file, file_id, span_start);
-                    DuplicateLocation { path, line, col }
+                        byte_offset_to_line_col(line_offsets_by_file, e.file_id, e.span_start);
+                    DuplicateLocation {
+                        path: e.path,
+                        line,
+                        col,
+                    }
                 })
                 .collect();
 
@@ -820,6 +855,71 @@ mod tests {
         let suppressions = FxHashMap::default();
         let result = find_duplicate_exports(&graph, &suppressions, &FxHashMap::default());
         assert!(result.is_empty());
+    }
+
+    #[test]
+    fn duplicate_exports_value_type_merging_not_flagged() {
+        // `export const Status = z.enum([...])` + `export type Status = z.infer<typeof Status>`
+        // in the same file is TypeScript declaration merging, not a duplicate.
+        let mut graph = build_graph(&[("/src/entry.ts", true), ("/src/schema.ts", false)]);
+        graph.modules[1].set_reachable(true);
+        graph.modules[1].exports = vec![
+            make_export("Status", 10, 20),      // value export
+            make_type_export("Status", 50, 60), // type export
+        ];
+        graph.reverse_deps[1] = vec![FileId(0)];
+        let suppressions = FxHashMap::default();
+        let result = find_duplicate_exports(&graph, &suppressions, &FxHashMap::default());
+        assert!(
+            result.is_empty(),
+            "value+type merging should not be flagged as duplicate"
+        );
+    }
+
+    #[test]
+    fn duplicate_exports_value_type_cross_file_not_flagged() {
+        // File A exports `const Status` and file B exports `type Status`.
+        // These are in different TS namespaces and should not be flagged.
+        let mut graph = build_graph(&[
+            ("/src/entry.ts", true),
+            ("/src/a.ts", false),
+            ("/src/b.ts", false),
+        ]);
+        graph.modules[1].set_reachable(true);
+        graph.modules[1].exports = vec![make_export("Status", 10, 20)];
+        graph.modules[2].set_reachable(true);
+        graph.modules[2].exports = vec![make_type_export("Status", 10, 20)];
+        graph.reverse_deps[1] = vec![FileId(0)];
+        graph.reverse_deps[2] = vec![FileId(0)];
+        let suppressions = FxHashMap::default();
+        let result = find_duplicate_exports(&graph, &suppressions, &FxHashMap::default());
+        assert!(
+            result.is_empty(),
+            "cross-file value+type should not be flagged"
+        );
+    }
+
+    #[test]
+    fn duplicate_exports_same_namespace_still_flagged() {
+        // Two files both export `const helper` (both value exports) — this IS a duplicate.
+        let mut graph = build_graph(&[
+            ("/src/entry.ts", true),
+            ("/src/a.ts", false),
+            ("/src/b.ts", false),
+        ]);
+        graph.modules[1].set_reachable(true);
+        graph.modules[1].exports = vec![make_export("helper", 10, 20)];
+        graph.modules[2].set_reachable(true);
+        graph.modules[2].exports = vec![make_export("helper", 10, 20)];
+        graph.reverse_deps[1] = vec![FileId(0)];
+        graph.reverse_deps[2] = vec![FileId(0)];
+        let suppressions = FxHashMap::default();
+        let result = find_duplicate_exports(&graph, &suppressions, &FxHashMap::default());
+        assert_eq!(
+            result.len(),
+            1,
+            "same-namespace duplicates should still be flagged"
+        );
     }
 
     // ---- find_unused_exports tests (exercises compile_ignore_matchers, compile_plugin_matchers,
