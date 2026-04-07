@@ -11,7 +11,7 @@ set -o pipefail
 #   INPUT_CROSS_LANGUAGE, INPUT_DRY_RUN, INPUT_WORKSPACE, INPUT_MAX_CYCLOMATIC,
 #   INPUT_MAX_COGNITIVE, INPUT_TOP, INPUT_SORT, INPUT_FILE_SCORES, INPUT_HOTSPOTS,
 #   INPUT_TARGETS, INPUT_COMPLEXITY, INPUT_SINCE, INPUT_MIN_COMMITS,
-#   INPUT_SAVE_SNAPSHOT, INPUT_TREND, INPUT_ISSUE_TYPES, INPUT_NO_CACHE, INPUT_THREADS,
+#   INPUT_SCORE, INPUT_SAVE_SNAPSHOT, INPUT_TREND, INPUT_ISSUE_TYPES, INPUT_NO_CACHE, INPUT_THREADS,
 #   INPUT_ONLY, INPUT_SKIP
 
 # --- Shared argument building functions ---
@@ -72,6 +72,7 @@ build_command_args() {
       [ -n "${INPUT_MAX_COGNITIVE:-}" ] && ARGS+=(--max-cognitive "$INPUT_MAX_COGNITIVE")
       [ "$include_top" = "true" ] && [ -n "${INPUT_TOP:-}" ] && ARGS+=(--top "$INPUT_TOP")
       [ -n "${INPUT_SORT:-}" ] && ARGS+=(--sort "$INPUT_SORT")
+      [ "${INPUT_SCORE:-}" = "true" ] && ARGS+=(--score)
       [ "${INPUT_FILE_SCORES:-}" = "true" ] && ARGS+=(--file-scores)
       [ "${INPUT_HOTSPOTS:-}" = "true" ] && ARGS+=(--hotspots)
       [ "${INPUT_TARGETS:-}" = "true" ] && ARGS+=(--targets)

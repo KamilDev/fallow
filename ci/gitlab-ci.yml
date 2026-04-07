@@ -113,6 +113,7 @@ variables:
   FALLOW_MAX_COGNITIVE: ""
   FALLOW_TOP: ""
   FALLOW_SORT: ""               # cyclomatic, cognitive, or lines
+  FALLOW_SCORE: "false"
   FALLOW_FILE_SCORES: "false"
   FALLOW_HOTSPOTS: "false"
   FALLOW_TARGETS: "false"
@@ -120,6 +121,7 @@ variables:
   FALLOW_SINCE: ""
   FALLOW_MIN_COMMITS: ""
   FALLOW_SAVE_SNAPSHOT: ""
+  FALLOW_TREND: "false"
 
   # Fix specific
   FALLOW_DRY_RUN: "true"
@@ -299,6 +301,7 @@ variables:
           [ -n "$FALLOW_MAX_COGNITIVE" ]      && ARGS+=(--max-cognitive "$FALLOW_MAX_COGNITIVE")
           [ -n "$FALLOW_TOP" ]                && ARGS+=(--top "$FALLOW_TOP")
           [ -n "$FALLOW_SORT" ]               && ARGS+=(--sort "$FALLOW_SORT")
+          [ "$FALLOW_SCORE" = "true" ]        && ARGS+=(--score)
           [ "$FALLOW_FILE_SCORES" = "true" ]  && ARGS+=(--file-scores)
           [ "$FALLOW_HOTSPOTS" = "true" ]     && ARGS+=(--hotspots)
           [ "$FALLOW_TARGETS" = "true" ]      && ARGS+=(--targets)
@@ -312,6 +315,7 @@ variables:
               ARGS+=(--save-snapshot "$FALLOW_SAVE_SNAPSHOT")
             fi
           fi
+          [ "$FALLOW_TREND" = "true" ]        && ARGS+=(--trend)
           ;;
         fix)
           [ "$FALLOW_DRY_RUN" = "true" ] && ARGS+=(--dry-run) || ARGS+=(--yes)
