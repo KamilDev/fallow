@@ -28,6 +28,7 @@ jobs:
       rust: ${{ steps.filter.outputs.rust }}
       vscode: ${{ steps.filter.outputs.vscode }}
       actions: ${{ steps.filter.outputs.actions }}
+      miri: ${{ steps.filter.outputs.miri }}
       ci-scripts: ${{ steps.filter.outputs.ci-scripts }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -47,6 +48,10 @@ jobs:
               - 'editors/vscode/**'
             actions:
               - '.github/**'
+            miri:
+              - 'crates/graph/**'
+              - 'crates/extract/**'
+              - 'crates/types/**'
             ci-scripts:
               - 'ci/**'
               - 'action/**'
@@ -216,10 +221,41 @@ jobs:
       - name: Check compilation
         run: cargo check --workspace
 
+  miri:
+    name: Miri
+    needs: changes
+    if: needs.changes.outputs.miri == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      MIRI_TOOLCHAIN: nightly-2026-03-20
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Miri toolchain
+        run: |
+          rustup toolchain install "$MIRI_TOOLCHAIN" --component miri
+          cargo +"$MIRI_TOOLCHAIN" miri setup
+
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          key: miri
+
+      - name: fallow-types
+        run: cargo +"$MIRI_TOOLCHAIN" miri test -p fallow-types --lib --tests
+
+      - name: fallow-graph
+        run: cargo +"$MIRI_TOOLCHAIN" miri test -p fallow-graph --lib --tests -- --skip proptests
+
+      - name: fallow-extract
+        run: cargo +"$MIRI_TOOLCHAIN" miri test -p fallow-extract --lib --tests -- --skip cache
+
   ci-ok:
     name: CI
     if: always()
-    needs: [check, doc, typos, vscode, test-gitlab-ci, audit, deny, shear, zizmor, msrv]
+    needs: [check, doc, typos, vscode, test-gitlab-ci, audit, deny, shear, zizmor, msrv, miri]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
