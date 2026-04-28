@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777278806541,
+  "lastUpdate": 1777365132277,
   "repoUrl": "https://github.com/KamilDev/fallow",
   "entries": {
     "Fallow Conformance": [
@@ -1979,6 +1979,88 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/KamilDev/fallow/commit/ab5b7ddf1280a871fad241c786640b8656c86c3d"
         },
         "date": 1777278805631,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Agreement Rate",
+            "value": 3.2,
+            "unit": "%"
+          },
+          {
+            "name": "Agreed Issues",
+            "value": 1023,
+            "unit": "issues"
+          },
+          {
+            "name": "Fallow Total",
+            "value": 30415,
+            "unit": "issues"
+          },
+          {
+            "name": "Knip Total",
+            "value": 2160,
+            "unit": "issues"
+          },
+          {
+            "name": "fastify Agreement",
+            "value": 6.2,
+            "unit": "%"
+          },
+          {
+            "name": "next.js Agreement",
+            "value": 2.8,
+            "unit": "%"
+          },
+          {
+            "name": "preact Agreement",
+            "value": 5.1,
+            "unit": "%"
+          },
+          {
+            "name": "query Agreement",
+            "value": 0,
+            "unit": "%"
+          },
+          {
+            "name": "svelte Agreement",
+            "value": 0.3,
+            "unit": "%"
+          },
+          {
+            "name": "vite Agreement",
+            "value": 7.3,
+            "unit": "%"
+          },
+          {
+            "name": "vue-core Agreement",
+            "value": 10,
+            "unit": "%"
+          },
+          {
+            "name": "zod Agreement",
+            "value": 27.7,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "committer": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "id": "ab5b7ddf1280a871fad241c786640b8656c86c3d",
+          "message": "fix(ci): pin npm@10 to avoid promise-retry module error on Node 22",
+          "timestamp": "2026-04-07T13:38:46Z",
+          "url": "https://github.com/KamilDev/fallow/commit/ab5b7ddf1280a871fad241c786640b8656c86c3d"
+        },
+        "date": 1777365131031,
         "tool": "customBiggerIsBetter",
         "benches": [
           {
