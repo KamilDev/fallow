@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777709983780,
+  "lastUpdate": 1777797166898,
   "repoUrl": "https://github.com/KamilDev/fallow",
   "entries": {
     "Fallow Real-World Benchmarks": [
@@ -3569,6 +3569,108 @@ window.BENCHMARK_DATA = {
           {
             "name": "next.js (warm)",
             "value": 2999,
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "committer": {
+            "name": "Bart Waardenburg",
+            "username": "BartWaardenburg",
+            "email": "bart@waardenburg.dev"
+          },
+          "id": "ab5b7ddf1280a871fad241c786640b8656c86c3d",
+          "message": "fix(ci): pin npm@10 to avoid promise-retry module error on Node 22",
+          "timestamp": "2026-04-07T13:38:46Z",
+          "url": "https://github.com/KamilDev/fallow/commit/ab5b7ddf1280a871fad241c786640b8656c86c3d"
+        },
+        "date": 1777797166085,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "preact (cold)",
+            "value": 52,
+            "unit": "ms"
+          },
+          {
+            "name": "preact (warm)",
+            "value": 38,
+            "unit": "ms"
+          },
+          {
+            "name": "fastify (cold)",
+            "value": 52,
+            "unit": "ms"
+          },
+          {
+            "name": "fastify (warm)",
+            "value": 46,
+            "unit": "ms"
+          },
+          {
+            "name": "zod (cold)",
+            "value": 49,
+            "unit": "ms"
+          },
+          {
+            "name": "zod (warm)",
+            "value": 35,
+            "unit": "ms"
+          },
+          {
+            "name": "vue-core (cold)",
+            "value": 117,
+            "unit": "ms"
+          },
+          {
+            "name": "vue-core (warm)",
+            "value": 105,
+            "unit": "ms"
+          },
+          {
+            "name": "svelte (cold)",
+            "value": 478,
+            "unit": "ms"
+          },
+          {
+            "name": "svelte (warm)",
+            "value": 445,
+            "unit": "ms"
+          },
+          {
+            "name": "query (cold)",
+            "value": 463,
+            "unit": "ms"
+          },
+          {
+            "name": "query (warm)",
+            "value": 431,
+            "unit": "ms"
+          },
+          {
+            "name": "vite (cold)",
+            "value": 250,
+            "unit": "ms"
+          },
+          {
+            "name": "vite (warm)",
+            "value": 226,
+            "unit": "ms"
+          },
+          {
+            "name": "next.js (cold)",
+            "value": 3317,
+            "unit": "ms"
+          },
+          {
+            "name": "next.js (warm)",
+            "value": 3265,
             "unit": "ms"
           }
         ]
